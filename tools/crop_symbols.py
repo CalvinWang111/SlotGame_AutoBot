@@ -9,12 +9,13 @@ from PIL import Image
 root_dir = Path(__file__).parent.parent
 print(root_dir)
 
-GAME_NAME = 'bull'
+GAME_NAME = 'fu'
 
 # Define a constant scaling factor
 SCALE = 0.5  # Adjust this value to scale the image
 
-image_path = root_dir / 'images' / f'{GAME_NAME}' / 'info' / '1.png'
+image_path = root_dir / 'images' / f'{GAME_NAME}' / 'info' / '5.png'
+image_path = root_dir / 'images' / f'{GAME_NAME}' / 'screenshots' / 'free_game' / 'vlcsnap-2024-11-10-15h35m47s222.png'
 image = cv2.imread(str(image_path))
 
 # Create the output directory if it doesn't exist
