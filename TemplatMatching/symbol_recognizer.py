@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 from pathlib import Path
-import matplotlib.pyplot as plt
 
 def custom_nms_boxes(nms_boxes, sorted_confidences, iou_threshold):
     if len(nms_boxes) == 0:
