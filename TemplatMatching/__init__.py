@@ -1,0 +1,2 @@
+from TemplatMatching import grid
+from TemplatMatching import symbol_recognizer
