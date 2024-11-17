@@ -21,7 +21,8 @@ def main():
     maskDict = sam.segment_image(r"./images/"+Snapshot+".png")
     
     # 3. ViT 辨識
-    vit = ViTRecognition(Snapshot=Snapshot, maskDict=maskDict)
+    # put your own VIT model path here 
+    vit = ViTRecognition(Snapshot=Snapshot, maskDict=maskDict, model_path=r'C:\Users\13514\button_recognition\VITrun_ver6\best_model.pth')
     highest_confidence_images = vit.classify_components()
 
     # 4. 操控遊戲
