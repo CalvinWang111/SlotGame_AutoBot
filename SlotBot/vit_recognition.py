@@ -102,11 +102,12 @@ class ViTRecognition:
             shutil.copy(info['path'], dest_path)
 
             # Display the copied image with the confidence score
+            '''
             plt.figure(figsize=(3, 3))
             plt.imshow(Image.open(dest_path).convert("RGB"))
             plt.axis('off')
             plt.title(f"{self.label_map[class_id]} - Confidence: {info['confidence']:.2f}")
             plt.show()
             print(f"position:{info['contour'][0],info['contour'][1]}, contour Height and Width:{info['contour'][2],info['contour'][3]}")
-
-        return highest_confidence_images
+            '''
+        return highest_confidence_images, template_folder
