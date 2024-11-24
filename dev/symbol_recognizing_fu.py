@@ -9,6 +9,7 @@ from TemplateMatching.utils import *
 
 MODE = 'base'
 GAME = 'fu'
+WRITE_GRID = False
 
 if MODE == 'base':
     template_dir = Path(f'./images/{GAME}/symbols/base_game')
@@ -59,8 +60,10 @@ for image_path in image_dir.glob('*.png'):
         grid_bbox, grid_shape = get_grid_info(matched_positions)
         grid = BullGrid(grid_bbox, grid_shape, MODE)
         print(f'initial grid shape: {grid.row} x {grid.col}')
-        write_object(grid, './dev/grid.pkl')
-        exit()
+        
+        if WRITE_GRID:
+            write_object(grid, f'./dev/grid/{GAME}_grid.pkl')
+            exit()
     
     # Process each grid cell
     start_time = time.time()

@@ -87,8 +87,11 @@ def apply_nms_and_filter_by_best_scale(matching_results, template_shape, iou_thr
 
     return filtered_results, best_scale
 
-def template_matching(template, img, scale_range, scale_step, threshold, border, match_one=False):
-    scales = np.arange(scale_range[0], scale_range[1] + scale_step, scale_step)
+def template_matching(template, img, scale_range, scale_step, threshold, border):
+    if scale_range[0] == scale_range[1]:
+        scales = [scale_range[0]]
+    else:
+        scales = np.arange(scale_range[0], scale_range[1] + scale_step, scale_step)
     img_area = (img.shape[0] - border) * (img.shape[1] - border)
     padding = 5  # Padding to add around the image for reverse matching
 
@@ -192,6 +195,164 @@ def process_template_matches(template_match_data, template_dir, img, iou_thresho
             'best_scale': match_one_scale
         }
         return match_one_template
+    
+def template_matching_gray(template_gray, mask, img_gray, scale_range, scale_step, threshold, border):
+    if scale_range[0] == scale_range[1]:
+        scales = [scale_range[0]]
+    else:
+        scales = np.arange(scale_range[0], scale_range[1] + scale_step, scale_step)
+    padding = 5  # Padding to add around the image for reverse matching
+    
+    matching_results = []  # To store the locations of matches
+    
+    for scale in scales:
+        # Resize template and mask for the current scale
+        resized_template = cv2.resize(template_gray, (0, 0), fx=scale, fy=scale)
+        resized_mask = cv2.resize(mask, (0, 0), fx=scale, fy=scale)
+        result = None
+        
+        template_h, template_w = resized_template.shape[:2]
+        img_h, img_w = img_gray.shape[:2]
+        # Ensure the resized template is not larger than the image
+        if template_h > img_h or template_w > img_w:
+            if template_h >= img_h - 2 * border and template_w >= img_w - 2 * border:
+                # perform reverse matching
+                img_without_border = img_gray[border+padding:img_h-border-padding, border+padding:img_w-border-padding]
+                result = cv2.matchTemplate(resized_template, img_without_border, cv2.TM_CCORR_NORMED)
+            else:
+                continue
+        else:
+            # Perform template matching
+            result = cv2.matchTemplate(img_gray, resized_template, cv2.TM_CCORR_NORMED, mask=resized_mask)
+        
+        # Find locations where the match is greater than the threshold
+        loc = np.where(result >= threshold)
+
+        # Collect all the matching points
+        for pt in zip(*loc[::-1]):  # Switch x and y in zip
+            matching_results.append((pt, scale, result[pt[1], pt[0]])) # (top_left, scale, match_val)
+    return matching_results
+
+def process_template_matches_gray(template_scale, template_dir, target_roi, scale_range, scale_step, threshold, border):
+    best_match = None
+    best_score = None
+    best_scale = None
+    
+    target_gray = cv2.cvtColor(target_roi, cv2.COLOR_BGR2GRAY)
+    target_gray = cv2.equalizeHist(target_gray)
+
+    # Iterate through each template in the directory
+    for template_path in Path(template_dir).iterdir():
+        template = cv2.imread(str(template_path), cv2.IMREAD_UNCHANGED)
+        template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+        template_gray = cv2.equalizeHist(template_gray)
+        _, _, _, alpha_channel = cv2.split(template)
+        mask = cv2.threshold(alpha_channel, 128, 255, cv2.THRESH_BINARY)[1]
+        template_name = template_path.stem
+        
+        if template_name in template_scale:
+            scale = template_scale[template_name]
+            matching_results = template_matching_gray(template_gray, mask, target_gray, (scale, scale), scale_step, threshold, border)
+        else:
+            matching_results = template_matching_gray(template_gray, mask, target_gray, scale_range, scale_step, threshold, border)
+            
+        # Extract the best score
+        if matching_results:
+            top_result = max(matching_results, key=lambda x: x[2])  # x[2] should be the score
+            top_score = top_result[2]
+            if best_score is None or top_score > best_score:
+                best_match = template_path.stem
+                best_score = top_score
+                best_scale = top_result[1]
+            print(f'{template_path.stem} has score {top_score}')
+                
+    # if not (best_match in template_scale):
+    #     template_scale[best_match] = best_scale
+    
+    if not best_match:
+        return None, None, None
+
+    matched_template = cv2.imread(str(template_dir / f'{best_match}.png'))
+    matched_template_gray = cv2.cvtColor(matched_template, cv2.COLOR_BGR2GRAY)
+    matched_template_gray = cv2.equalizeHist(matched_template_gray)
+    matched_template_gray = cv2.resize(matched_template_gray, (0, 0), fx=best_scale, fy=best_scale)
+    cv2.imshow('best_match', matched_template_gray)
+    cv2.imshow('target gray', target_gray)
+    
+    return best_match, best_score, best_scale
+
+def process_template_matches_sift(template_dir, target_roi, threshold):
+    # Initialize SIFT detector and BFMatcher
+    sift = cv2.SIFT_create()
+    bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
+
+    best_match = None
+    best_score = None
+    best_keypoints = None
+    best_template_keypoints = None
+    best_template_img = None
+    best_matches = None
+    
+
+    # Compute keypoints and descriptors for the target ROI
+    target_gray = cv2.cvtColor(target_roi, cv2.COLOR_BGR2GRAY)
+    # target_gray = cv2.equalizeHist(target_gray)
+    keypoints_target, descriptors_target = sift.detectAndCompute(target_gray, None)
+
+    # Iterate through each template in the directory
+    for template_path in Path(template_dir).iterdir():
+        template = cv2.imread(str(template_path), cv2.IMREAD_UNCHANGED)
+        template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+        # template_gray = cv2.equalizeHist(template_gray)
+        
+        # Calculate new dimensions (crop x% of each border)
+        crop_percent = 0.1
+        height, width = template.shape[:2]
+        crop_top = int(height * crop_percent)
+        crop_bottom = int(height * (1 - crop_percent))
+        crop_left = int(width * crop_percent)
+        crop_right = int(width * (1 - crop_percent))
+        
+        template_gray = template_gray[crop_top:crop_bottom, crop_left:crop_right]
+
+        # Compute keypoints and descriptors for the template
+        keypoints_template, descriptors_template = sift.detectAndCompute(template_gray, None)
+
+        # Match descriptors using BFMatcher
+        matches = bf.match(descriptors_template, descriptors_target)
+        matches = sorted(matches, key=lambda x: x.distance)  # Sort matches by distance (lower is better)
+
+        # Compute the match score
+        if matches:
+            score = sum([m.distance for m in matches]) / len(matches)  # Average distance as score
+            if best_score is None or score < best_score:  # Lower distance indicates a better match
+                best_match = template_path.stem
+                best_score = score
+                best_keypoints = keypoints_target
+                best_template_keypoints = keypoints_template
+                best_template_img = template_gray
+                best_matches = matches
+            print(f'{template_path.stem} score: {score}')
+
+    if not best_match:
+        print("No match found.")
+        return None, None, None
+
+    # Visualize keypoints and matches
+    keypoints_target_img = cv2.drawKeypoints(target_gray, best_keypoints, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    keypoints_template_img = cv2.drawKeypoints(best_template_img, best_template_keypoints, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+
+    matches_img = cv2.drawMatches(best_template_img, best_template_keypoints, target_gray, best_keypoints, best_matches[:10], None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+
+    # Display results using cv2.imshow
+    cv2.imshow("Target Keypoints", keypoints_target_img)
+    cv2.imshow("Template Keypoints", keypoints_template_img)
+    cv2.imshow("Matches", matches_img)
+
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+
+    return best_match, best_score, len(best_matches)
     
 def get_grid_info(points, tolerance=30):
     # tolerance is in pixel
