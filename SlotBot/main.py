@@ -3,8 +3,8 @@ from sam_segmentation import SAMSegmentation
 from vit_recognition import ViTRecognition
 from component_matching import ComponentMatcher
 from game_controller import GameController
-from process_symbol.symbol_recognizing import *
-from process_symbol.stopping_detection import StoppingFrameCapture
+from symbol_recognizing import *
+from stopping_detection import StoppingFrameCapture
 
 from PIL import Image
 import time

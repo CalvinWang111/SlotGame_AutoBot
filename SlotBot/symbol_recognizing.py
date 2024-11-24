@@ -1,8 +1,8 @@
-from .grid import BullGrid
-from .symbol_recognizer import *
-from .utils import *
+from TemplateMatching.grid import BullGrid
+from TemplateMatching.symbol_recognizer import *
+from TemplateMatching.utils import *
 
-STRAIGHT_VERSION = True
+STRAIGHT_VERSION = False
 template_match_data = {}
 if STRAIGHT_VERSION:
     zoom_rate = 0.5
