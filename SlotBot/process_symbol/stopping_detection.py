@@ -21,17 +21,19 @@ if SET_ROI:
     symbol_number = (4,5)
 
 class StoppingFrameCapture:
-    def __init__(self,window_name,save_dir,grid:BullGrid):
+    def __init__(self,window_name,grid:BullGrid,save_dir):
         self.grid = grid
         self.window_name = window_name
         self.save_dir = save_dir
         self.__output_counter = 0
         self.__button_available = False
         self.__terminated = False
-        self.__spin_start_time = 0        
+        self.__spin_start_time = 0      
+        if DEBUG:
+            print("bbox:",grid.bbox)
 
-    def save_key_frames(self, intial_intensity,highest_confidence_images,intensity_threshold):
-        
+    def get_key_frames(self, intial_intensity,intensity_threshold,highest_confidence_images):
+        key_image_pathes = []
 
         def __get_window_frame(self:StoppingFrameCapture,frame_buffer):
             window = gw.getWindowsWithTitle(self.window_name)[0]
@@ -48,11 +50,11 @@ class StoppingFrameCapture:
                     frame_buffer.put(frame)
                 else:
                     print("Warning: Frame buffer is full")
-                # with self.lock:
-                #     self.latest_frame = frame
                 intensity = screenshot.clickable_np(frame,highest_confidence_images=highest_confidence_images)
                 if abs(intial_intensity - intensity) < intensity_threshold and time.time()-self.__spin_start_time>1:
                     self.__button_available = True
+                else:
+                    self.__button_available = False
                 frame_elapsed = time.time() - frame_start_time
                 if DEBUG:
                     print(f"Frame read time: {frame_elapsed}, Buffer size: {frame_buffer.qsize()}")
@@ -68,16 +70,17 @@ class StoppingFrameCapture:
             sw = self.grid.symbol_width
 
             # setting Shi-Tomasi
-            feature_params = dict(maxCorners=10000, qualityLevel=0.01, minDistance=20, blockSize=20)
+            feature_params = dict(maxCorners=50000, qualityLevel=0.01, minDistance=20, blockSize=20)
 
             # setting Lucas-Kanade optical flow
-            lk_params = dict(winSize=(int(sh/7), int(sw/10)), maxLevel=3, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 20, 0.02))
+            lk_params = dict(winSize=(int(sh/7), int(sw/10)), maxLevel=3, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
 
 
             # setting my parameter
             rolling_record_size = 9
             min_moving_down_distance = sh/7
-            min_point_number = int(roi_w*roi_h/100000+1)
+            min_point_number = min(int(roi_w*roi_h/100000+1),10)
+            print("min_point_number:",min_point_number)
             max_error = 25
             min_rolling_frames = 15
             max_degree = 5
@@ -119,7 +122,7 @@ class StoppingFrameCapture:
                                     rolling_point_number += 1
                                     if rolling_point_number >= min_point_number:
                                         rolling_now = True
-                                        break
+                                        # break
                     rolling_record.append(rolling_now)
                     point_record.append(rolling_point_number)
                     old_frame = new_frame.copy()
@@ -128,19 +131,20 @@ class StoppingFrameCapture:
                         if True in rolling_record:
                             if rolling_record.index(True) == 0 and rolling_record.count(True) == 1 and rolling_frames >= min_rolling_frames:
                                 if not SAVE_THREAD:
-                                    cv2.imwrite(f"{self.save_dir}/test_frame{self.__output_counter}.png", frame)
+                                    cv2.imwrite(f"{self.save_dir}\\key_frame{self.__output_counter}.png", frame)
+                                    key_image_pathes.append(f"{self.save_dir}\\key_frame{self.__output_counter}.png")
+                                    print("Get stopping frame, Saved to path:", f"{self.save_dir}\\key_frame{self.__output_counter}.png")
                                     self.__output_counter+=1
-                                    capture_number += 1
                                     last_capture_time = time.time()
-                                    print("Get stopping frame, Saved to path:", f"{self.save_dir}/test_frame{self.__output_counter}.png")
                                 else:
                                     if save_frame_queue.qsize() < MAX_BUFFER_SIZE:
                                         save_frame_queue.put(frame)
                                     else:
                                         print("Warning: saving queue is full, skipping frame...")
-                                
+                                capture_number += 1
                             else:
                                 rolling_frames+=1
+                            
                         else:
                             rolling_frames = 0
                     if DEBUG:
@@ -150,19 +154,21 @@ class StoppingFrameCapture:
                     time.sleep(0.01) 
 
                 if self.__button_available==True:
-                    if capture_number>0 or time.time()-last_capture_time>3 :
+                    if time.time()-last_capture_time>5 :
                         self.__terminated = True
 
         def save_frame(self:StoppingFrameCapture,save_frame_queue):
             while not self.__terminated:
                 if not save_frame_queue.empty():
                     start_time = time.time()
-                    cv2.imwrite(f"{self.save_dir}/test_frame{self.__output_counter}.png", save_frame_queue.get())
+                    cv2.imwrite(f"{self.save_dir}\\key_frame{self.__output_counter}.png", save_frame_queue.get())
+                    key_image_pathes.append(f"{self.save_dir}\\key_frame{self.__output_counter}.png")
+                    print("Get stopping frame, Saved to path:", f"{self.save_dir}\\key_frame{self.__output_counter}.png")
                     self.__output_counter+=1
                     if DEBUG:
                         print(f"Saving time: {time.time()-start_time}, Queue size: {save_frame_queue.qsize()}")
                 else:
-                    time.sleep(0.01) 
+                    time.sleep(0.01)
                 
         frame_buffer = Queue()
         save_frame_queue = Queue()
@@ -185,4 +191,5 @@ class StoppingFrameCapture:
         if SAVE_THREAD:
             save_thread.join()
 
-        print("Stop stopping catching")
+        print("round over")
+        return(key_image_pathes)

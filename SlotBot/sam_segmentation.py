@@ -150,6 +150,7 @@ class SAMSegmentation:
         # plt.show()
 
         sam2 = build_sam2(self.model_cfg, self.checkpoint, device=self.device, apply_postprocessing=False)
+        print("build sam completed")
         mask_generator = SAM2AutomaticMaskGenerator(sam2)
         masks = mask_generator.generate(image)
         self.show_anns(masks, image)
