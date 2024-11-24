@@ -3,9 +3,7 @@ material/
 result/
 Scripts/
 Lib/
-images/
 inputTest/
-.git/
 temp/
 
 # Byte-compiled / optimized / DLL files
@@ -15,3 +13,14 @@ __pycache__/
 
 # api key
 .env
+.vscode/
+.DS_Store
+*-checkpoint.ipynb
+.venv
+*.egg*
+build/*
+_C.*
+outputs/*
+checkpoints/*.pt
+test.ipynb
+temp/

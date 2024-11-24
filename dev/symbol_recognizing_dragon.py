@@ -1,0 +1,98 @@
+import cv2
+import numpy as np
+import time
+from pathlib import Path
+from TemplateMatching.grid import BullGrid
+from TemplateMatching.symbol_recognizer import *
+from TemplateMatching.utils import *
+
+MODE = 'base'
+GAME = 'dragon'
+
+if MODE == 'base':
+    template_dir = Path(f'./images/{GAME}/symbols/base_game')
+    image_dir = Path(f'./images/{GAME}/screenshots/base_game')
+    save_dir = Path(f'./temp/{GAME}_base_output')
+elif MODE == 'free':
+    template_dir = Path(f'./images/{GAME}/symbols/free_game')
+    image_dir = Path(f'./images/{GAME}/screenshots/free_game')
+    save_dir = Path(f'./temp/{GAME}_free_output')
+save_dir.mkdir(parents=True, exist_ok=True)
+
+template_match_data = {}
+grid = None
+cell_border = 20
+
+for image_path in image_dir.glob('*.png'): 
+    print(f"Processing image: {image_path}")
+    img = cv2.imread(str(image_path))
+    
+    # initialize grid
+    if grid is None:
+        start_time = time.time()
+        process_template_matches(
+            template_match_data=template_match_data, 
+            template_dir=template_dir, 
+            img=img, 
+            iou_threshold=0.1, 
+            scale_range=[0.8, 1.5],
+            scale_step=0.05,
+            threshold=0.95,
+            min_area=5000,
+            border=100
+        )
+        elapsed_time = time.time() - start_time
+        print(f"Initial grid matching: {elapsed_time:.2f} seconds")
+        
+        matched_positions = []
+        for template_name, data in template_match_data.items():
+            w, h = data['shape'][1], data['shape'][0]
+            for (top_left, scale, _) in data['result']:
+                x = top_left[0] + w * scale / 2
+                y = top_left[1] + h * scale / 2
+                matched_positions.append((x, y))
+        if len(matched_positions) == 0:
+            print("Could not find any matches")
+            break
+                
+        grid_bbox, grid_shape = get_grid_info(matched_positions)
+        grid = BullGrid(grid_bbox, grid_shape, MODE)
+        print(f'initial grid shape: {grid.row} x {grid.col}')
+    
+    
+    # Process each grid cell
+    start_time = time.time()
+    for j in range(grid.col):
+        row_range = (
+            range(grid.row - grid.column_heights[j], grid.row) if MODE == 'up'
+            else range(grid.column_heights[j])
+        )
+        
+        for i in row_range:
+            roi = grid.get_roi(i, j)
+            x, y, w, h = roi
+            x1, x2 = x - cell_border, x + w + cell_border
+            y1, y2 = y - cell_border, y + h + cell_border
+            cell = img[y1:y2, x1:x2]
+            
+            symbol_name = process_template_matches(
+                template_match_data=template_match_data,
+                template_dir=template_dir,
+                img=cell,
+                iou_threshold=0.1,
+                scale_range=[0.8, 1.5],
+                scale_step=0.05,
+                threshold=0.8,
+                min_area=5000,
+                match_one=True,
+                border=cell_border,
+            )
+            
+            grid[i, j] = symbol_name
+    elapsed_time = time.time() - start_time
+    print(f"Grid cells matching: {elapsed_time:.2f} seconds")
+    
+    save_path = save_dir / f"{image_path.stem}.png"
+    draw_bboxes_and_icons_on_image(img, template_dir, grid, save_path=save_path)
+    grid.clear()
+    print("------------------------------------------------------")
