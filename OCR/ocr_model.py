@@ -15,7 +15,7 @@ class OCRmodel(PaddleOCR):
         self.__receive_btn = "領取"
         self.__confirm_btn = "確認"
         self.__start_spin_loc = []
-    
+
     def __is_free_game_patterns(self, string) -> bool:
         """
         matching free game patterns
@@ -24,7 +24,7 @@ class OCRmodel(PaddleOCR):
             if pattern in string:
                 return True
         return False
-    
+
     def __get_free_game_loc(self, loc_list) -> list[tuple]:
         """
         get int type location

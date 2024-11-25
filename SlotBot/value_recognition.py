@@ -1,7 +1,6 @@
 from paddleocr import PaddleOCR
 from ChatGPT.openai_api import OpenAiApi
 
-
 class ValueRecognition:
     def __init__(self):
         self.api_key = ""
@@ -10,6 +9,7 @@ class ValueRecognition:
         self.value_pos_form = []
 
         self.threshold = 5
+        self.ocr = PaddleOCR(use_angle_cls=True, lang="en")
 
     def get_board_value(self, image_path):
         # Path to your image
@@ -21,8 +21,7 @@ class ValueRecognition:
         table = [line.split(";") for line in result]
 
         # OCR
-        ocr = PaddleOCR(use_angle_cls=True, lang="en")
-        ocr_result = ocr.ocr(image_path, cls=True)
+        ocr_result = self.ocr.ocr(image_path, cls=True)
         ocr_result = ocr_result[0]
 
         # compare
