@@ -250,6 +250,16 @@ def process_template_matches_gray(template_scale, template_dir, target_roi, scal
         mask = cv2.threshold(alpha_channel, 128, 255, cv2.THRESH_BINARY)[1]
         template_name = template_path.stem
         
+        # Calculate new dimensions (crop x% of each border)
+        crop_percent = 0.1
+        height, width = template.shape[:2]
+        crop_top = int(height * crop_percent)
+        crop_bottom = int(height * (1 - crop_percent))
+        crop_left = int(width * crop_percent)
+        crop_right = int(width * (1 - crop_percent))
+        template_gray = template_gray[crop_top:crop_bottom, crop_left:crop_right]
+        mask = mask[crop_top:crop_bottom, crop_left:crop_right]
+        
         if template_name in template_scale:
             scale = template_scale[template_name]
             matching_results = template_matching_gray(template_gray, mask, target_gray, (scale, scale), scale_step, threshold, border)
@@ -281,78 +291,149 @@ def process_template_matches_gray(template_scale, template_dir, target_roi, scal
     
     return best_match, best_score, best_scale
 
-def process_template_matches_sift(template_dir, target_roi, threshold):
+import cv2
+import numpy as np
+from pathlib import Path
+
+def process_template_matches_sift(template_dir, target_roi, scale_range=(0.9, 1.1), debug=False):
     # Initialize SIFT detector and BFMatcher
     sift = cv2.SIFT_create()
-    bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=True)
+    bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)  # Use crossCheck=False for knnMatch
 
     best_match = None
-    best_score = None
+    best_num_matches = 0  # Keep track of the highest number of filtered matches
     best_keypoints = None
     best_template_keypoints = None
     best_template_img = None
     best_matches = None
-    
+    best_scale = None  # To keep track of the estimated scale between template and target ROI
 
-    # Compute keypoints and descriptors for the target ROI
+    # Preprocess the target ROI using CLAHE
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     target_gray = cv2.cvtColor(target_roi, cv2.COLOR_BGR2GRAY)
-    # target_gray = cv2.equalizeHist(target_gray)
+    target_gray = clahe.apply(target_gray)
     keypoints_target, descriptors_target = sift.detectAndCompute(target_gray, None)
+
+    # Check if descriptors are found in the target ROI
+    if descriptors_target is None or len(keypoints_target) < 2:
+        if debug:
+            print("Not enough descriptors in target ROI.")
+        return None, None, None
 
     # Iterate through each template in the directory
     for template_path in Path(template_dir).iterdir():
         template = cv2.imread(str(template_path), cv2.IMREAD_UNCHANGED)
         template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-        # template_gray = cv2.equalizeHist(template_gray)
-        
-        # Calculate new dimensions (crop x% of each border)
+
+        # Preprocess the template using CLAHE
+        template_gray = clahe.apply(template_gray)
+
+        # Crop borders (optional)
         crop_percent = 0.1
-        height, width = template.shape[:2]
+        height, width = template_gray.shape[:2]
         crop_top = int(height * crop_percent)
         crop_bottom = int(height * (1 - crop_percent))
         crop_left = int(width * crop_percent)
         crop_right = int(width * (1 - crop_percent))
-        
         template_gray = template_gray[crop_top:crop_bottom, crop_left:crop_right]
 
         # Compute keypoints and descriptors for the template
         keypoints_template, descriptors_template = sift.detectAndCompute(template_gray, None)
 
-        # Match descriptors using BFMatcher
-        matches = bf.match(descriptors_template, descriptors_target)
-        matches = sorted(matches, key=lambda x: x.distance)  # Sort matches by distance (lower is better)
+        # Check if descriptors are found in the template
+        if descriptors_template is None or len(keypoints_template) < 2:
+            continue
 
-        # Compute the match score
-        if matches:
-            score = sum([m.distance for m in matches]) / len(matches)  # Average distance as score
-            if best_score is None or score < best_score:  # Lower distance indicates a better match
-                best_match = template_path.stem
-                best_score = score
-                best_keypoints = keypoints_target
-                best_template_keypoints = keypoints_template
-                best_template_img = template_gray
-                best_matches = matches
-            print(f'{template_path.stem} score: {score}')
+        # Match descriptors using BFMatcher and Lowe's Ratio Test
+        matches_knn = bf.knnMatch(descriptors_template, descriptors_target, k=2)
+        good_matches = []
+        for m, n in matches_knn:
+            if m.distance < 0.75 * n.distance:
+                good_matches.append(m)
+
+        # Filter matches based on spatial consistency
+        if len(good_matches) >= 4:  # Need at least 4 matches to compute homography/affine
+            src_pts = np.float32([keypoints_template[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+            dst_pts = np.float32([keypoints_target[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+
+            # Estimate affine transformation using RANSAC
+            M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts, method=cv2.RANSAC)
+
+            if M is not None:
+                matches_mask = mask.ravel().tolist()
+                filtered_matches = [m for m, keep in zip(good_matches, matches_mask) if keep]
+
+                if len(filtered_matches) >= 4:
+                    # Calculate the scale from the affine transformation matrix
+                    scale_x = np.sqrt(M[0, 0] ** 2 + M[0, 1] ** 2)
+                    scale_y = np.sqrt(M[1, 0] ** 2 + M[1, 1] ** 2)
+                    estimated_scale = (scale_x + scale_y) / 2  # Average scale
+
+                    # Check if estimated scale is within the specified range
+                    min_scale, max_scale = scale_range
+                    if min_scale <= estimated_scale <= max_scale:
+                        num_filtered_matches = len(filtered_matches)
+                        if num_filtered_matches > best_num_matches:
+                            best_match = template_path.stem
+                            best_num_matches = num_filtered_matches
+                            best_keypoints = keypoints_target
+                            best_template_keypoints = keypoints_template
+                            best_template_img = template_gray
+                            best_matches = filtered_matches
+                            best_scale = estimated_scale
+                        if debug:
+                            print(f'{template_path.stem:<20} | Matches: {num_filtered_matches:<5} | Estimated Scale: {estimated_scale:<6.2f}')
+                    else:
+                        if debug:
+                            print(f'{template_path.stem:<20} | Estimated Scale {estimated_scale:5.2f} out of range')
+                else:
+                    if debug:
+                        print(f'{template_path.stem:<20} | Insufficient filtered matches ({len(filtered_matches)})')
+            else:
+                if debug:
+                    print(f'{template_path.stem:<20} | Affine transformation could not be estimated')
+        else:
+            if debug:
+                print(f'{template_path.stem:<20} | Insufficient good matches ({len(good_matches)})')
 
     if not best_match:
-        print("No match found.")
+        if debug:
+            print("No match found.")
         return None, None, None
 
-    # Visualize keypoints and matches
-    keypoints_target_img = cv2.drawKeypoints(target_gray, best_keypoints, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    keypoints_template_img = cv2.drawKeypoints(best_template_img, best_template_keypoints, None, flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    # Visualize keypoints and filtered matches
+    keypoints_target_img = cv2.drawKeypoints(
+        target_gray,
+        best_keypoints,
+        None,
+        flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
+    )
+    keypoints_template_img = cv2.drawKeypoints(
+        best_template_img,
+        best_template_keypoints,
+        None,
+        flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
+    )
+    matches_img = cv2.drawMatches(
+        best_template_img,
+        best_template_keypoints,
+        target_gray,
+        best_keypoints,
+        best_matches,
+        None,
+        flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS
+    )
 
-    matches_img = cv2.drawMatches(best_template_img, best_template_keypoints, target_gray, best_keypoints, best_matches[:10], None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+    if debug:
+        # Display results using cv2.imshow
+        cv2.imshow("Target Keypoints", keypoints_target_img)
+        cv2.imshow("Template Keypoints", keypoints_template_img)
+        cv2.imshow("Filtered Matches", matches_img)
+        print(f'Best match: {best_match} | Filtered Matches: {best_num_matches} | Estimated Scale: {best_scale:.2f}')
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
-    # Display results using cv2.imshow
-    cv2.imshow("Target Keypoints", keypoints_target_img)
-    cv2.imshow("Template Keypoints", keypoints_template_img)
-    cv2.imshow("Matches", matches_img)
-
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
-    return best_match, best_score, len(best_matches)
+    return best_match, best_scale, best_num_matches
     
 def get_grid_info(points, tolerance=30):
     # tolerance is in pixel
