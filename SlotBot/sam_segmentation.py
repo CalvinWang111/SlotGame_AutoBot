@@ -1,4 +1,5 @@
 import os
+
 # if using Apple MPS, fall back to CPU for unsupported ops
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 import numpy as np
@@ -12,7 +13,7 @@ import shutil
 
 
 class SAMSegmentation:
-    def __init__(self, Snapshot, sam2_checkpoint = "../checkpoints/sam2_hiera_large.pt", model_cfg = "sam2_hiera_l.yaml"):
+    def __init__(self, Snapshot, sam2_checkpoint="./checkpoints/sam2_hiera_large.pt", model_cfg="sam2_hiera_l.yaml"):
         # select the device for computation
         if torch.cuda.is_available():
             device = torch.device("cuda")
@@ -29,9 +30,9 @@ class SAMSegmentation:
             if torch.cuda.get_device_properties(0).major >= 8:
                 torch.backends.cuda.matmul.allow_tf32 = True
                 torch.backends.cudnn.allow_tf32 = True
-        
+
         self.device = device
-        self.checkpoint = sam2_checkpoint        
+        self.checkpoint = sam2_checkpoint
         self.model_cfg = model_cfg
         self.maskDict = {}
         self.Snapshot = Snapshot
@@ -93,7 +94,7 @@ class SAMSegmentation:
                     x, y, w, h = cv2.boundingRect(contour)
 
                     # Crop the original image using the bounding box
-                    cropped_image = original_image[y:y+h, x:x+w]
+                    cropped_image = original_image[y:y + h, x:x + w]
 
                     # Create a blank mask for the contour in the cropped area
                     cropped_mask = np.zeros((h, w), dtype=np.uint8)
@@ -127,13 +128,13 @@ class SAMSegmentation:
 
             # Display the final image with all masks
             ax.imshow(img)
-            
+
             # Convert the RGBA image to an 8-bit unsigned integer format
             final_image_uint8 = (img * 255).astype(np.uint8)
-            
+
             # Convert RGBA to BGR for saving with OpenCV
             final_image_bgr = cv2.cvtColor(final_image_uint8, cv2.COLOR_RGBA2BGRA)
-            
+
             # Save the final image
             image_filename = os.path.join(output_dir, f'Final.png')
             cv2.imwrite(image_filename, final_image_bgr)  # Save as BGRA
@@ -155,7 +156,3 @@ class SAMSegmentation:
         self.show_anns(masks, image)
 
         return self.maskDict
-
-
-
-

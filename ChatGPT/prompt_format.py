@@ -23,3 +23,12 @@ class PromptFormat:
         "請幫我辨識這張圖片是不是按鍵，請在標籤`<answer></answer>`內輸出是<answer>是</answer>或者<answer>不是</answer>"
         "如果是按鍵的話，在標籤`<button></button>`內輸出是哪一類按鍵。"
     )
+
+class GetValuePromptFormat:
+    """
+        A class for prompt format of getting value
+    """
+    PROMPT = (
+        "請幫我找出畫面中的所有數值，並告訴我它的意義，輸出成 數值;意義 的格式，不要有其他符號"
+        "用{}框起來，意義的部分盡量精簡"
+    )

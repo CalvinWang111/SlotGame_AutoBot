@@ -1,6 +1,7 @@
 # ignored folders
 material/
 result/
+.idea
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -9,3 +10,7 @@ __pycache__/
 
 # api key
 .env
+
+*.pt
+*.png
+*.pth

@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 import torch
 import os
 from transformers import ViTForImageClassification, ViTFeatureExtractor
-from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
+# from sklearn.metrics import confusion_matrix, classification_report, accuracy_score
 import matplotlib.pyplot as plt
 from PIL import Image
 import numpy as np
