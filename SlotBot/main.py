@@ -46,11 +46,15 @@ def main():
         print('spin')
         time.sleep(3)
 
+        if i == 10:
+            value_recognition.get_meaning()
+
         while (abs(intial_intensity - intensity) >= intensity_threshold):
             screenshot.capture_screenshot(window_title=window_name, filename=Snapshot + '_runtime')
             intensity = screenshot.clickable(snapshot_path=r"./images/" + Snapshot + "_runtime.png",
                                              highest_confidence_images=highest_confidence_images)
             print('waiting')
+
 
 
 if __name__ == "__main__":

@@ -32,3 +32,12 @@ class GetValuePromptFormat:
         "請幫我找出畫面中的所有數值，並告訴我它的意義，輸出成 數值;意義 的格式，不要有其他符號"
         "用{}框起來，意義的部分盡量精簡"
     )
+
+class GetSimplifiedMeaningPromptFormat:
+    """
+        A class for prompt format of getting value
+    """
+    PROMPT = (
+        "我辨識了一個數字，但我不知道它的意義，以下是它可能的意義。"
+        "你認為這個數字的意義是什麼。意義的部分盡量精簡。"
+    )

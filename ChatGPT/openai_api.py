@@ -1,7 +1,7 @@
 import base64
 from pathlib import Path
 from openai import OpenAI
-from ChatGPT.prompt_format import PromptFormat, GetValuePromptFormat
+from ChatGPT.prompt_format import PromptFormat, GetValuePromptFormat, GetSimplifiedMeaningPromptFormat
 
 class OpenAiApi:
 
@@ -66,6 +66,29 @@ class OpenAiApi:
                             "image_url": {
                                 "url": f"data:image/jpeg;base64,{image}"
                             }
+                        }
+                    ]
+                }
+            ],
+            max_tokens = 300,
+            temperature = 0.7
+        )
+        return response.choices[0].message.content
+
+    def get_simplified_meaning(self, meaning_list):
+        response = self.openai.chat.completions.create(
+            model="gpt-4o",
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": GetSimplifiedMeaningPromptFormat.PROMPT
+                        },
+                        {
+                            "type": "text",
+                            "text": f"{meaning_list}"
                         }
                     ]
                 }

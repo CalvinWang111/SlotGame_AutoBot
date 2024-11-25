@@ -63,11 +63,14 @@ class ValueRecognition:
 
                     if not found:
                         self.value_pos_form.append(new_value_pos)
-                    break
+
 
         for line in self.value_pos_form:
             print(line)
 
-# for line in ocr_result:
-#   print(line[-1])
-# print(table)
+    def get_meaning(self):
+        for line in self.value_pos_form:
+            meaning_list = line['meaning']
+            chat_response = self.openai_api.get_simplified_meaning(meaning_list)
+            print(f'meaning = {meaning_list}')
+            print(f'response = {chat_response}')
