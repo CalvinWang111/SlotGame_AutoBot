@@ -329,7 +329,7 @@ def process_template_matches_sift(template_dir, target_roi, scale_range=(0.9, 1.
         template_gray = clahe.apply(template_gray)
 
         # Crop borders (optional)
-        crop_percent = 0.1
+        crop_percent = 0.0
         height, width = template_gray.shape[:2]
         crop_top = int(height * crop_percent)
         crop_bottom = int(height * (1 - crop_percent))
@@ -345,10 +345,11 @@ def process_template_matches_sift(template_dir, target_roi, scale_range=(0.9, 1.
             continue
 
         # Match descriptors using BFMatcher and Lowe's Ratio Test
+        ratio_threshold = 0.8
         matches_knn = bf.knnMatch(descriptors_template, descriptors_target, k=2)
         good_matches = []
         for m, n in matches_knn:
-            if m.distance < 0.75 * n.distance:
+            if m.distance < ratio_threshold * n.distance:
                 good_matches.append(m)
 
         # Filter matches based on spatial consistency
@@ -357,7 +358,7 @@ def process_template_matches_sift(template_dir, target_roi, scale_range=(0.9, 1.
             dst_pts = np.float32([keypoints_target[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
 
             # Estimate affine transformation using RANSAC
-            M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts, method=cv2.RANSAC)
+            M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts, method=cv2.RANSAC, ransacReprojThreshold=20.0)
 
             if M is not None:
                 matches_mask = mask.ravel().tolist()
