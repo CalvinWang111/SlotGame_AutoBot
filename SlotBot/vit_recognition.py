@@ -28,7 +28,9 @@ class ViTRecognition:
             9: "button_three_dot",
             10: "gold_coin",
             11: "gold_ingot",
-            12: "stickers"
+            12: "stickers",
+            13: "confirm",
+            14: "receive"
         }
 
         # Confidence threshold (e.g., 0.8 for 80%)
@@ -45,7 +47,7 @@ class ViTRecognition:
         ])
 
         # Load the model and move it to the device
-        model = ViTForImageClassification.from_pretrained("google/vit-base-patch16-224-in21k", num_labels=13)
+        model = ViTForImageClassification.from_pretrained("google/vit-base-patch16-224-in21k", num_labels=15)
         model.load_state_dict(torch.load(self.model_path))
         model.to(self.device)
         model.eval()

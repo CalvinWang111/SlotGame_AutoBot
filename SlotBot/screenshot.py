@@ -2,6 +2,7 @@ import pygetwindow as gw
 import pyautogui
 import os
 from PIL import Image
+from pathlib import Path
 import numpy as np
 
 class GameScreenshot:
@@ -10,13 +11,15 @@ class GameScreenshot:
         """取得遊戲畫面截圖"""
         try:
             # Define the directory where the screenshot will be saved
-            save_directory = './images/'
+            root_dir = Path(__file__).parent.parent
+            save_directory = os.path.join(root_dir, 'images')
                 
             # Create the directory if it does not exist
             os.makedirs(save_directory, exist_ok=True)
             
             # Find the window by title
             window = gw.getWindowsWithTitle(window_title)[0]  # Get the first matching window
+
             # window.activate()  # Bring the window to the foreground if needed
             
             # Get window position and size

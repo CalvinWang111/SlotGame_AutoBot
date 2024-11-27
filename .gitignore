@@ -1,6 +1,10 @@
 # ignored folders
 material/
+images/
 result/
+weights/
+inputTest/
+SAM_2.egg-info/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
