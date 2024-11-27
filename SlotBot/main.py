@@ -14,9 +14,9 @@ from PIL import Image
 def main():
     # 初始化模組
     root_dir = Path(__file__).parent.parent
-    vit_model = os.path.join(root_dir, 'weights', 'vit_model.pth')
-    sam_model = os.path.join(root_dir, 'weights', 'sam2_hiera_large.pt')
-    sam_model_cfg = os.path.join(root_dir, 'sam2', 'configs', 'sam2', 'sam2_hiera_l.yaml')
+    vit_model = os.path.join(root_dir, 'VITrun_ver6', 'best_model.pth')
+    sam_model = os.path.join(root_dir, 'checkpoints', 'sam2_hiera_large.pt')
+    # sam_model_cfg = os.path.join(root_dir, 'sam2', 'configs', 'sam2', 'sam2_hiera_l.yaml')
 
     screenshot = GameScreenshot()
     window_name = 'BlueStacks App Player'
@@ -26,7 +26,7 @@ def main():
     spin_round = 20
     is_region_selected = False
 
-    sam = SAMSegmentation(Snapshot=Snapshot, sam2_checkpoint=sam_model, model_cfg=sam_model_cfg)
+    sam = SAMSegmentation(Snapshot=Snapshot, sam2_checkpoint=sam_model)
 
     # 1. 截圖
     screenshot.capture_screenshot(window_title=window_name, filename=Snapshot)
@@ -64,7 +64,7 @@ def main():
                 
             else:
                 # call selection tool
-                
+
                 # all_template_path = None
                 # test_template_matching(os.path.join(root_dir, 'images', Snapshot + '_runtime.png'), all_template_path)
                 
