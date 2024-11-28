@@ -7,6 +7,8 @@ from game_controller import GameController
 from PIL import Image
 import time
 from datetime import datetime
+from pathlib import Path
+import os
 
 def main():
     # 初始化模組
@@ -15,25 +17,30 @@ def main():
     Snapshot = 'FuXin'
     intensity_threshold = 10
     spin_round = 500
+    root_dir = Path(__file__).parent.parent
+    vit_model_path = os.path.join(root_dir, 'VITrun_ver6', 'best_model.pth')
+    sam_model_path = os.path.join(root_dir, 'checkpoints', 'sam2_hiera_large.pt')
+    sam_model_cfg = os.path.join(root_dir, 'sam2', 'configs', 'sam2', 'sam2_hiera_l.yaml')
+    images_dir = os.path.join(root_dir, 'images')
 
-    sam = SAMSegmentation(Snapshot=Snapshot)
-    
-    
+    sam = SAMSegmentation(Snapshot=Snapshot, sam2_checkpoint=sam_model_path, model_cfg=sam_model_cfg)
+
     # 1. 截圖
     screenshot.capture_screenshot(window_title=window_name, filename=Snapshot)
     
     # 2. SAM 分割
-    maskDict = sam.segment_image(r"./images/"+Snapshot+".png")
+    maskDict = sam.segment_image(os.path.join(root_dir, 'images', Snapshot+".png"))
     
     # 3. ViT 辨識
     # put your own VIT model path here 
-    #vit = ViTRecognition(Snapshot=Snapshot, maskDict=maskDict, model_path=r'C:\Users\13514\button_recognition\VITrun_ver6\best_model.pth')
-    vit = ViTRecognition(Snapshot=Snapshot, maskDict=maskDict,model_path=r"C:\Users\13514\button_recognition\VITrun_ver7\vit_model.pth")
+    vit = ViTRecognition(Snapshot=Snapshot, maskDict=maskDict,model_path=vit_model_path)
     highest_confidence_images, template_folder = vit.classify_components()
 
     # 4. 操控遊戲
     screenshot.capture_screenshot(window_title=window_name, filename=Snapshot+'_intialshot')
-    intial_avg_intensities = screenshot.clickable(snapshot_path=r"./images/"+Snapshot+"_intialshot.png",highest_confidence_images=highest_confidence_images)
+
+    intialshot_path = os.path.join(images_dir, Snapshot+"_intialshot.png")
+    intial_avg_intensities = screenshot.clickable(snapshot_path=intialshot_path,highest_confidence_images=highest_confidence_images)
 
     for i in range(spin_round):
         GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=10)
@@ -52,7 +59,9 @@ def main():
             elapsed_time = time.time() - start_time
             print('elapsed time', elapsed_time)
             screenshot.capture_screenshot(window_title=window_name, filename=Snapshot+'_runtime')
-            avg_intensities = screenshot.clickable(snapshot_path=r"./images/"+Snapshot+"_runtime.png",highest_confidence_images=highest_confidence_images)
+            
+            snapshot_path = os.path.join(images_dir, Snapshot+"_runtime.png")
+            avg_intensities = screenshot.clickable(snapshot_path=snapshot_path,highest_confidence_images=highest_confidence_images)
             print('waiting')
 
             if elapsed_time > 10:  # Exit if running for more than 10 seconds
@@ -63,13 +72,14 @@ def main():
                     screenshot.capture_screenshot(window_title=window_name, filename=Snapshot+'freegame')
 
                     # Segment the image
-                    maskDict = sam.segment_image(r"./images/" + Snapshot+'freegame' + ".png")
+                    maskDict_path = os.path.join(images_dir, Snapshot+'freegame' + ".png")
+                    maskDict = sam.segment_image(maskDict_path)
                     
                     # Classify components
                     vit = ViTRecognition(
                         Snapshot=Snapshot, 
                         maskDict=maskDict, 
-                        model_path=r"C:\Users\13514\button_recognition\VITrun_ver7\vit_model.pth"
+                        model_path=vit_model_path
                     )
                     highest_confidence_images, template_folder = vit.classify_components()
                     
