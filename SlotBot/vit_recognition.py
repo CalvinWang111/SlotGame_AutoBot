@@ -12,23 +12,26 @@ import torch.nn.functional as F  # For softmax
 
 
 class ViTRecognition:
+    # put your own model path here
     def __init__(self, Snapshot, maskDict, model_path=r'C:\Users\13514\button_recognition\VITrun_ver6\best_model.pth'):
         # Define the label mapping
         label_map = {
-            0: "button_max_bet",
-            1: "button_additional_bet",
-            2: "button_close",
-            3: "button_decrease_bet",
-            4: "button_home",
-            5: "button_increase_bet",
-            6: "button_info",
-            7: "button_speedup_spin",
-            8: "button_start_spin",
-            9: "button_three_dot",
-            10: "gold_coin",
-            11: "gold_ingot",
-            12: "stickers"
-        }
+                    0: "button_max_bet",
+                    1: "button_additional_bet",
+                    2: "button_close",
+                    3: "confirm",
+                    4: "button_decrease_bet",
+                    5: "button_home",
+                    6: "button_increase_bet",
+                    7: "button_info",
+                    8: "receive",
+                    9: "button_speedup_spin",
+                    10: "button_start_spin",
+                    11: "button_three_dot",
+                    12: "gold_coin",
+                    13: "gold_ingot",
+                    14: "stickers",
+                }
 
         # Confidence threshold (e.g., 0.8 for 80%)
         confidence_threshold = 0
@@ -44,7 +47,7 @@ class ViTRecognition:
         ])
 
         # Load the model and move it to the device
-        model = ViTForImageClassification.from_pretrained("google/vit-base-patch16-224-in21k", num_labels=13)
+        model = ViTForImageClassification.from_pretrained("google/vit-base-patch16-224-in21k", num_labels=15)
         model.load_state_dict(torch.load(self.model_path))
         model.to(self.device)
         model.eval()
@@ -59,7 +62,7 @@ class ViTRecognition:
         self.transform = transform
         self.model = model
 
-    def classify_components(self):
+    def classify_components(self, freegame_compoment=[3, 8, 12, 13 ]):
         """使用 ViT 模型對分割元件進行辨識"""
         # Create the "template" folder if it doesn't exist
         template_folder = os.path.join(self.test_folder, "template")
@@ -88,24 +91,37 @@ class ViTRecognition:
                     # Check if the prediction meets the threshold and is not in class 10
                     if pred_class != 12 and confidence >= self.confidence_threshold:
                         # If the class is not yet in the dictionary or the confidence is higher, update the entry
-                        if (pred_class not in highest_confidence_images) or (confidence > highest_confidence_images[pred_class]['confidence']):
+                        if pred_class in freegame_compoment:
+                            # For classes 10 and 11, append all entries
+                            if pred_class not in highest_confidence_images:
+                                highest_confidence_images[pred_class] = []
+
+                            highest_confidence_images[pred_class].append({
+                                'path':img_path, 
+                                'confidence':confidence, 
+                                'contour':self.maskDict[img_name]
+                            })
+                            
+                        elif (pred_class not in highest_confidence_images) or (confidence > highest_confidence_images[pred_class]['confidence']):
                             
                             highest_confidence_images[pred_class] = {'path': img_path, 'confidence': confidence, 'contour': self.maskDict[img_name]}
 
         # Copy and display only the highest-confidence images for each class
         for class_id, info in highest_confidence_images.items():
-            base_name = f"{self.label_map[class_id]}.png"
-            dest_path = os.path.join(template_folder, base_name)
-            
-            # Copy the file to the "template" folder with the class name
-            shutil.copy(info['path'], dest_path)
+            if class_id not in freegame_compoment:
+                base_name = f"{self.label_map[class_id]}.png"
+                dest_path = os.path.join(template_folder, base_name)
+                
+                # Copy the file to the "template" folder with the class name
+                shutil.copy(info['path'], dest_path)
 
-            # Display the copied image with the confidence score
-            plt.figure(figsize=(3, 3))
-            plt.imshow(Image.open(dest_path).convert("RGB"))
-            plt.axis('off')
-            plt.title(f"{self.label_map[class_id]} - Confidence: {info['confidence']:.2f}")
-            plt.show()
-            print(f"position:{info['contour'][0],info['contour'][1]}, contour Height and Width:{info['contour'][2],info['contour'][3]}")
-
-        return highest_confidence_images
+                # Display the copied image with the confidence score
+                '''
+                plt.figure(figsize=(3, 3))
+                plt.imshow(Image.open(dest_path).convert("RGB"))
+                plt.axis('off')
+                plt.title(f"{self.label_map[class_id]} - Confidence: {info['confidence']:.2f}")
+                plt.show()
+                print(f"position:{info['contour'][0],info['contour'][1]}, contour Height and Width:{info['contour'][2],info['contour'][3]}")
+                '''
+        return highest_confidence_images, template_folder

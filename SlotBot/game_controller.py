@@ -39,11 +39,21 @@ class GameController:
             print(f"Window titled '{window_title}' not found.")
 
     def Windowcontrol(self, highest_confidence_images, classId):
+        
         for item in highest_confidence_images.items():
             if item[0] == classId:
-                x,y,w,h = item[1]['contour']
-                x_offset = x + w / 2
-                y_offset = y + h / 2
+                if classId in [12, 13]:
+                    for subitem in item[1]:
+                        x,y,w,h = subitem['contour']
+                        x_offset = x + w / 2
+                        y_offset = y + h / 2
+                        
+                        print('special',classId,x_offset, y_offset)
+                        self.click_in_window('BlueStacks App Player',x_offset, y_offset)
+                else:
+                    x,y,w,h = item[1]['contour']
+                    x_offset = x + w / 2
+                    y_offset = y + h / 2
 
-                print(x_offset, y_offset)
-                self.click_in_window('BlueStacks App Player',x_offset, y_offset)
+                    print(x_offset, y_offset)
+                    self.click_in_window('BlueStacks App Player',x_offset, y_offset)
