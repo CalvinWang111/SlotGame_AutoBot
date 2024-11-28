@@ -218,14 +218,13 @@ class GameScreenshot:
             x1, y1 = eclick.xdata, eclick.ydata 
             x2, y2 = erelease.xdata, erelease.ydata 
  
-            # 確保坐標是正確的 (x, y, w, h) 
-            x = min(x1, x2) 
-            y = min(y1, y2) 
-            w = abs(x2 - x1) 
-            h = abs(y2 - y1) 
+            # 確保坐標是正確的 (x, y, w, h)
+            x = min(x1, x2)
+            y = min(y1, y2)
+            w = abs(x2 - x1)
+            h = abs(y2 - y1)
  
- 
-             
+
             # 使用 Tkinter 捕獲用戶輸入的按鍵名稱 
             button_class = simpledialog.askstring( 
             "Input", f"Enter button name for region ({x}, {y}, {w}, {h}):") 
