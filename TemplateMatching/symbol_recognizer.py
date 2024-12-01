@@ -150,9 +150,9 @@ def process_template_matches(template_match_data, template_dir, img, iou_thresho
         # Check if this template already has a best scale in the template_match_data
         if template_name in template_match_data and template_match_data[template_name]['best_scale'] is not None:
             best_scale = template_match_data[template_name]['best_scale']
-            matching_results = template_matching(template, img, scale_range=[best_scale, best_scale], scale_step=1.0, threshold=threshold, border=border, match_one=match_one)
+            matching_results = template_matching(template, img, scale_range=[best_scale, best_scale], scale_step=1.0, threshold=threshold, border=border)
         else:
-            matching_results = template_matching(template, img, scale_range=scale_range, scale_step=scale_step, threshold=threshold, border=border, match_one=match_one)
+            matching_results = template_matching(template, img, scale_range=scale_range, scale_step=scale_step, threshold=threshold, border=border)
         
         # Apply NMS and filter by best scale
         filtered_results, best_scale = apply_nms_and_filter_by_best_scale(matching_results, template_shape, iou_threshold=iou_threshold)
@@ -201,7 +201,7 @@ def template_matching_gray(template_gray, mask, img_gray, scale_range, scale_ste
         scales = [scale_range[0]]
     else:
         scales = np.arange(scale_range[0], scale_range[1] + scale_step, scale_step)
-    padding = 5  # Padding to add around the image for reverse matching
+    padding = 0  # Padding to add around the image for reverse matching
     
     matching_results = []  # To store the locations of matches
     
@@ -217,6 +217,7 @@ def template_matching_gray(template_gray, mask, img_gray, scale_range, scale_ste
         if template_h > img_h or template_w > img_w:
             if template_h >= img_h - 2 * border and template_w >= img_w - 2 * border:
                 # perform reverse matching
+                
                 img_without_border = img_gray[border+padding:img_h-border-padding, border+padding:img_w-border-padding]
                 result = cv2.matchTemplate(resized_template, img_without_border, cv2.TM_CCORR_NORMED)
             else:
@@ -233,19 +234,19 @@ def template_matching_gray(template_gray, mask, img_gray, scale_range, scale_ste
             matching_results.append((pt, scale, result[pt[1], pt[0]])) # (top_left, scale, match_val)
     return matching_results
 
-def process_template_matches_gray(template_scale, template_dir, target_roi, scale_range, scale_step, threshold, border):
+def process_template_matches_gray(template_scale, template_dir, target_roi, scale_range, scale_step, threshold, border, debug=False):
     best_match = None
     best_score = None
     best_scale = None
     
     target_gray = cv2.cvtColor(target_roi, cv2.COLOR_BGR2GRAY)
-    target_gray = cv2.equalizeHist(target_gray)
+    # target_gray = cv2.equalizeHist(target_gray)
 
     # Iterate through each template in the directory
     for template_path in Path(template_dir).iterdir():
         template = cv2.imread(str(template_path), cv2.IMREAD_UNCHANGED)
         template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-        template_gray = cv2.equalizeHist(template_gray)
+        # template_gray = cv2.equalizeHist(template_gray)
         _, _, _, alpha_channel = cv2.split(template)
         mask = cv2.threshold(alpha_channel, 128, 255, cv2.THRESH_BINARY)[1]
         template_name = template_path.stem
@@ -274,20 +275,24 @@ def process_template_matches_gray(template_scale, template_dir, target_roi, scal
                 best_match = template_path.stem
                 best_score = top_score
                 best_scale = top_result[1]
-            print(f'{template_path.stem} has score {top_score}')
+            if debug:
+                print(f'{template_path.stem} has score {top_score}, scale {top_result[1]}')
                 
-    # if not (best_match in template_scale):
-    #     template_scale[best_match] = best_scale
+    if not (best_match in template_scale):
+        template_scale[best_match] = best_scale
     
     if not best_match:
         return None, None, None
 
-    matched_template = cv2.imread(str(template_dir / f'{best_match}.png'))
-    matched_template_gray = cv2.cvtColor(matched_template, cv2.COLOR_BGR2GRAY)
-    matched_template_gray = cv2.equalizeHist(matched_template_gray)
-    matched_template_gray = cv2.resize(matched_template_gray, (0, 0), fx=best_scale, fy=best_scale)
-    cv2.imshow('best_match', matched_template_gray)
-    cv2.imshow('target gray', target_gray)
+    if debug:
+        matched_template = cv2.imread(str(template_dir / f'{best_match}.png'))
+        matched_template_gray = cv2.cvtColor(matched_template, cv2.COLOR_BGR2GRAY)
+        matched_template_gray = cv2.equalizeHist(matched_template_gray)
+        matched_template_gray = cv2.resize(matched_template_gray, (0, 0), fx=best_scale, fy=best_scale)
+        cv2.imshow('best_match', matched_template_gray)
+        cv2.imshow('target gray', target_gray)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
     
     return best_match, best_score, best_scale
 

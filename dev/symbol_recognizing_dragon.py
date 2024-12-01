@@ -1,13 +1,15 @@
-import cv2
-import numpy as np
-import time
+import sys
 from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))
+import cv2
+import time
 from TemplateMatching.grid import BullGrid
 from TemplateMatching.symbol_recognizer import *
 from TemplateMatching.utils import *
 
 MODE = 'base'
 GAME = 'dragon'
+WRITE_GRID = True
 
 if MODE == 'base':
     template_dir = Path(f'./images/{GAME}/symbols/base_game')
@@ -58,7 +60,10 @@ for image_path in image_dir.glob('*.png'):
         grid_bbox, grid_shape = get_grid_info(matched_positions)
         grid = BullGrid(grid_bbox, grid_shape, MODE)
         print(f'initial grid shape: {grid.row} x {grid.col}')
-    
+        
+        if WRITE_GRID:
+            write_object(grid, f'./dev/grid/{GAME}_grid.pkl')
+            exit()
     
     # Process each grid cell
     start_time = time.time()

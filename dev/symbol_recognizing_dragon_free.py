@@ -6,7 +6,7 @@ from TemplateMatching.grid import BaseGrid
 from TemplateMatching.utils import *
 from TemplateMatching.symbol_recognizer import *
 
-GAME = 'fu'
+GAME = 'dragon'
 
 grid: BaseGrid = read_object(f'./dev/grid/{GAME}_grid.pkl')
 border = 0
