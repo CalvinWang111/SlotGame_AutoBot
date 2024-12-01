@@ -83,3 +83,34 @@ class ValueRecognition:
             chat_response = self.openai_api.get_simplified_meaning(meaning_list)
             print(f'meaning = {meaning_list}')
             print(f'response = {chat_response}')
+            line['meaning'] = f'response = {chat_response}'
+
+    def recognize_value(self, image_path):
+        ocr_result = self.ocr.ocr(image_path, cls=True)
+        ocr_result = ocr_result[0]
+
+        for data in ocr_result:
+            for line in self.value_pos_form:
+                top_left = line['roi'][0]
+                bottom_right = line['roi'][2]
+                middle = [(top_left[0] + bottom_right[0]) / 2, (top_left[1] + bottom_right[1]) / 2]
+                new_middle = [(data[0][0][0] + data[0][2][0]) / 2,
+                              (data[0][0][1] + data[0][2][1]) / 2]
+
+                # left side similar
+                if top_left[0] + self.threshold > data[0][0][0] > top_left[0] - self.threshold and \
+                        middle[1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
+                    print(data[1][0], line['meaning'])
+                    break
+                # right side similar
+                elif bottom_right[0] + self.threshold > data[0][2][0] > bottom_right[
+                    0] - self.threshold and middle[1] + self.threshold > new_middle[1] > middle[
+                    1] - self.threshold:
+                    print(data[1][0], line['meaning'])
+                    break
+                # middle similar
+                elif middle[0] + self.threshold > new_middle[0] > middle[0] - self.threshold and middle[
+                    1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
+                    print(data[1][0], line['meaning'])
+                    break
+

@@ -29,7 +29,7 @@ def main():
     # 3. ViT 辨識
     # put your own VIT model path here
     vit = ViTRecognition(Snapshot=Snapshot, maskDict=maskDict,
-                         model_path=r'D:\git-repository\SlotGame_AutoBot\SlotBot\VITrun_ver6\best_model.pth')
+                         model_path=r'D:\sam2\VIT_Model\VITrun_ver6\best_model.pth')
     highest_confidence_images, template_folder = vit.classify_components()
 
     # 4. 操控遊戲
