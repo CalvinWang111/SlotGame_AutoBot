@@ -46,22 +46,20 @@ class ValueRecognition:
                     new_value_pos = {'roi': [x, y, w, h], 'value': [data[1][0]], 'meaning': [meaning[1]]}
                     found = False
                     for line in self.value_pos_form:
-                        top_left = line['roi'][0]
-                        bottom_right = line['roi'][2]
-                        middle = [(top_left[0] + bottom_right[0]) / 2, (top_left[1] + bottom_right[1]) / 2]
-                        new_middle = [(new_value_pos['roi'][0][0] + new_value_pos['roi'][2][0]) / 2,
-                                      (new_value_pos['roi'][0][1] + new_value_pos['roi'][2][1]) / 2]
+                        middle = [line['roi'][0] + line['roi'][2] / 2, line['roi'][1] + line['roi'][3] / 2]
+                        new_middle = [new_value_pos['roi'][0] + new_value_pos['roi'][2] / 2,
+                                      new_value_pos['roi'][1] + new_value_pos['roi'][3] / 2]
 
                         # left side similar
-                        if top_left[0] + self.threshold > new_value_pos['roi'][0][0] > top_left[0] - self.threshold and \
+                        if line['roi'][0] + self.threshold > new_value_pos['roi'][0] > line['roi'][0] - self.threshold and \
                                 middle[1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
                             line['value'].append(new_value_pos['value'][0])
                             line['meaning'].append(new_value_pos['meaning'][0])
                             found = True
                             break
                         # right side similar
-                        elif bottom_right[0] + self.threshold > new_value_pos['roi'][2][0] > bottom_right[
-                            0] - self.threshold and middle[1] + self.threshold > new_middle[1] > middle[
+                        elif line['roi'][0] + line['roi'][2] + self.threshold > new_value_pos['roi'][0] + new_value_pos['roi'][2] > line['roi'][
+                            0] + line['roi'][2] - self.threshold and middle[1] + self.threshold > new_middle[1] > middle[
                             1] - self.threshold:
                             line['value'].append(new_value_pos['value'][0])
                             line['meaning'].append(new_value_pos['meaning'][0])
@@ -94,27 +92,32 @@ class ValueRecognition:
         ocr_result = ocr_result[0]
 
         for data in ocr_result:
+            x = int(data[0][0][0])
+            y = int(data[0][0][1])
+            w = int(data[0][1][0] - data[0][0][0])
+            h = int(data[0][2][1] - data[0][1][1])
+            new_value_pos = {'roi': [x, y, w, h], 'value': [data[1][0]]}
             for line in self.value_pos_form:
-                top_left = line['roi'][0]
-                bottom_right = line['roi'][2]
-                middle = [(top_left[0] + bottom_right[0]) / 2, (top_left[1] + bottom_right[1]) / 2]
-                new_middle = [(data[0][0][0] + data[0][2][0]) / 2,
-                              (data[0][0][1] + data[0][2][1]) / 2]
+                middle = [line['roi'][0] + line['roi'][2] / 2, line['roi'][1] + line['roi'][3] / 2]
+                new_middle = [new_value_pos['roi'][0] + new_value_pos['roi'][2] / 2,
+                              new_value_pos['roi'][1] + new_value_pos['roi'][3] / 2]
 
                 # left side similar
-                if top_left[0] + self.threshold > data[0][0][0] > top_left[0] - self.threshold and \
+                if line['roi'][0] + self.threshold > new_value_pos['roi'][0] > line['roi'][0] - self.threshold and \
                         middle[1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
-                    print(data[1][0], line['meaning'])
+                    print(new_value_pos['value'], line['meaning'])
                     break
                 # right side similar
-                elif bottom_right[0] + self.threshold > data[0][2][0] > bottom_right[
-                    0] - self.threshold and middle[1] + self.threshold > new_middle[1] > middle[
+                elif line['roi'][0] + line['roi'][2] + self.threshold > new_value_pos['roi'][0] + new_value_pos['roi'][
+                    2] > line['roi'][0] + line['roi'][2] - self.threshold and middle[1] + self.threshold > new_middle[1] > middle[
                     1] - self.threshold:
-                    print(data[1][0], line['meaning'])
+                    print(new_value_pos['value'], line['meaning'])
+
                     break
                 # middle similar
                 elif middle[0] + self.threshold > new_middle[0] > middle[0] - self.threshold and middle[
                     1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
-                    print(data[1][0], line['meaning'])
+                    print(new_value_pos['value'], line['meaning'])
+
                     break
 
