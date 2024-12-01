@@ -1,9 +1,16 @@
 from paddleocr import PaddleOCR
 from ChatGPT.openai_api import OpenAiApi
+from dotenv import load_dotenv
+import os
+from pathlib import Path
 
 class ValueRecognition:
     def __init__(self):
-        self.api_key = ""
+        env_path = r"../.env"
+        dotenv_path = Path(env_path)
+        load_dotenv(dotenv_path=dotenv_path, override=True)
+
+        self.api_key = os.getenv("OPENAI_API_KEY")
         self.openai_api = OpenAiApi(self.api_key)
 
         self.value_pos_form = []
@@ -11,6 +18,8 @@ class ValueRecognition:
         self.threshold = 5
         self.ocr = PaddleOCR(use_angle_cls=True, lang="en")
 
+    # def set_position_to_meaning(self, frame_list):
+    #
     def get_board_value(self, image_path):
         # Path to your image
         chat_response = self.openai_api.get_value_response(image_path)
