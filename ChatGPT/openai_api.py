@@ -93,7 +93,7 @@ class OpenAiApi:
                     ]
                 }
             ],
-            max_tokens = 300,
+            max_tokens = 500,
             temperature = 0.7
         )
         return response.choices[0].message.content

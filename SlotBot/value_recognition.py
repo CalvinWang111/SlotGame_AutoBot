@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import json
 from datetime import datetime
-
+import re
 
 class ValueRecognition:
     def __init__(self):
@@ -21,6 +21,7 @@ class ValueRecognition:
         self.threshold = 5
         self.ocr = PaddleOCR(use_angle_cls=True, lang="en")
 
+        self.meaning_table = None
     # def set_position_to_meaning(self, frame_list):
     #
     def get_board_value(self, image_path):
@@ -84,8 +85,14 @@ class ValueRecognition:
     def get_meaning(self):
         meaning_list = [{'position': line['roi'], 'meanings': line['meaning']} for line in self.value_pos_form]
         chat_response = self.openai_api.get_simplified_meaning(meaning_list)
+        tuple_list = re.findall(r"<position>(.*?)</position>.*?<meaning>(.*?)</meaning>", chat_response, re.DOTALL)
+        dict_list = [
+            {'roi': [int(n) for n in roi.strip('[]').split(',')], 'meaning': meaning}
+            for roi, meaning in tuple_list
+        ]
+        self.meaning_table = dict_list
         print(f'meaning = {meaning_list}')
-        print(f'response = {chat_response}')
+        print(f'result = {dict_list}')
 
     def recognize_value(self, image_path):
         ocr_result = self.ocr.ocr(image_path, cls=True)
