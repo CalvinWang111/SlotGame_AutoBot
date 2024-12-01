@@ -24,3 +24,6 @@ outputs/*
 checkpoints/*.pt
 test.ipynb
 temp/
+
+#test files
+inputTest*
