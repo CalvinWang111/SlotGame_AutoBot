@@ -3,6 +3,8 @@ from ChatGPT.openai_api import OpenAiApi
 from dotenv import load_dotenv
 import os
 from pathlib import Path
+import json
+from datetime import datetime
 
 
 class ValueRecognition:
@@ -88,14 +90,17 @@ class ValueRecognition:
     def recognize_value(self, image_path):
         ocr_result = self.ocr.ocr(image_path, cls=True)
         ocr_result = ocr_result[0]
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        json_data = {}
+        filename = f"data_{timestamp}.json"
+        for line in self.value_pos_form:
+            for data in ocr_result:
+                x = int(data[0][0][0])
+                y = int(data[0][0][1])
+                w = int(data[0][1][0] - data[0][0][0])
+                h = int(data[0][2][1] - data[0][1][1])
+                new_value_pos = {'roi': [x, y, w, h], 'value': [data[1][0]]}
 
-        for data in ocr_result:
-            x = int(data[0][0][0])
-            y = int(data[0][0][1])
-            w = int(data[0][1][0] - data[0][0][0])
-            h = int(data[0][2][1] - data[0][1][1])
-            new_value_pos = {'roi': [x, y, w, h], 'value': [data[1][0]]}
-            for line in self.value_pos_form:
                 middle = [line['roi'][0] + line['roi'][2] / 2, line['roi'][1] + line['roi'][3] / 2]
                 new_middle = [new_value_pos['roi'][0] + new_value_pos['roi'][2] / 2,
                               new_value_pos['roi'][1] + new_value_pos['roi'][3] / 2]
