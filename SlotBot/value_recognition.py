@@ -80,12 +80,10 @@ class ValueRecognition:
             print(line)
 
     def get_meaning(self):
-        for line in self.value_pos_form:
-            meaning_list = line['meaning']
-            chat_response = self.openai_api.get_simplified_meaning(meaning_list)
-            print(f'meaning = {meaning_list}')
-            print(f'response = {chat_response}')
-            line['meaning'] = f'response = {chat_response}'
+        meaning_list = [{'position': line['roi'], 'meanings': line['meaning']} for line in self.value_pos_form]
+        chat_response = self.openai_api.get_simplified_meaning(meaning_list)
+        print(f'meaning = {meaning_list}')
+        print(f'response = {chat_response}')
 
     def recognize_value(self, image_path):
         ocr_result = self.ocr.ocr(image_path, cls=True)

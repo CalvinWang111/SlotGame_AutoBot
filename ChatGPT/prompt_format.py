@@ -38,7 +38,16 @@ class GetSimplifiedMeaningPromptFormat:
         A class for prompt format of getting value
     """
     PROMPT = (
-        "我辨識了一個數字，但我不知道它的意義，以下是它可能的意義。"
-        "你認為這個數字的意義是什麼。"
-        "用{}框起來，意義的部分盡量精簡，ex:{贏分}、{押注}。"
+        """
+        我正在辨識一款slot game的遊戲畫面中的數字，但我得到數字和數字的位置了，卻不知道它的意義，所以我記錄了這些數字的位置和這個數字可能的意義。
+        
+        以下是slot game中主要要獲得的信息:
+            玩家贏得的分數（ex:玩家贏分）
+            玩家剩餘金額（ex:玩家剩餘金額）
+            每局的押注金額（ex:押注金額）
+            特殊獎項金額（ex:大獎/中獎/小獎）
+        
+        請幫我找出位置對上意義，只保留主要要獲得的信息，而且要避免輸出重複的意義，輸出格式<position></position> = <meaning></meaning>
+        """
+
     )
