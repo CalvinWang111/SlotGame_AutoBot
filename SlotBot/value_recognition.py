@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 from pathlib import Path
 
+
 class ValueRecognition:
     def __init__(self):
         env_path = r"../.env"
@@ -38,7 +39,11 @@ class ValueRecognition:
             for meaning in table:
                 # if value of OCR = value of chatgpt
                 if data[1][0] == meaning[0]:
-                    new_value_pos = {'roi': data[0], 'value': [data[1][0]], 'meaning': [meaning[1]]}
+                    x = int(data[0][0][0])
+                    y = int(data[0][0][1])
+                    w = int(data[0][1][0] - data[0][0][0])
+                    h = int(data[0][2][1] - data[0][1][1])
+                    new_value_pos = {'roi': [x, y, w, h], 'value': [data[1][0]], 'meaning': [meaning[1]]}
                     found = False
                     for line in self.value_pos_form:
                         top_left = line['roi'][0]
@@ -72,7 +77,6 @@ class ValueRecognition:
 
                     if not found:
                         self.value_pos_form.append(new_value_pos)
-
 
         for line in self.value_pos_form:
             print(line)
