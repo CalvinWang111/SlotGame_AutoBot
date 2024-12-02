@@ -1,3 +1,5 @@
+import pickle
+
 class BaseGrid:
     def __init__(self, bbox, shape):
         self.bbox = bbox
@@ -15,6 +17,14 @@ class BaseGrid:
         for i in range(self.row):
             for j in range(self.col):
                 self._grid[i][j] = None
+    
+    def load(path: str):
+        with open(path, 'rb') as f:
+            return pickle.load(f)
+        
+    def save(self, path: str):
+        with open(path, 'wb') as f:
+            pickle.dump(self, f)
     
     def __getitem__(self, idx):
         i, j = idx
