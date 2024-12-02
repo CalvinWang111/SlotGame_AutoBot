@@ -1,27 +1,31 @@
-import cv2
-import numpy as np
-import time
+import sys
 from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent))
+import cv2
+import time
 from TemplateMatching.grid import BullGrid
 from TemplateMatching.symbol_recognizer import *
+from TemplateMatching.utils import *
 
-MODE = 'up'
+MODE = 'base'
+GAME = 'bull'
+direction = 'up' if MODE == 'base' else 'down'
 
-if MODE == 'up':
-    template_dir = Path('./images/bull/symbols/base_game')
-    image_dir = Path('./images/bull/screenshots/base_game')
-elif MODE == 'down':
-    template_dir = Path('./images/bull/symbols/free_game')
-    image_dir = Path('./images/bull/screenshots/free_game')
+if MODE == 'base':
+    template_dir = Path(f'./images/{GAME}/symbols/base_game')
+    image_dir = Path(f'./images/{GAME}/screenshots/base_game')
+elif MODE == 'free':
+    template_dir = Path(f'./images/{GAME}/symbols/free_game')
+    image_dir = Path(f'./images/{GAME}/screenshots/free_game')
 
 template_match_data = {}
 grid = None
 is_init_column_heights = False
 cell_border = 10
 
-if MODE == 'up':
+if MODE == 'base':
     arrow_name = "up_arrow"
-elif MODE == 'down':
+elif MODE == 'free':
     arrow_name = "down_arrow"
 arrow_template = cv2.imread(str(template_dir / f'{arrow_name}.png'), cv2.IMREAD_UNCHANGED)
 arrow_scale_range = [1.0, 2.0]
@@ -42,7 +46,7 @@ for image_path in image_dir.glob('*.png'):
             scale_range=[0.9, 1.5],
             scale_step=0.05,
             threshold=0.95,
-            min_area=5000,
+            min_area=3000,
             border=100
         )
         elapsed_time = time.time() - start_time
@@ -58,17 +62,23 @@ for image_path in image_dir.glob('*.png'):
         if len(matched_positions) == 0:
             print("Could not find any matches")
             break
+        print(f'found {len(matched_positions)} symbols')
                 
         grid_bbox, grid_shape = get_grid_info(matched_positions)
-        grid = BullGrid(grid_bbox, grid_shape, MODE)
+        grid = BullGrid(grid_bbox, grid_shape, direction)
         print(f'initial grid shape: {grid.row} x {grid.col}')
-    
+
+        draw_grid_on_image(img, grid)
+        img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
+        cv2.imshow('grid', img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
     
     # Process each grid cell
     start_time = time.time()
     for j in range(grid.col):
         row_range = (
-            range(grid.row - grid.column_heights[j], grid.row) if MODE == 'up'
+            range(grid.row - grid.column_heights[j], grid.row) if MODE == 'base'
             else range(grid.column_heights[j])
         )
         
@@ -105,10 +115,10 @@ for image_path in image_dir.glob('*.png'):
     #find arrow at each column
     start_time = time.time()                    
     for j in range(grid.col):
-        if MODE == 'up':
+        if MODE == 'base':
             index = grid.row - grid.column_heights[j] - 1
-            position = 'top'
-        elif MODE == 'down':
+            position = 'free'
+        elif MODE == 'free':
             index = grid.column_heights[j]
             position = 'bottom'
 
@@ -122,7 +132,7 @@ for image_path in image_dir.glob('*.png'):
             grid.column_heights[j] += 1
             if grid.column_heights[j] > grid.max_height:
                 grid.column_heights[j] = grid.base_height
-            print(f'{MODE} arrow found at column[{j}], update column_heights[{j}] to {grid.column_heights[j]}')
+            print(f'{direction} arrow found at column[{j}], update column_heights[{j}] to {grid.column_heights[j]}')
 
             if grid.column_heights[j] > grid.row:
                 grid.add_row(position=position)

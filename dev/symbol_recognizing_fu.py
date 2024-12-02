@@ -3,13 +3,12 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 import cv2
 import time
-from TemplateMatching.grid import BullGrid
+from TemplateMatching.grid import BaseGrid
 from TemplateMatching.symbol_recognizer import *
 from TemplateMatching.utils import *
 
 MODE = 'base'
 GAME = 'fu'
-WRITE_GRID = False
 
 if MODE == 'base':
     template_dir = Path(f'./images/{GAME}/symbols/base_game')
@@ -37,7 +36,7 @@ for image_path in image_dir.glob('*.png'):
             template_dir=template_dir, 
             img=img, 
             iou_threshold=0.1, 
-            scale_range=[0.8, 1.5],
+            scale_range=[0.9, 1.3],
             scale_step=0.05,
             threshold=0.95,
             min_area=5000,
@@ -56,24 +55,16 @@ for image_path in image_dir.glob('*.png'):
         if len(matched_positions) == 0:
             print("Could not find any matches")
             break
+        print(f'found {len(matched_positions)} symbols')
                 
         grid_bbox, grid_shape = get_grid_info(matched_positions)
-        grid = BullGrid(grid_bbox, grid_shape, MODE)
+        grid = BaseGrid(grid_bbox, grid_shape)
         print(f'initial grid shape: {grid.row} x {grid.col}')
-        
-        if WRITE_GRID:
-            write_object(grid, f'./dev/grid/{GAME}_grid.pkl')
-            exit()
     
     # Process each grid cell
     start_time = time.time()
-    for j in range(grid.col):
-        row_range = (
-            range(grid.row - grid.column_heights[j], grid.row) if MODE == 'up'
-            else range(grid.column_heights[j])
-        )
-        
-        for i in row_range:
+    for j in range(grid.col):        
+        for i in range(grid.row):
             roi = grid.get_roi(i, j)
             x, y, w, h = roi
             x1, x2 = x - cell_border, x + w + cell_border

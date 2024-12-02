@@ -1,8 +1,9 @@
-import cv2
-import numpy as np
-import time
+import sys
 from pathlib import Path
-from TemplateMatching.grid import BullGrid
+sys.path.append(str(Path(__file__).parent.parent))
+import cv2
+import time
+from TemplateMatching.grid import BaseGrid
 from TemplateMatching.symbol_recognizer import *
 from TemplateMatching.utils import *
 
@@ -38,7 +39,7 @@ for image_path in image_dir.glob('*.png'):
             scale_range=[0.5, 1.5],
             scale_step=0.05,
             threshold=0.95,
-            min_area=5000,
+            min_area=3000,
             border=100
         )
         elapsed_time = time.time() - start_time
@@ -51,24 +52,27 @@ for image_path in image_dir.glob('*.png'):
                 x = top_left[0] + w * scale / 2
                 y = top_left[1] + h * scale / 2
                 matched_positions.append((x, y))
+                print(f'{template_name}: area: {w * h * scale * scale})')
         if len(matched_positions) == 0:
             print("Could not find any matches")
             break
+        print(f'found {len(matched_positions)} symbols')
                 
         grid_bbox, grid_shape = get_grid_info(matched_positions)
-        grid = BullGrid(grid_bbox, grid_shape, MODE)
+        grid = BaseGrid(grid_bbox, grid_shape)
         print(f'initial grid shape: {grid.row} x {grid.col}')
+        
+        # draw_grid_on_image(img, grid)
+        # img = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
+        # cv2.imshow('grid', img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
     
     
     # Process each grid cell
     start_time = time.time()
     for j in range(grid.col):
-        row_range = (
-            range(grid.row - grid.column_heights[j], grid.row) if MODE == 'up'
-            else range(grid.column_heights[j])
-        )
-        
-        for i in row_range:
+        for i in range(grid.row):
             roi = grid.get_roi(i, j)
             x, y, w, h = roi
             x1, x2 = x - cell_border, x + w + cell_border
@@ -83,7 +87,7 @@ for image_path in image_dir.glob('*.png'):
                 scale_range=[0.5, 1.5],
                 scale_step=0.05,
                 threshold=0.8,
-                min_area=5000,
+                min_area=3000,
                 match_one=True,
                 border=cell_border,
             )
