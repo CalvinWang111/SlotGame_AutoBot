@@ -1,0 +1,17 @@
+# ignored folders
+material/
+images/
+result/
+checkpoints/
+VITrun_ver6/
+inputTest/
+SAM_2.egg-info/
+sam2/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# api key
+.env

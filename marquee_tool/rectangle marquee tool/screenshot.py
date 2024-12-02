@@ -1,55 +1,58 @@
-import pygetwindow as gw 
+import os
+from tkinter import Tk, simpledialog
+from pathlib import Path
+import pygetwindow as gw
 import pyautogui 
-import os 
-from PIL import Image, ImageDraw 
+from PIL import Image, ImageDraw
 import numpy as np 
-import matplotlib.pyplot as plt 
-from matplotlib.patches import Rectangle 
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 # 使用 Matplotlib 的交互工具 
-from matplotlib.widgets import RectangleSelector 
-from tkinter import Tk, simpledialog 
- 
+from matplotlib.widgets import RectangleSelector
+
 class GameScreenshot: 
     @staticmethod 
-    def capture_screenshot(window_title,filename,region=None): 
+    def capture_screenshot(window_title,filename,region=None):
         """取得遊戲畫面截圖""" 
         try: 
-            # Define the directory where the screenshot will be saved 
-            save_directory = os.path.join('./images/')
-                 
-            # Create the directory if it does not exist 
-            os.makedirs(save_directory, exist_ok=True) 
-             
-            # Find the window by title 
-            window = gw.getWindowsWithTitle(window_title)[0]  # Get the first matching window 
-            # window.activate()  # Bring the window to the foreground if needed 
-             
-            # Get window position and size 
-            x, y, width, height = window.left, window.top, window.width, window.height 
-            print(f"Window position and size: x={x}, y={y}, width={width}, height={height}") 
-             
+            # Define the directory where the screenshot will be saved
+            root_dir = Path(__file__).parent.parent.parent
+
+            save_directory = os.path.join(root_dir, 'marquee_tool', 'images')
+
+            # Create the directory if it does not exist
+            os.makedirs(save_directory, exist_ok=True)
+
+            # Find the window by title
+            window = gw.getWindowsWithTitle(window_title)[0]  # Get the first matching window
+            # window.activate()  # Bring the window to the foreground if needed
+
+            # Get window position and size
+            x, y, width, height = window.left, window.top, window.width, window.height
+            print(f"Window position and size: x={x}, y={y}, width={width}, height={height}")
+
             # Capture the specified region 
-            screenshot = pyautogui.screenshot(region=(x, y, width, height)) 
-             
-            # Save the screenshot to the specified file 
-            full_path = os.path.join(save_directory, filename + '.png') 
-            screenshot.save(full_path) 
-            print(f"Screenshot saved as {full_path}") 
-        except IndexError: 
-            print(f"Window titled '{window_title}' not found.") 
- 
+            screenshot = pyautogui.screenshot(region=(x, y, width, height))
+
+            # Save the screenshot to the specified file
+            full_path = os.path.join(save_directory, filename + '.png')
+            screenshot.save(full_path)
+            print(f"Screenshot saved as {full_path}")
+        except IndexError:
+            print(f"Window titled '{window_title}' not found.")
+
     @staticmethod 
-    def click(position): 
+    def click(position):
         """模擬點擊指定位置""" 
-        pyautogui.click(position) 
- 
+        pyautogui.click(position)
+
     @staticmethod 
-    def move_to(position): 
+    def move_to(position):
         """移動滑鼠到指定位置""" 
-        pyautogui.moveTo(position) 
- 
+        pyautogui.moveTo(position)
+
     @staticmethod 
-    def clickable(snapshot_path, highest_confidence_images, draw_and_show=False): 
+    def clickable(snapshot_path, highest_confidence_images, draw_and_show=False):
         """ 
         Analyze the intensity of button regions in the snapshot to determine their clickable state. 
  
@@ -60,45 +63,29 @@ class GameScreenshot:
  
         Returns: 
             avg_intensities (dict): A dictionary mapping each class_id to a list of average intensities. 
-        """ 
-        # Define the label mapping 
-        label_map = { 
-            0: "button_max_bet", 
-            1: "button_additional_bet", 
-            2: "button_close", 
-            3: "button_decrease_bet", 
-            4: "button_home", 
-            5: "button_increase_bet", 
-            6: "button_info", 
-            7: "button_speedup_spin", 
-            8: "button_start_spin", 
-            9: "button_three_dot", 
-            10: "gold_coin", 
-            11: "gold_ingot", 
-            12: "stickers" 
-        } 
- 
-        avg_intensities = {}  # To store average intensities for each class_id 
- 
-        # Load the snapshot image 
-        try: 
-            with Image.open(snapshot_path) as img: 
-                draw = ImageDraw.Draw(img) if draw_and_show else None 
- 
-                for class_id, info in highest_confidence_images.items(): 
-                    avg_intensities[class_id] = []  # Initialize list for each class_id 
- 
-                    if isinstance(info, list):  # Multiple bounding boxes for the class 
-                        for info_item in info: 
+        """
+
+        avg_intensities = {}  # To store average intensities for each class_id
+
+        # Load the snapshot image
+        try:
+            with Image.open(snapshot_path) as img:
+                draw = ImageDraw.Draw(img) if draw_and_show else None
+
+                for class_id, info in highest_confidence_images.items():
+                    avg_intensities[class_id] = []  # Initialize list for each class_id
+
+                    if isinstance(info, list):  # Multiple bounding boxes for the class
+                        for info_item in info:
                             (x, y, w, h) = info_item['contour'] 
+
+                            # Crop the region specified by the bounding box
+                            cropped_img = img.crop((x, y, x + w, y + h))
  
-                            # Crop the region specified by the bounding box 
-                            cropped_img = img.crop((x, y, x + w, y + h)) 
+                            # Convert the button region to grayscale to measure intensity
+                            button_gray = np.array(cropped_img).mean(axis=2)  # Convert RGB to grayscale
  
-                            # Convert the button region to grayscale to measure intensity 
-                            button_gray = np.array(cropped_img).mean(axis=2)  # Convert RGB to grayscale 
- 
-                            # Calculate the average intensity of the grayscale button region 
+                            # Calculate the average intensity of the grayscale button region
                             avg_intensity = button_gray.mean() 
                             #avg_intensities[class_id].append(avg_intensity) 
  
@@ -169,7 +156,7 @@ class GameScreenshot:
         return False  # Return True if all intensity differences are within the threshold 
      
     @staticmethod 
-    def interactive_labeling(image_path,Snapshot): 
+    def interactive_labeling(image_path, output_dir, Snapshot): 
         """ 
         交互式框選區域並添加標記，返回位置和標記數據。 
          
@@ -198,63 +185,42 @@ class GameScreenshot:
  
             # Define the label mapping 
             label_map = { 
-                0: "button_max_bet", 
-                1: "button_additional_bet", 
-                2: "button_close", 
-                3: "button_decrease_bet", 
-                4: "button_home", 
-                5: "button_increase_bet", 
-                6: "button_info", 
-                7: "button_speedup_spin", 
-                8: "button_start_spin", 
-                9: "button_three_dot", 
-                10: "gold_coin", 
-                11: "gold_ingot", 
-                12: "stickers" 
-            } 
+                        0: "button_max_bet", 
+                        1: "button_additional_bet", 
+                        2: "button_close", 
+                        3: "confirm", 
+                        4: "button_decrease_bet", 
+                        5: "button_home", 
+                        6: "button_increase_bet", 
+                        7: "button_info", 
+                        8: "receive", 
+                        9: "button_speedup_spin", 
+                        10: "button_start_spin", 
+                        11: "button_three_dot", 
+                        12: "gold_coin", 
+                        13: "gold_ingot", 
+                        14: "stickers", 
+                    } 
  
             print('請依照框選區域，使用代號命名該按鍵功用',label_map) 
  
             x1, y1 = eclick.xdata, eclick.ydata 
             x2, y2 = erelease.xdata, erelease.ydata 
  
-            # 確保坐標是正確的 (x, y, w, h)
-            x = min(x1, x2)
-            y = min(y1, y2)
-            w = abs(x2 - x1)
-            h = abs(y2 - y1)
+            # 確保坐標是正確的 (x, y, w, h) 
+            x = min(x1, x2) 
+            y = min(y1, y2) 
+            w = abs(x2 - x1) 
+            h = abs(y2 - y1) 
  
-
             # 使用 Tkinter 捕獲用戶輸入的按鍵名稱 
             button_class = simpledialog.askstring( 
             "Input", f"Enter button name for region ({x}, {y}, {w}, {h}):") 
- 
-            # 要求用戶輸入按鍵名稱 
-            #button_class = input(f"Enter button name for region ({x:.1f}, {y:.1f}, {w:.1f}, {h:.1f}): ").strip() 
              
             with Image.open(image_path) as img: 
                 if button_class: 
                     # 裁剪指定區域 
                     cropped_img = img.crop((x, y, x + w, y + h)) 
- 
-                    # Define the directory where the screenshot will be saved 
-                    output_dir = Snapshot+'/template' 
- 
-                    # Clear output directory if it exists, or create it if it doesn't 
-                    if os.path.exists(output_dir): 
-                        # Clear the output folder if it exists 
-                        for filename in os.listdir(output_dir): 
-                            file_path = os.path.join(output_dir, filename) 
-                            try: 
-                                if os.path.isfile(file_path) or os.path.islink(file_path): 
-                                    os.unlink(file_path)  # Remove the file 
-                                elif os.path.isdir(file_path): 
-                                    os.rmdir(file_path)  # Remove the sub-directory (only works if empty) 
-                            except Exception as e: 
-                                print(f"Failed to delete {file_path}. Reason: {e}") 
- 
-                # Re-create the output folder 
-                os.makedirs(output_dir, exist_ok=True) 
  
                 # 保存裁剪圖像 
                 cropped_img_path = os.path.join(output_dir, f"{button_class}.png") 
@@ -273,6 +239,22 @@ class GameScreenshot:
                 selected_rectangles.append(rect) 
                 plt.draw() 
  
+        # Define the directory where the screenshot will be saved 
+        output_dir = os.path.join(output_dir, 'template') 
+        os.makedirs(output_dir, exist_ok=True) 
+ 
+        # Clear output directory if it exists, or create it if it doesn't 
+        if os.path.exists(output_dir): 
+            # Clear the output folder if it exists 
+            for filename in os.listdir(output_dir): 
+                file_path = os.path.join(output_dir, filename) 
+                try: 
+                    if os.path.isfile(file_path) or os.path.islink(file_path): 
+                        os.unlink(file_path)  # Remove the file 
+                    elif os.path.isdir(file_path): 
+                        os.rmdir(file_path)  # Remove the sub-directory (only works if empty) 
+                except Exception as e: 
+                    print(f"Failed to delete {file_path}. Reason: {e}") 
  
         # 修正：移除 drawtype 
         toggle_selector = RectangleSelector(ax, onselect, interactive=True, button=[1], 
