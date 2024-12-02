@@ -99,14 +99,16 @@ class ValueRecognition:
         ocr_result = ocr_result[0]
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         json_data = {}
-        filename = f"data_{timestamp}.json"
-        for line in self.value_pos_form:
+        filename = f"./json/data_{timestamp}.json"
+        for line in self.meaning_table:
+            json_each_line = {}
+            json_each_line['path'] = ''
             for data in ocr_result:
                 x = int(data[0][0][0])
                 y = int(data[0][0][1])
                 w = int(data[0][1][0] - data[0][0][0])
                 h = int(data[0][2][1] - data[0][1][1])
-                new_value_pos = {'roi': [x, y, w, h], 'value': [data[1][0]]}
+                new_value_pos = {'roi': [x, y, w, h], 'value': data[1][0]}
 
                 middle = [line['roi'][0] + line['roi'][2] / 2, line['roi'][1] + line['roi'][3] / 2]
                 new_middle = [new_value_pos['roi'][0] + new_value_pos['roi'][2] / 2,
@@ -116,18 +118,31 @@ class ValueRecognition:
                 if line['roi'][0] + self.threshold > new_value_pos['roi'][0] > line['roi'][0] - self.threshold and \
                         middle[1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
                     print(new_value_pos['value'], line['meaning'])
+                    json_each_line['confidence'] = data[1][1]
+                    json_each_line['contour'] = new_value_pos['roi']
+                    json_each_line['value'] = new_value_pos['value']
+                    json_data[line['meaning']] = json_each_line
                     break
                 # right side similar
                 elif line['roi'][0] + line['roi'][2] + self.threshold > new_value_pos['roi'][0] + new_value_pos['roi'][
                     2] > line['roi'][0] + line['roi'][2] - self.threshold and middle[1] + self.threshold > new_middle[1] > middle[
                     1] - self.threshold:
                     print(new_value_pos['value'], line['meaning'])
+                    json_each_line['confidence'] = data[1][1]
+                    json_each_line['contour'] = new_value_pos['roi']
+                    json_each_line['value'] = new_value_pos['value']
+                    json_data[line['meaning']] = json_each_line
 
                     break
                 # middle similar
                 elif middle[0] + self.threshold > new_middle[0] > middle[0] - self.threshold and middle[
                     1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
                     print(new_value_pos['value'], line['meaning'])
+                    json_each_line['confidence'] = data[1][1]
+                    json_each_line['contour'] = new_value_pos['roi']
+                    json_each_line['value'] = new_value_pos['value']
+                    json_data[line['meaning']] = json_each_line
 
                     break
-
+        with open(filename, "w", encoding="utf-8") as file:
+            json.dump(json_data, file, ensure_ascii=False, indent=4)

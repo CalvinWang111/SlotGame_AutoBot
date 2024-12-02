@@ -41,7 +41,11 @@ def main():
     for i in range(spin_round):
         time.sleep(1)
         screenshot.capture_screenshot(window_title=window_name, filename=Snapshot + '_runtime')
-        value_recognition.get_board_value("./images/" + Snapshot + "_runtime.png")
+        if i <= 10:
+            value_recognition.get_board_value("./images/" + Snapshot + "_runtime.png")
+        else:
+            value_recognition.recognize_value("./images/" + Snapshot + "_runtime.png")
+
         GameController.Windowcontrol(GameController, highest_confidence_images=highest_confidence_images, classId=8)
         print('spin')
         time.sleep(3)
