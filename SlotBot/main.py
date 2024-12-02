@@ -18,15 +18,20 @@ def main():
     # 初始化模組
     screenshot = GameScreenshot()
     window_name = 'BlueStacks App Player'
-    Snapshot = 'FuXin'
+    Snapshot = 'GoldenHoYeah'
     intensity_threshold = 10
-    spin_round = 500
+    spin_round = 3
     root_dir = Path(__file__).parent.parent
-    vit_model_path = os.path.join(root_dir, 'VITrun_ver6', 'best_model.pth')
-    sam_model_path = os.path.join(root_dir, 'checkpoints', 'sam2_hiera_large.pt')
-    sam_model_cfg = os.path.join(root_dir, 'sam2', 'configs', 'sam2', 'sam2_hiera_l.yaml')
-    images_dir = os.path.join(root_dir, 'images')
+    print('rootdir',root_dir)
 
+    vit_model_path = os.path.join(root_dir, 'VITModel', 'vit_model.pth')
+    sam_model_path = os.path.join(root_dir, 'checkpoints', 'sam2_hiera_large.pt')
+    #sam_model_cfg = os.path.join(root_dir, 'sam2', 'configs', 'sam2', 'sam2_hiera_l.yaml')
+    sam_model_cfg = os.path.join(root_dir, 'sam2_configs', 'sam2_hiera_l.yaml')
+    images_dir = os.path.join(root_dir, 'images')
+    
+    print('sam_model_path',sam_model_path)
+    print('sam_model_cfg',sam_model_cfg)
 
     sam = SAMSegmentation(Snapshot=Snapshot, sam2_checkpoint=sam_model_path, model_cfg=sam_model_cfg)
 
@@ -34,12 +39,14 @@ def main():
     screenshot.capture_screenshot(window_title=window_name, filename=Snapshot)
     
     # 2. SAM 分割
-    maskDict = sam.segment_image(os.path.join(root_dir, 'images', Snapshot+".png"))
+    maskDict = sam.segment_image(os.path.join(root_dir, 'images', Snapshot + ".png"))
     
     # 3. ViT 辨識
     # put your own VIT model path here 
     vit = ViTRecognition(Snapshot=Snapshot, maskDict=maskDict,model_path=vit_model_path)
     highest_confidence_images, template_folder = vit.classify_components()
+    vit.output_json(template_folder=template_folder, highest_confidence_images=highest_confidence_images)
+
 
     # 4. 操控遊戲
     screenshot.capture_screenshot(window_title=window_name, filename=Snapshot+'_intialshot')
@@ -69,7 +76,7 @@ def main():
             avg_intensities = screenshot.clickable(snapshot_path=snapshot_path,highest_confidence_images=highest_confidence_images)
             print('waiting')
 
-            if elapsed_time > 30:  # Exit if running for more than 10 seconds
+            if elapsed_time > 10 and elapsed_time <= 30:  # Exit if running for more than 10 seconds
                 print("Timeout: Exiting the loop after 10 seconds.")
 
                 try:
@@ -97,11 +104,11 @@ def main():
                         model_path=vit_model_path
                     )
                     highest_confidence_images, template_folder = vit.classify_components()
-      
+                    vit.output_json(template_folder=template_folder, highest_confidence_images=highest_confidence_images)
          
                     # Check for specific predictions
-                    if any(key in [12, 13] for key in highest_confidence_images.keys()):
-                        key = [key in [12,13] for key in highest_confidence_images.keys()]
+                    if any(key in [3,8,12, 13] for key in highest_confidence_images.keys()):
+                        key = [key in [3,8,12,13] for key in highest_confidence_images.keys()]
                         print('detecting 金元寶或金幣')
                         GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=key[0])
                         break  # Exit the loop
@@ -116,7 +123,8 @@ def main():
                 screenshot.capture_screenshot(window_title=window_name, filename=filename)
                 print(f"Screenshot saved as {filename}")
                 break
-            
+            elif elapsed_time > 30:
+                break
 
 
 if __name__ == "__main__":
