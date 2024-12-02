@@ -1,10 +1,11 @@
 # ignored folders
 material/
 result/
-Scripts/
-Lib/
+checkpoints/
+VITrun_ver6/
 inputTest/
-temp/
+SAM_2.egg-info/
+sam2/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
