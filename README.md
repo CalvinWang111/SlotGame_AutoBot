@@ -10,7 +10,7 @@
 
 **SlotBot使用方式**
 SlotBot folder: 模組化操作元件辨識，須將模組如圖放置
-![image](https://drive.google.com/file/d/1TVmXvEkWVaXrikOBBuM3fZ3fD9iPP8QO/view?usp=sharing)
+![image](readmeFig.png)
 ，VIT模型檔下載路徑如下
 使用Bluestacks模擬器執行遊戲(不能覆蓋其他視窗在上面)，運行main.py即可執行，
 元件指令如下
