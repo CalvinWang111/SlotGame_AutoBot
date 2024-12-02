@@ -6,6 +6,8 @@ from pathlib import Path
 import json
 from datetime import datetime
 import re
+import cv2
+
 
 class ValueRecognition:
     def __init__(self):
@@ -22,6 +24,7 @@ class ValueRecognition:
         self.ocr = PaddleOCR(use_angle_cls=True, lang="en")
 
         self.meaning_table = None
+
     # def set_position_to_meaning(self, frame_list):
     #
     def get_board_value(self, image_path):
@@ -54,16 +57,19 @@ class ValueRecognition:
                                       new_value_pos['roi'][1] + new_value_pos['roi'][3] / 2]
 
                         # left side similar
-                        if line['roi'][0] + self.threshold > new_value_pos['roi'][0] > line['roi'][0] - self.threshold and \
+                        if line['roi'][0] + self.threshold > new_value_pos['roi'][0] > line['roi'][
+                            0] - self.threshold and \
                                 middle[1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
                             line['value'].append(new_value_pos['value'][0])
                             line['meaning'].append(new_value_pos['meaning'][0])
                             found = True
                             break
                         # right side similar
-                        elif line['roi'][0] + line['roi'][2] + self.threshold > new_value_pos['roi'][0] + new_value_pos['roi'][2] > line['roi'][
-                            0] + line['roi'][2] - self.threshold and middle[1] + self.threshold > new_middle[1] > middle[
-                            1] - self.threshold:
+                        elif line['roi'][0] + line['roi'][2] + self.threshold > new_value_pos['roi'][0] + \
+                                new_value_pos['roi'][2] > line['roi'][
+                            0] + line['roi'][2] - self.threshold and middle[1] + self.threshold > new_middle[1] > \
+                                middle[
+                                    1] - self.threshold:
                             line['value'].append(new_value_pos['value'][0])
                             line['meaning'].append(new_value_pos['meaning'][0])
                             found = True
@@ -125,7 +131,8 @@ class ValueRecognition:
                     break
                 # right side similar
                 elif line['roi'][0] + line['roi'][2] + self.threshold > new_value_pos['roi'][0] + new_value_pos['roi'][
-                    2] > line['roi'][0] + line['roi'][2] - self.threshold and middle[1] + self.threshold > new_middle[1] > middle[
+                    2] > line['roi'][0] + line['roi'][2] - self.threshold and middle[1] + self.threshold > new_middle[
+                    1] > middle[
                     1] - self.threshold:
                     print(new_value_pos['value'], line['meaning'])
                     json_each_line['confidence'] = data[1][1]
@@ -146,3 +153,5 @@ class ValueRecognition:
                     break
         with open(filename, "w", encoding="utf-8") as file:
             json.dump(json_data, file, ensure_ascii=False, indent=4)
+        frame = cv2.imread(image_path)
+        cv2.imwrite(rf'./images/value/value+{timestamp}.png', frame)
