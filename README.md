@@ -14,6 +14,8 @@ SlotBot folder: 模組化操作元件辨識，須將模組(sam2_configs/checkpoi
 ，VIT模型檔下載路徑如下
 使用Bluestacks模擬器執行遊戲(不能覆蓋其他視窗在上面)，運行main.py即可執行，
 元件指令如下
+
+```
     # 4. 操控遊戲
     GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=8)
 更換classId 使用底下編號與按鍵對應表
@@ -34,6 +36,6 @@ SlotBot folder: 模組化操作元件辨識，須將模組(sam2_configs/checkpoi
                     13: "gold_ingot",
                     14: "stickers",
                 }
-
 最新VIT模型下載路徑
 https://drive.google.com/drive/folders/1cPY8fSodutPBDmM-59n8rNku8dqUU7pP?usp=sharing
+```
