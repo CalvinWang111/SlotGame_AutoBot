@@ -91,6 +91,7 @@ class ValueRecognition:
     def get_meaning(self):
         meaning_list = [{'position': line['roi'], 'meanings': line['meaning']} for line in self.value_pos_form]
         chat_response = self.openai_api.get_simplified_meaning(meaning_list)
+        print(f'chat_response = {chat_response}')
         tuple_list = re.findall(r"<position>(.*?)</position>.*?<meaning>(.*?)</meaning>", chat_response, re.DOTALL)
         dict_list = [
             {'roi': [int(n) for n in roi.strip('[]').split(',')], 'meaning': meaning}
