@@ -31,10 +31,11 @@ class ValueRecognition:
         # Path to your image
         chat_response = self.openai_api.get_value_response(image_path)
         print(chat_response)
-        chat_response = chat_response.replace("{", "").replace("}", "")
-        result = chat_response.splitlines()
-        count = 0
-        table = [line.split(";") for line in result]
+        tuple_list = re.findall(r"<number>(.*?)</number>.*?<meaning>(.*?)</meaning>", chat_response, re.DOTALL)
+        table = [
+            [number, meaning]
+            for number, meaning in tuple_list
+        ]
 
         # OCR
         ocr_result = self.ocr.ocr(image_path, cls=True)
