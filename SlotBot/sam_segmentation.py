@@ -51,7 +51,7 @@ class SAMSegmentation:
             except Exception as e:
                 print(f"Error deleting {file_path}: {e}")
 
-    def show_anns(self, anns, original_image, borders=True):
+    def show_anns(self, anns, original_image, rotate, borders=True):
         if len(anns) == 0:
             return
         output_dir = self.Snapshot
@@ -115,7 +115,17 @@ class SAMSegmentation:
                     image_filename = os.path.join(output_dir, f'cropped_image_{mask_counter}_contour_{i}.png')
 
                     # Store pixel positions in maskDict
+                    if rotate:
+                        rotate_x = img.shape[0]-y
+                        rotate_y = x
+                        rotate_w = h
+                        rotate_h = w
+                        x = rotate_x
+                        y = rotate_y
+                        w = rotate_h
+                        h = rotate_w
                     self.maskDict[str(f'cropped_image_{mask_counter}_contour_{i}.png')] = (x, y, w, h)
+
                     cv2.imwrite(image_filename, cropped_image_rgba)  # Save the RGBA image
                     print(f"Saved: {image_filename}")
 
@@ -139,10 +149,12 @@ class SAMSegmentation:
             cv2.imwrite(image_filename, final_image_bgr)  # Save as BGRA
             print(f"Saved final image: {image_filename}")
 
-    def segment_image(self, route):
+    def segment_image(self, route, rotate):
         """使用 SAM 分割圖片"""
         image = Image.open(route)
         image = np.array(image.convert("RGB"))
+        if rotate:
+            image = np.rot90(image, k=1, axes=(0, 1)).copy()
 
         plt.figure(figsize=(20, 20))
         # plt.imshow(image)
@@ -153,7 +165,7 @@ class SAMSegmentation:
         print("build sam completed")
         mask_generator = SAM2AutomaticMaskGenerator(sam2)
         masks = mask_generator.generate(image)
-        self.show_anns(masks, image)
+        self.show_anns(masks, image, rotate)
 
         return self.maskDict
 

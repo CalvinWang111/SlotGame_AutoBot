@@ -17,7 +17,13 @@ from pathlib import Path
 
 MODE = 'base'
 GAME = 'dragon'
+rotate = False  # clockwise
+# if rotated, maskDict will save the position of the actual screen space, and grid save the position of rotated image space because their uses are different :)
 
+# if GAME == 'bull' or GAME == 'golden':
+#     rotate = True
+# elif GAME == 'fu' or GAME == 'dragon':
+#     rotate = False
 if MODE == 'base':
     symbol_template_dir = Path(f'./images/{GAME}/symbols/base_game')
     image_dir = Path(f'./images/{GAME}/screenshots/base_game')
@@ -46,20 +52,26 @@ def main():
     screenshot.capture_screenshot(window_title=window_name, filename=Snapshot)
     
     # 2. SAM 分割
-    maskDict = sam.segment_image(r"./images/"+Snapshot+".png")
+    maskDict = sam.segment_image(r"./images/"+Snapshot+".png", rotate)
     print("segment completed")
 
     # 3. ViT 辨識
     # put your own VIT model path here 
     vit = ViTRecognition(Snapshot=Snapshot, maskDict=maskDict, model_path=r'../best_model.pth')
-    highest_confidence_images, template_folder = vit.classify_components()
+    highest_confidence_images, template_folder = vit.classify_components(rotate)
     print("ViTRecognition completed")
     
     # 4. 根據第一張畫面初始化程式
+    
     screenshot.capture_screenshot(window_title=window_name, filename=Snapshot+'_runtime')
     intial_intensity = screenshot.clickable(snapshot_path=r"./images/"+Snapshot+"_runtime.png",highest_confidence_images=highest_confidence_images)
     
+    print(highest_confidence_images)
+    print(intial_intensity)
+
     first_frame = cv2.imread(r"./images/"+Snapshot+"_runtime.png")
+    if rotate:
+        first_frame = cv2.rotate(first_frame, cv2.ROTATE_90_COUNTERCLOCKWISE).copy()
 
     matched_positions = get_symbol_positions(template_dir=symbol_template_dir, image=first_frame)
     if matched_positions is None:
@@ -73,7 +85,7 @@ def main():
     output_counter = 0
     for round_number in range(spin_round):
         GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=8)
-        key_frame_pathes = stop_catcher.get_key_frames(intial_intensity,intensity_threshold,highest_confidence_images)
+        key_frame_pathes = stop_catcher.get_key_frames(intial_intensity,intensity_threshold,highest_confidence_images,rotate)
         
         # process key frames
         for path in key_frame_pathes:

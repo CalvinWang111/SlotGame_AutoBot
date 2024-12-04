@@ -84,7 +84,6 @@ class GameScreenshot:
                 for class_id, info in highest_confidence_images.items():
                     if class_id==8:
                         (x, y, w, h) = info['contour']
-                    
                         # Crop the region specified by the bounding box
                         cropped_img = np.array(img)[y:y+h,x:x+w,0:3]
 

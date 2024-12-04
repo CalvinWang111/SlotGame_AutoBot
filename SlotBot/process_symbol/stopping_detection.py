@@ -32,7 +32,7 @@ class StoppingFrameCapture:
         if DEBUG:
             print("bbox:",grid.bbox)
 
-    def get_key_frames(self, intial_intensity,intensity_threshold,highest_confidence_images):
+    def get_key_frames(self, intial_intensity,intensity_threshold,highest_confidence_images,rotate):
         key_image_pathes = []
 
         def __get_window_frame(self:StoppingFrameCapture,frame_buffer):
@@ -46,11 +46,14 @@ class StoppingFrameCapture:
             while not self.__terminated:
                 frame_start_time = time.time() 
                 frame = np.array(sct.grab(monitor))
+                # use unrotated image to judge clickable
+                intensity = screenshot.clickable_np(frame,highest_confidence_images=highest_confidence_images)
+                if rotate:
+                    frame = np.rot90(frame).copy()
                 if frame_buffer.qsize() < MAX_BUFFER_SIZE:
                     frame_buffer.put(frame)
                 else:
                     print("Warning: Frame buffer is full")
-                intensity = screenshot.clickable_np(frame,highest_confidence_images=highest_confidence_images)
                 if abs(intial_intensity - intensity) < intensity_threshold and time.time()-self.__spin_start_time>1:
                     self.__button_available = True
                 else:
@@ -78,7 +81,7 @@ class StoppingFrameCapture:
 
             # setting my parameter
             rolling_record_size = 9
-            min_moving_down_distance = sh/7
+            min_moving_down_distance = sh/5
             min_point_number = min(int(roi_w*roi_h/100000+1),10)
             print("min_point_number:",min_point_number)
             max_error = 25

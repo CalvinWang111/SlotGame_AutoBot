@@ -60,7 +60,7 @@ class ViTRecognition:
         self.transform = transform
         self.model = model
 
-    def classify_components(self):
+    def classify_components(self, rotate):
         """使用 ViT 模型對分割元件進行辨識"""
         # Create the "template" folder if it doesn't exist
         template_folder = os.path.join(self.test_folder, "template")
@@ -77,6 +77,8 @@ class ViTRecognition:
                     
                     # Load and transform the image
                     image = Image.open(img_path).convert("RGB")
+                    if rotate:
+                        image = image.rotate(90,expand=True)
                     image = self.transform(image).unsqueeze(0).to(self.device)
 
                     # Predict the class

@@ -2,23 +2,18 @@ from .grid import BullGrid
 from .symbol_recognizer import *
 from .utils import *
 
-STRAIGHT_VERSION = True
 template_match_data = {}
-if STRAIGHT_VERSION:
-    zoom_rate = 0.5
-else:
-    zoom_rate = 1.0
-
+zoom_rate = 1
 def get_symbol_positions(template_dir,image):    
     process_template_matches(
         template_match_data=template_match_data, 
         template_dir=template_dir, 
         img=image, 
-        iou_threshold=0.1*zoom_rate, 
+        iou_threshold=0.1, 
         scale_range=[0.8*zoom_rate, 1.5*zoom_rate],
         scale_step=0.05*zoom_rate,
-        threshold=0.95*zoom_rate,
-        min_area=5000*zoom_rate,
+        threshold=0.95,
+        min_area=5000*(zoom_rate**2),
         border=100*zoom_rate
     )
     
@@ -52,13 +47,14 @@ def recoglize_symbol(img,grid:BullGrid,template_dir,game_mode,cell_border=20):
                 template_match_data=template_match_data,
                 template_dir=template_dir,
                 img=cell,
-                iou_threshold=0.1*zoom_rate,
+                iou_threshold=0.1,
                 scale_range=[0.8*zoom_rate, 1.5*zoom_rate],
                 scale_step=0.05*zoom_rate,
-                threshold=0.8*zoom_rate,
-                min_area=5000*zoom_rate,
+                threshold=0.8,
+                min_area=5000*(zoom_rate**2),
                 match_one=True,
                 border=cell_border,
+                
             )
             
             grid[i, j] = symbol_name
