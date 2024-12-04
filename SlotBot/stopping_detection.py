@@ -78,7 +78,7 @@ class StoppingFrameCapture:
 
             # setting my parameter
             rolling_record_size = 9
-            min_moving_down_distance = sh/7
+            min_moving_down_distance = sh/5
             min_point_number = min(int(roi_w*roi_h/100000+1),10)
             print("min_point_number:",min_point_number)
             max_error = 25
