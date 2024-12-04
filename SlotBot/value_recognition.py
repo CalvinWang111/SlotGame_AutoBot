@@ -30,7 +30,7 @@ class ValueRecognition:
     def get_board_value(self, image_path):
         # Path to your image
         chat_response = self.openai_api.get_value_response(image_path)
-
+        print(chat_response)
         chat_response = chat_response.replace("{", "").replace("}", "")
         result = chat_response.splitlines()
         count = 0

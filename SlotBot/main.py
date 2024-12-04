@@ -10,6 +10,7 @@ from vit_recognition import ViTRecognition
 from component_matching import ComponentMatcher
 from game_controller import GameController
 from TemplatMatching.template_matching import test_template_matching
+from value_recognition import ValueRecognition
 from PIL import Image
 
 
@@ -20,7 +21,7 @@ def main():
     window_name = 'BlueStacks App Player'
     Snapshot = 'GoldenHoYeah'
     intensity_threshold = 10
-    spin_round = 3
+    spin_round = 20
     root_dir = Path(__file__).parent.parent
     print('rootdir',root_dir)
 
@@ -29,11 +30,12 @@ def main():
     #sam_model_cfg = os.path.join(root_dir, 'sam2', 'configs', 'sam2', 'sam2_hiera_l.yaml')
     sam_model_cfg = os.path.join(root_dir, 'sam2_configs', 'sam2_hiera_l.yaml')
     images_dir = os.path.join(root_dir, 'images')
-    
+
     print('sam_model_path',sam_model_path)
     print('sam_model_cfg',sam_model_cfg)
 
     sam = SAMSegmentation(Snapshot=Snapshot, sam2_checkpoint=sam_model_path, model_cfg=sam_model_cfg)
+    valuerec = ValueRecognition()
 
     # 1. 截圖
     screenshot.capture_screenshot(window_title=window_name, filename=Snapshot)
@@ -57,6 +59,13 @@ def main():
     for i in range(spin_round):
         GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=10)
         print('spin round : ',i)
+        if i <= 10:
+            valuerec.get_board_value(Snapshot+'_runtime')
+        else:
+            valuerec.recognize_value(Snapshot+'_runtime')
+
+        if i == 10:
+            valuerec.get_meaning()
         time.sleep(3)
         start_time = time.time()
 

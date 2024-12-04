@@ -15,7 +15,7 @@ class GameScreenshot:
         """取得遊戲畫面截圖""" 
         try: 
             # Define the directory where the screenshot will be saved 
-            save_directory = os.path.join('./images/')
+            save_directory = os.path.join('../images/')
                  
             # Create the directory if it does not exist 
             os.makedirs(save_directory, exist_ok=True) 
