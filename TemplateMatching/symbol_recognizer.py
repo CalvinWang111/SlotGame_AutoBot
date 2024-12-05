@@ -185,7 +185,6 @@ def process_template_matches(template_match_data, template_dir, img, iou_thresho
                 match_one_filtered_results = filtered_results
                 match_one_scale = best_scale
 
-        
     if match_one == True:
         template_match_data[match_one_template] = {
             'shape': match_one_template_shape,
@@ -193,112 +192,8 @@ def process_template_matches(template_match_data, template_dir, img, iou_thresho
             'best_scale': match_one_scale
         }
         return match_one_template, max_score
-    
-def template_matching_gray(template_gray, mask, img_gray, scale_range, scale_step, threshold, border):
-    if scale_range[0] == scale_range[1]:
-        scales = [scale_range[0]]
-    else:
-        scales = np.arange(scale_range[0], scale_range[1] + scale_step, scale_step)
-    padding = 0  # Padding to add around the image for reverse matching
-    
-    matching_results = []  # To store the locations of matches
-    
-    for scale in scales:
-        # Resize template and mask for the current scale
-        resized_template = cv2.resize(template_gray, (0, 0), fx=scale, fy=scale)
-        resized_mask = cv2.resize(mask, (0, 0), fx=scale, fy=scale)
-        result = None
-        
-        template_h, template_w = resized_template.shape[:2]
-        img_h, img_w = img_gray.shape[:2]
-        # Ensure the resized template is not larger than the image
-        if template_h > img_h or template_w > img_w:
-            if template_h >= img_h - 2 * border and template_w >= img_w - 2 * border:
-                # perform reverse matching
-                
-                img_without_border = img_gray[border+padding:img_h-border-padding, border+padding:img_w-border-padding]
-                result = cv2.matchTemplate(resized_template, img_without_border, cv2.TM_CCORR_NORMED)
-            else:
-                continue
-        else:
-            # Perform template matching
-            result = cv2.matchTemplate(img_gray, resized_template, cv2.TM_CCORR_NORMED, mask=resized_mask)
-        
-        # Find locations where the match is greater than the threshold
-        loc = np.where(result >= threshold)
 
-        # Collect all the matching points
-        for pt in zip(*loc[::-1]):  # Switch x and y in zip
-            matching_results.append((pt, scale, result[pt[1], pt[0]])) # (top_left, scale, match_val)
-    return matching_results
-
-def process_template_matches_gray(template_scale, template_dir, target_roi, scale_range, scale_step, threshold, border, debug=False):
-    best_match = None
-    best_score = None
-    best_scale = None
-    
-    target_gray = cv2.cvtColor(target_roi, cv2.COLOR_BGR2GRAY)
-    # target_gray = cv2.equalizeHist(target_gray)
-
-    # Iterate through each template in the directory
-    for template_path in Path(template_dir).iterdir():
-        template = cv2.imread(str(template_path), cv2.IMREAD_UNCHANGED)
-        template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-        # template_gray = cv2.equalizeHist(template_gray)
-        _, _, _, alpha_channel = cv2.split(template)
-        mask = cv2.threshold(alpha_channel, 128, 255, cv2.THRESH_BINARY)[1]
-        template_name = template_path.stem
-        
-        # Calculate new dimensions (crop x% of each border)
-        crop_percent = 0.1
-        height, width = template.shape[:2]
-        crop_top = int(height * crop_percent)
-        crop_bottom = int(height * (1 - crop_percent))
-        crop_left = int(width * crop_percent)
-        crop_right = int(width * (1 - crop_percent))
-        template_gray = template_gray[crop_top:crop_bottom, crop_left:crop_right]
-        mask = mask[crop_top:crop_bottom, crop_left:crop_right]
-        
-        if template_name in template_scale:
-            scale = template_scale[template_name]
-            matching_results = template_matching_gray(template_gray, mask, target_gray, (scale, scale), scale_step, threshold, border)
-        else:
-            matching_results = template_matching_gray(template_gray, mask, target_gray, scale_range, scale_step, threshold, border)
-            
-        # Extract the best score
-        if matching_results:
-            top_result = max(matching_results, key=lambda x: x[2])  # x[2] should be the score
-            top_score = top_result[2]
-            if best_score is None or top_score > best_score:
-                best_match = template_path.stem
-                best_score = top_score
-                best_scale = top_result[1]
-            if debug:
-                print(f'{template_path.stem} has score {top_score}, scale {top_result[1]}')
-                
-    if not (best_match in template_scale):
-        template_scale[best_match] = best_scale
-    
-    if not best_match:
-        return None, None, None
-
-    if debug:
-        matched_template = cv2.imread(str(template_dir / f'{best_match}.png'))
-        matched_template_gray = cv2.cvtColor(matched_template, cv2.COLOR_BGR2GRAY)
-        matched_template_gray = cv2.equalizeHist(matched_template_gray)
-        matched_template_gray = cv2.resize(matched_template_gray, (0, 0), fx=best_scale, fy=best_scale)
-        cv2.imshow('best_match', matched_template_gray)
-        cv2.imshow('target gray', target_gray)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-    
-    return best_match, best_score, best_scale
-
-import cv2
-import numpy as np
-from pathlib import Path
-
-def process_template_matches_sift(template_dir, target_roi, scale_range=(0.9, 1.1), debug=False):
+def process_template_matches_sift(template_dir, target_roi, scale_range, debug=False):
     # Initialize SIFT detector and BFMatcher
     sift = cv2.SIFT_create()
     bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)  # Use crossCheck=False for knnMatch
@@ -316,13 +211,16 @@ def process_template_matches_sift(template_dir, target_roi, scale_range=(0.9, 1.
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     target_gray = cv2.cvtColor(target_roi, cv2.COLOR_BGR2GRAY)
     target_gray = clahe.apply(target_gray)
+    target_height, target_width = target_gray.shape[:2]
+    
+    # Compute keypoints and descriptors for the target ROI
     keypoints_target, descriptors_target = sift.detectAndCompute(target_gray, None)
 
     # Check if descriptors are found in the target ROI
     if descriptors_target is None or len(keypoints_target) < 2:
         if debug:
             print("Not enough descriptors in target ROI.")
-        return None, None, None
+        return None, None
 
     # Iterate through each template in the directory
     for template_path in Path(template_dir).iterdir():
@@ -331,16 +229,8 @@ def process_template_matches_sift(template_dir, target_roi, scale_range=(0.9, 1.
 
         # Preprocess the template using CLAHE
         template_gray = clahe.apply(template_gray)
-
-        # Crop borders (optional)
-        crop_percent = 0.0
-        height, width = template_gray.shape[:2]
-        crop_top = int(height * crop_percent)
-        crop_bottom = int(height * (1 - crop_percent))
-        crop_left = int(width * crop_percent)
-        crop_right = int(width * (1 - crop_percent))
-        template_gray = template_gray[crop_top:crop_bottom, crop_left:crop_right]
-
+        template_height, template_width = template_gray.shape[:2]
+        
         # Compute keypoints and descriptors for the template
         keypoints_template, descriptors_template = sift.detectAndCompute(template_gray, None)
 
@@ -358,49 +248,76 @@ def process_template_matches_sift(template_dir, target_roi, scale_range=(0.9, 1.
 
         # Filter matches based on spatial consistency
         if len(good_matches) >= 4:  # Need at least 4 matches to compute homography/affine
-            src_pts = np.float32([keypoints_template[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
-            dst_pts = np.float32([keypoints_target[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+            src_pts = np.float32([keypoints_template[m.queryIdx].pt for m in good_matches])
+            dst_pts = np.float32([keypoints_target[m.trainIdx].pt for m in good_matches])
 
-            # Estimate affine transformation using RANSAC
-            M, mask = cv2.estimateAffinePartial2D(src_pts, dst_pts, method=cv2.RANSAC, ransacReprojThreshold=20.0)
+            # Normalize the keypoint positions
+            src_pts_norm = src_pts / [template_width, template_height]
+            dst_pts_norm = dst_pts / [target_width, target_height]
 
-            if M is not None:
-                matches_mask = mask.ravel().tolist()
-                filtered_matches = [m for m, keep in zip(good_matches, matches_mask) if keep]
+            # Calculate the differences in normalized positions
+            position_diffs = src_pts_norm - dst_pts_norm
 
-                if len(filtered_matches) >= 4:
-                    # Calculate the total distance (score) for the filtered matches
-                    score = sum([m.distance for m in filtered_matches])
-                    
-                    # Calculate the scale from the affine transformation matrix
-                    scale_x = np.sqrt(M[0, 0] ** 2 + M[0, 1] ** 2)
-                    scale_y = np.sqrt(M[1, 0] ** 2 + M[1, 1] ** 2)
-                    estimated_scale = (scale_x + scale_y) / 2  # Average scale
+            # Focus on the vertical differences (y-axis)
+            vertical_diffs = position_diffs[:, 1]
 
-                    # Check if estimated scale is within the specified range
-                    min_scale, max_scale = scale_range
-                    if min_scale <= estimated_scale <= max_scale:
-                        num_filtered_matches = len(filtered_matches)
-                        if (num_filtered_matches > best_num_matches) or (num_filtered_matches == best_num_matches and score < best_score):
-                            best_match = template_path.stem
-                            best_num_matches = num_filtered_matches
-                            best_keypoints = keypoints_target
-                            best_template_keypoints = keypoints_template
-                            best_template_img = template_gray
-                            best_matches = filtered_matches
-                            best_scale = estimated_scale
-                            best_score = score
-                        if debug:
-                            print(f'{template_path.stem:<20} | Matches: {num_filtered_matches:<5} | Estimated Scale: {estimated_scale:<6.2f} | Score: {score:<6.2f}')
+            # Define a threshold for acceptable vertical differences
+            vertical_threshold = 0.2  # Adjust this value as needed
+
+            # Filter matches based on vertical position consistency
+            position_consistent_matches = []
+            for i, m in enumerate(good_matches):
+                if abs(vertical_diffs[i]) <= vertical_threshold:
+                    position_consistent_matches.append(m)
+
+            # Proceed if we have enough position-consistent matches
+            if len(position_consistent_matches) >= 4:
+                src_pts_consistent = np.float32([keypoints_template[m.queryIdx].pt for m in position_consistent_matches]).reshape(-1, 1, 2)
+                dst_pts_consistent = np.float32([keypoints_target[m.trainIdx].pt for m in position_consistent_matches]).reshape(-1, 1, 2)
+
+                # Estimate affine transformation using RANSAC
+                M, mask_ransac = cv2.estimateAffinePartial2D(src_pts_consistent, dst_pts_consistent, method=cv2.RANSAC, ransacReprojThreshold=20.0)
+
+                if M is not None:
+                    matches_mask = mask_ransac.ravel().tolist()
+                    filtered_matches = [m for m, keep in zip(position_consistent_matches, matches_mask) if keep]
+
+                    if len(filtered_matches) >= 4:
+                        # Calculate the total distance (score) for the filtered matches
+                        score = sum([m.distance for m in filtered_matches])
+
+                        # Calculate the scale from the affine transformation matrix
+                        scale_x = np.sqrt(M[0, 0] ** 2 + M[0, 1] ** 2)
+                        scale_y = np.sqrt(M[1, 0] ** 2 + M[1, 1] ** 2)
+                        estimated_scale = (scale_x + scale_y) / 2  # Average scale
+
+                        # Check if estimated scale is within the specified range
+                        min_scale, max_scale = scale_range
+                        if min_scale <= estimated_scale <= max_scale:
+                            num_filtered_matches = len(filtered_matches)
+                            if (num_filtered_matches > best_num_matches) or (num_filtered_matches == best_num_matches and score < best_score):
+                                best_match = template_path.stem
+                                best_num_matches = num_filtered_matches
+                                best_keypoints = keypoints_target
+                                best_template_keypoints = keypoints_template
+                                best_template_img = template_gray
+                                best_matches = filtered_matches
+                                best_scale = estimated_scale
+                                best_score = score
+                            if debug:
+                                print(f'{template_path.stem:<20} | Matches: {num_filtered_matches:<5} | Scale: {estimated_scale:<6.2f} | Score: {score:<6.2f}')
+                        else:
+                            if debug:
+                                print(f'{template_path.stem:<20} | Estimated Scale {estimated_scale:5.2f} out of range')
                     else:
                         if debug:
-                            print(f'{template_path.stem:<20} | Estimated Scale {estimated_scale:5.2f} out of range')
+                            print(f'{template_path.stem:<20} | Insufficient filtered matches after RANSAC ({len(filtered_matches)})')
                 else:
                     if debug:
-                        print(f'{template_path.stem:<20} | Insufficient filtered matches ({len(filtered_matches)})')
+                        print(f'{template_path.stem:<20} | Affine transformation could not be estimated after position filtering')
             else:
                 if debug:
-                    print(f'{template_path.stem:<20} | Affine transformation could not be estimated')
+                    print(f'{template_path.stem:<20} | Insufficient position-consistent matches ({len(position_consistent_matches)})')
         else:
             if debug:
                 print(f'{template_path.stem:<20} | Insufficient good matches ({len(good_matches)})')
@@ -408,7 +325,7 @@ def process_template_matches_sift(template_dir, target_roi, scale_range=(0.9, 1.
     if not best_match:
         if debug:
             print("No match found.")
-        return None, None, None
+        return None, None
 
     # Visualize keypoints and filtered matches
     keypoints_target_img = cv2.drawKeypoints(
@@ -442,7 +359,7 @@ def process_template_matches_sift(template_dir, target_roi, scale_range=(0.9, 1.
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-    return best_match, best_scale, best_num_matches
+    return best_match, best_score
     
 def get_grid_info(points, tolerance=30):
     # tolerance is in pixel
@@ -513,7 +430,7 @@ def draw_bboxes_and_icons_on_image(img, template_dir, grid, save_path, icon_size
     
     for i in range(grid.row):
         for j in range(grid.col):
-            if grid[i, j] is None:
+            if grid[i, j]["symbol"] is None:
                 continue
             template_name = grid[i, j]["symbol"]
             template_path = template_dir / f"{template_name}.png"
