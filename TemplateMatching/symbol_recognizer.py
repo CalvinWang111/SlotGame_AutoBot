@@ -192,7 +192,7 @@ def process_template_matches(template_match_data, template_dir, img, iou_thresho
             'result': match_one_filtered_results,
             'best_scale': match_one_scale
         }
-        return match_one_template
+        return match_one_template, max_score
     
 def template_matching_gray(template_gray, mask, img_gray, scale_range, scale_step, threshold, border):
     if scale_range[0] == scale_range[1]:
@@ -515,7 +515,7 @@ def draw_bboxes_and_icons_on_image(img, template_dir, grid, save_path, icon_size
         for j in range(grid.col):
             if grid[i, j] is None:
                 continue
-            template_name = grid[i, j]
+            template_name = grid[i, j]["symbol"]
             template_path = template_dir / f"{template_name}.png"
             template = cv2.imread(str(template_path), cv2.IMREAD_UNCHANGED)
             template_rgb = cv2.cvtColor(template, cv2.COLOR_BGRA2BGR)  # Convert to RGB, discard alpha

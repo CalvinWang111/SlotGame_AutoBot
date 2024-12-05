@@ -1,4 +1,6 @@
 import pickle
+from pathlib import Path
+import json
 
 class BaseGrid:
     def __init__(self, bbox, shape):
@@ -25,6 +27,23 @@ class BaseGrid:
     def save(self, path: str):
         with open(path, 'wb') as f:
             pickle.dump(self, f)
+    
+    def save_results_as_json(self, save_dir: Path, template_dir: Path, frame_count: int):
+        output_list = []
+        for i in range(self.row):
+            for j in range(self.col):
+                cell = self._grid[i][j]
+                if cell is not None:
+                    output_dict = {
+                        "key": cell["symbol"],
+                        "path": str(template_dir / f'{cell["symbol"]}.png'),
+                        "confidence": float(cell["score"]),
+                        "contour": self.get_roi(i, j),
+                        "value": [i, j]
+                    }
+                    output_list.append(output_dict)
+        with open(str(save_dir / f"{frame_count}.json"), "w") as f:
+            json.dump(output_list, f, indent=4)
     
     def __getitem__(self, idx):
         i, j = idx

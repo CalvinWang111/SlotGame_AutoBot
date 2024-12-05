@@ -10,6 +10,10 @@ from TemplateMatching.utils import *
 MODE = 'base'
 GAME = 'fu'
 
+output_json_dir = Path(f'./output/{GAME}/{MODE}')
+if not output_json_dir.exists():
+    output_json_dir.mkdir(parents=True, exist_ok=True)
+    
 if MODE == 'base':
     template_dir = Path(f'./images/{GAME}/symbols/base_game')
     image_dir = Path(f'./images/{GAME}/screenshots/base_game')
@@ -20,10 +24,15 @@ elif MODE == 'free':
     save_dir = Path(f'./temp/{GAME}_free_output')
 save_dir.mkdir(parents=True, exist_ok=True)
 
-template_match_data = {}
 grid = None
+grid_path = Path(f'./dev/grid/{GAME}_{MODE}_grid.pkl')
+if grid_path.exists():
+    grid = BaseGrid.load(str(grid_path))
+
+template_match_data = {}
 cell_border = 10
 
+frame_count = 0 # replace it when integrating with the game
 for image_path in image_dir.glob('*.png'): 
     print(f"Processing image: {image_path}")
     img = cv2.imread(str(image_path))
@@ -59,6 +68,7 @@ for image_path in image_dir.glob('*.png'):
                 
         grid_bbox, grid_shape = get_grid_info(matched_positions)
         grid = BaseGrid(grid_bbox, grid_shape)
+        grid.save(str(grid_path))
         print(f'initial grid shape: {grid.row} x {grid.col}')
     
     # Process each grid cell
@@ -71,7 +81,7 @@ for image_path in image_dir.glob('*.png'):
             y1, y2 = y - cell_border, y + h + cell_border
             cell = img[y1:y2, x1:x2]
             
-            symbol_name = process_template_matches(
+            symbol_name, score = process_template_matches(
                 template_match_data=template_match_data,
                 template_dir=template_dir,
                 img=cell,
@@ -83,12 +93,18 @@ for image_path in image_dir.glob('*.png'):
                 match_one=True,
                 border=cell_border,
             )
+            grid[i, j] = {"symbol": symbol_name, "score": score, "value": None}
             
-            grid[i, j] = symbol_name
     elapsed_time = time.time() - start_time
     print(f"Grid cells matching: {elapsed_time:.2f} seconds")
     
     save_path = save_dir / f"{image_path.stem}.png"
     draw_bboxes_and_icons_on_image(img, template_dir, grid, save_path=save_path)
+    
+    # save output json
+    grid.save_results_as_json(save_dir=output_json_dir, template_dir=template_dir, frame_count=frame_count)
+    
+    # clear grid
     grid.clear()
+    frame_count += 1
     print("------------------------------------------------------")
