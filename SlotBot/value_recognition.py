@@ -43,6 +43,7 @@ class ValueRecognition:
 
         # compare
         for data in ocr_result:
+            print(data)
             for meaning in table:
                 # if value of OCR = value of chatgpt
                 if data[1][0] == meaning[0]:

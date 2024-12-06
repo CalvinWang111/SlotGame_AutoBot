@@ -20,7 +20,7 @@ def main():
     window_name = 'BlueStacks App Player'
     Snapshot = 'GoldenHoYeah'
     intensity_threshold = 10
-    spin_round = 20
+    spin_round = 11
     root_dir = Path(__file__).parent.parent
     print('rootdir', root_dir)
 
