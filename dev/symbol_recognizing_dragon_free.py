@@ -8,7 +8,7 @@ from TemplateMatching.symbol_recognizer import *
 
 GAME = 'dragon'
 MODE = 'free'
-DEBUG = False
+DEBUG = True 
 
 grid = None
 border = 0
@@ -24,8 +24,6 @@ if grid_path.exists():
     grid = BaseGrid.load(str(grid_path))
 
 for img_path in img_dir.iterdir():
-    if DEBUG:
-        break
     img_name = img_path.stem
     img = cv2.imread(str(img_path))
     print(f'Processing {img_name}...')
@@ -72,21 +70,23 @@ for img_path in img_dir.iterdir():
         # cv2.imshow('grid', img_copy)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
-
+        
+    if DEBUG:
+        break
+    
     for i in range(grid.row):
         for j in range(grid.col):
             x, y, w, h = grid.get_roi(i, j)
             roi = img[y-border:y+h+border, x-border:x+w+border]
 
-            best_match, best_score, num_matches = process_template_matches_sift(template_dir, roi, (0.7, 1.3), False)
-            grid[i, j] = best_match
+            symbol_name, score = process_template_matches_sift(template_dir, roi, (0.7, 1.3), False)
+            grid[i, j] = {"symbol": symbol_name, "score": score, "value": None}
 
     output_path = output_dir / f'{img_name}.png'
     draw_bboxes_and_icons_on_image(img, template_dir, grid, str(output_path))
 
 if DEBUG:
-    img_path = Path('images/fu/screenshots/free_game/vlcsnap-2024-11-10-15h37m09s088.png')
-    # img_path = Path('images/fu/screenshots/free_game/vlcsnap-2024-11-10-15h35m53s352.png')
+    img_path = Path(f'images/{GAME}/screenshots/free_game/vlcsnap-2024-11-28-16h00m28s306.png')
     img_name = img_path.stem
     img = cv2.imread(str(img_path))
 
@@ -97,8 +97,8 @@ if DEBUG:
             roi = img[y-border:y+h+border, x-border:x+w+border]
             # roi = img[y:y+h, x:x+w]
             
-            best_match, best_scale, num_matches = process_template_matches_sift(template_dir, roi, (0.7, 1.3), True)
-            grid[i, j] = best_match
+            symbol_name, score = process_template_matches_sift(template_dir, roi, (0.7, 1.3), True)
+            grid[i, j] = {"symbol": symbol_name, "score": score, "value": None}
             
             cv2.waitKey(0)
             cv2.destroyAllWindows()
