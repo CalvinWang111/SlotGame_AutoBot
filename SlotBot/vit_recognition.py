@@ -9,6 +9,7 @@ from PIL import Image
 import numpy as np
 import shutil  # For copying files
 import torch.nn.functional as F  # For softmax
+import json
 
 
 class ViTRecognition:
@@ -62,6 +63,39 @@ class ViTRecognition:
         self.transform = transform
         self.model = model
 
+    def output_json(self, highest_confidence_images, template_folder):
+        # Transform the dictionary keys using the mapping
+        transformed_dict = {}
+        for key, value in highest_confidence_images.items():
+            new_key = self.label_map.get(key, str(key))  # Default to string key if no mapping
+            transformed_dict[new_key] = value
+
+        # Define the output file path
+        output_file = os.path.join(template_folder, "_controlcompoment.json")
+
+        # Check if the file already exists and read its content
+        if os.path.exists(output_file):
+            try:
+                with open(output_file, 'r', encoding='utf-8') as file:
+                    existing_data = json.load(file)
+            except Exception as e:
+                print(f"Error reading existing JSON file: {e}")
+                existing_data = {}
+        else:
+            existing_data = {}
+
+        # Merge the existing data with the new transformed data
+        merged_data = {**existing_data, **transformed_dict}  # Union dictionaries (new data overwrites old for same keys)
+
+        # Write the merged data to the JSON file
+        try:
+            with open(output_file, 'w', encoding='utf-8') as file:
+                json.dump(merged_data, file, indent=4, ensure_ascii=False)
+            print(f"Regions successfully saved to {output_file}")
+        except Exception as e:
+            print(f"An error occurred while writing to file: {e}")
+
+
     def classify_components(self, freegame_compoment=[3, 8, 12, 13 ]):
         """使用 ViT 模型對分割元件進行辨識"""
         # Create the "template" folder if it doesn't exist
@@ -95,16 +129,17 @@ class ViTRecognition:
                             # For classes 10 and 11, append all entries
                             if pred_class not in highest_confidence_images:
                                 highest_confidence_images[pred_class] = []
-
+                                
                             highest_confidence_images[pred_class].append({
                                 'path':img_path, 
                                 'confidence':confidence, 
-                                'contour':self.maskDict[img_name]
+                                'contour':self.maskDict[img_name],
+                                'value':None
                             })
                             
                         elif (pred_class not in highest_confidence_images) or (confidence > highest_confidence_images[pred_class]['confidence']):
                             
-                            highest_confidence_images[pred_class] = {'path': img_path, 'confidence': confidence, 'contour': self.maskDict[img_name]}
+                            highest_confidence_images[pred_class] = {'path': img_path, 'confidence': confidence, 'contour': self.maskDict[img_name], 'value': None}
 
         # Copy and display only the highest-confidence images for each class
         for class_id, info in highest_confidence_images.items():
