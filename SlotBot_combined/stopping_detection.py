@@ -11,6 +11,7 @@ from queue import Queue
 import threading
 from grid import BullGrid
 from screenshot import GameScreenshot
+from game_controller import GameController
 
 target_fps = 30
 MAX_BUFFER_SIZE = 32
@@ -21,7 +22,7 @@ if SET_ROI:
     symbol_number = (4,5)
 
 class StoppingFrameCapture:
-    def __init__(self,window_name,grid:BullGrid,save_dir):
+    def __init__(self,window_name,grid:BullGrid,save_dir, Snapshot, elapsed_time_threshold):
         self.grid = grid
         self.window_name = window_name
         self.save_dir = save_dir
@@ -29,6 +30,8 @@ class StoppingFrameCapture:
         self.__button_available = False
         self.__terminated = False
         self.__spin_start_time = 0      
+        self.Snapshot = Snapshot
+        self.time_threshold = elapsed_time_threshold
         if DEBUG:
             print("bbox:",grid.bbox)
 
@@ -51,14 +54,20 @@ class StoppingFrameCapture:
                 else:
                     print("Warning: Frame buffer is full")
                 
-                # only calling 我的按鍵狀態?
+                '''
                 intensity = screenshot.clickable_np(frame,highest_confidence_images=highest_confidence_images)
                 if abs(intial_intensity - intensity) < intensity_threshold and time.time()-self.__spin_start_time>1:
                     self.__button_available = True
                 else:
                     self.__button_available = False
-                
-                
+                '''
+                screenshot.capture_screenshot(window_title=self.window_name, filename=self.Snapshot+'_runtime')
+                avg_intensities = screenshot.clickable(snapshot_path=self.Snapshot+'_runtime',highest_confidence_images=highest_confidence_images)
+                if screenshot.intensity_check(avg_intensities=avg_intensities, intensity_threshold=intensity_threshold):
+                    self.__button_available = True
+                else:
+                    self.__button_available = False
+
                 frame_elapsed = time.time() - frame_start_time
                 if DEBUG:
                     print(f"Frame read time: {frame_elapsed}, Buffer size: {frame_buffer.qsize()}")
@@ -162,7 +171,10 @@ class StoppingFrameCapture:
                         self.__terminated = True
 
         def save_frame(self:StoppingFrameCapture,save_frame_queue):
+            start_time = time.time()
+
             while not self.__terminated:
+                elapsed_time = time.time() - start_time
                 if not save_frame_queue.empty():
                     start_time = time.time()
                     cv2.imwrite(f"{self.save_dir}\\key_frame{self.__output_counter}.png", save_frame_queue.get())
@@ -171,6 +183,10 @@ class StoppingFrameCapture:
                     self.__output_counter+=1
                     if DEBUG:
                         print(f"Saving time: {time.time()-start_time}, Queue size: {save_frame_queue.qsize()}")
+                elif elapsed_time > self.time_threshold:
+                    GameController.freegame_control(window_name=self.window_name, Snapshot=self.Snapshot)
+                elif elapsed_time >= self.time_threshold + 20:
+                    break
                 else:
                     time.sleep(0.01)
                 
