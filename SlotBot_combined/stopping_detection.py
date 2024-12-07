@@ -26,6 +26,7 @@ class StoppingFrameCapture:
         self.grid = grid
         self.window_name = window_name
         self.save_dir = save_dir
+        self.state = "based"
         self.__output_counter = 0
         self.__button_available = False
         self.__terminated = False
@@ -53,7 +54,7 @@ class StoppingFrameCapture:
                     frame_buffer.put(frame)
                 else:
                     print("Warning: Frame buffer is full")
-                
+
                 '''
                 intensity = screenshot.clickable_np(frame,highest_confidence_images=highest_confidence_images)
                 if abs(intial_intensity - intensity) < intensity_threshold and time.time()-self.__spin_start_time>1:
@@ -88,12 +89,10 @@ class StoppingFrameCapture:
             # setting Lucas-Kanade optical flow
             lk_params = dict(winSize=(int(sh/7), int(sw/10)), maxLevel=3, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
 
-
             # setting my parameter
             rolling_record_size = 9
             min_moving_down_distance = sh/5
             min_point_number = min(int(roi_w*roi_h/100000+1),10)
-            print("min_point_number:",min_point_number)
             max_error = 25
             min_rolling_frames = 15
             max_degree = 5
@@ -184,7 +183,8 @@ class StoppingFrameCapture:
                     if DEBUG:
                         print(f"Saving time: {time.time()-start_time}, Queue size: {save_frame_queue.qsize()}")
                 elif elapsed_time > self.time_threshold:
-                    GameController.freegame_control(window_name=self.window_name, Snapshot=self.Snapshot)
+                    if GameController.freegame_control(window_name=self.window_name, Snapshot=self.Snapshot):
+                        self.state = "free"
                 elif elapsed_time >= self.time_threshold + 20:
                     break
                 else:
@@ -195,6 +195,7 @@ class StoppingFrameCapture:
         self.__button_available = False
         self.__terminated = False
         self.__spin_start_time = time.time()
+        self.state = "based"
 
         capture_thread = threading.Thread(target=__get_window_frame, args=(self,frame_buffer))
         process_thread = threading.Thread(target=__detect_stopping_frame, args=(self,frame_buffer, save_frame_queue))
