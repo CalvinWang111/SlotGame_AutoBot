@@ -126,7 +126,7 @@ class SAMSegmentation:
             mask_counter += 1
 
             # Display the final image with all masks
-            # ax.imshow(img)
+            ax.imshow(img)
             
             # Convert the RGBA image to an 8-bit unsigned integer format
             final_image_uint8 = (img * 255).astype(np.uint8)
@@ -145,12 +145,11 @@ class SAMSegmentation:
         image = np.array(image.convert("RGB"))
 
         plt.figure(figsize=(20, 20))
-        # plt.imshow(image)
+        plt.imshow(image)
         plt.axis('off')
-        # plt.show()
+        plt.show()
 
         sam2 = build_sam2(self.model_cfg, self.checkpoint, device=self.device, apply_postprocessing=False)
-        print("build sam completed")
         mask_generator = SAM2AutomaticMaskGenerator(sam2)
         masks = mask_generator.generate(image)
         self.show_anns(masks, image)

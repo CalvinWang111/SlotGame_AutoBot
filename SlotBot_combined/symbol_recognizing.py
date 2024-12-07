@@ -22,6 +22,7 @@ def get_symbol_positions(template_dir,image):
         border=100*zoom_rate
     )
     
+    print('template_match_data',template_match_data)
     matched_positions = []
     for template_name, data in template_match_data.items():
         w, h = data['shape'][1], data['shape'][0]
