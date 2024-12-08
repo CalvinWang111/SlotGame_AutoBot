@@ -43,10 +43,19 @@ class ValueRecognition:
 
         # compare
         for data in ocr_result:
-            print(data)
+            #去除數字英文以外的字元
+            number_of_OCR = data[1][0]
+            for char in data[1][0]:
+                if not ('9' >= char >= '0' or 'Z' >= char >= 'A' or 'z' >= char >= 'a'):
+                    number_of_OCR = number_of_OCR.replace(char,"")
             for meaning in table:
+                # 去除數字英文以外的字元
+                number_of_GPT = meaning[0]
+                for char in meaning[0]:
+                    if not ('9' >= char >= '0' or 'Z' >= char >= 'A' or 'z' >= char >= 'a'):
+                        number_of_GPT = number_of_GPT.replace(char, "")
                 # if value of OCR = value of chatgpt
-                if data[1][0] == meaning[0]:
+                if number_of_OCR == number_of_GPT:
                     x = int(data[0][0][0])
                     y = int(data[0][0][1])
                     w = int(data[0][1][0] - data[0][0][0])
