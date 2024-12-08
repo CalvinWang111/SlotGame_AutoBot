@@ -70,8 +70,8 @@ class OpenAiApi:
                     ]
                 }
             ],
-            max_tokens = 300,
-            temperature = 0.7
+            max_tokens = 500,
+            temperature = 0
         )
         return response.choices[0].message.content
 
@@ -94,6 +94,6 @@ class OpenAiApi:
                 }
             ],
             max_tokens = 500,
-            temperature = 0.7
+            temperature = 0
         )
         return response.choices[0].message.content
