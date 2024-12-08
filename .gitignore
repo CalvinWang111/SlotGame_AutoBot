@@ -6,6 +6,11 @@ VITrun_ver6/
 inputTest/
 SAM_2.egg-info/
 sam2/
+sam2_configs/
+VITModel/
+
+# game images
+GoldenHoYeah/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
