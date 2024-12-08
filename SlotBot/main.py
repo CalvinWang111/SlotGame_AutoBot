@@ -67,7 +67,9 @@ def main():
             valuerec.recognize_value(snapshot_path)
 
         if i == 9:
-            valuerec.get_meaning()
+            for j in range(10):
+                print(j,"times")
+                valuerec.get_meaning()
             ocr_total_run_time = time.time() - ocr_start_time
             print(f'ocr_total_run_time = {ocr_total_run_time}')
         time.sleep(3)

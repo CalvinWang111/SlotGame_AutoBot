@@ -43,6 +43,7 @@ class GetValuePromptFormat:
             2.數字要用<number></number>標籤包起來，意義要用<meaning></meaning>標籤包起來
             3.輸出格式<number></number> = <meaning></meaning>
             4.回答盡量精簡
+            
         """
     )
 
