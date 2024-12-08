@@ -100,8 +100,13 @@ def main():
         
         # process key frames
         for path in key_frame_pathes:
+            key_frame_name = Path(path).stem
+            print(f'Processing key frame: {key_frame_name}')
             img = cv2.imread(path)
-            grid = recoglize_symbol(img=img,grid=grid,template_dir=symbol_template_dir,game_mode=MODE,cell_border=cell_border)
+            grid_recognizer.initialize_grid(img)
+            grid_recognizer.recognize_roi(img, 2)
+            # grid_recognizer.save_annotated_frame(img, image_name)
+            grid_recognizer.save_grid_results(str(key_frame_name))
             save_path = save_dir / f"capture_result{output_counter}.png"
             output_counter += 1
             symbol_recognizer.draw_bboxes_and_icons_on_image(img, symbol_template_dir, grid, save_path=save_path)

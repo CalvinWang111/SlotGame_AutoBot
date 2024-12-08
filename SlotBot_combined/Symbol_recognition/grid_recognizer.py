@@ -155,6 +155,7 @@ class BaseGridRecognizer:
                     
                 
                 self.grid[i, j] = {"symbol": symbol_name, "score": score, "value": None}
+        print(self.grid)
         
     
     def save_grid_results(self, file_name):

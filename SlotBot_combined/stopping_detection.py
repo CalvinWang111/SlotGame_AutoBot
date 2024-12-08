@@ -63,7 +63,7 @@ class StoppingFrameCapture:
                 '''
                 screenshot.capture_screenshot(window_title=self.window_name, filename=self.Snapshot+'_runtime')
                 avg_intensities = screenshot.clickable(snapshot_path=self.Snapshot+'_runtime',highest_confidence_images=highest_confidence_images)
-                if screenshot.intensity_check(avg_intensities=avg_intensities, intensity_threshold=intensity_threshold):
+                if screenshot.intensity_check(initial_avg_intensities=intial_intensity, avg_intensities=avg_intensities, intensity_threshold=intensity_threshold):
                     self.__button_available = True
                 else:
                     self.__button_available = False
