@@ -1,0 +1,34 @@
+# ignored folders
+material/
+result/
+checkpoints/
+VITrun_ver6/
+inputTest/
+SAM_2.egg-info/
+sam2/
+sam2_configs/
+VITModel/
+output/
+screenshots/
+
+# game images
+GoldenHoYeah/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# api key
+.env
+.vscode/
+.DS_Store
+*-checkpoint.ipynb
+.venv
+*.egg*
+build/*
+_C.*
+outputs/*
+checkpoints/*.pt
+test.ipynb
+temp/
