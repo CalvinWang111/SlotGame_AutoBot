@@ -109,8 +109,10 @@ class ValueRecognition:
             for roi, meaning in tuple_list
         ]
         self.meaning_table = dict_list
-        print(f'meaning = {meaning_list}')
-        print(f'result = {dict_list}')
+        print(f'meaning = ')
+        print('\n'.join(map(str, meaning_list)))
+        print(f'result = ')
+        print('\n'.join(map(str, dict_list)))
 
     def recognize_value(self, image_path):
         ocr_result = self.ocr.ocr(image_path, cls=True)
@@ -167,3 +169,25 @@ class ValueRecognition:
             json.dump(json_data, file, ensure_ascii=False, indent=4)
         frame = cv2.imread(image_path)
         cv2.imwrite(rf'./images/value/value+{timestamp}.png', frame)
+
+# 方法2
+# 逐行問ChatGPT，整理出單行的意義
+# def get_meaning(self):
+#     # 逐行問ChatGPT，整理出單行的意義
+#     self.meaning_table = []
+#     for line in self.value_pos_form:
+#         meaning_list = line['meaning']
+#         print(f'meaning = {meaning_list}')
+#
+#         chat_response = self.openai_api.get_simplified_meaning(meaning_list)
+#         print(f'chat_response = {chat_response}')
+#
+#         # 比對標籤，抓出意義
+#         meaning = re.findall(r"<meaning>(.*?)</meaning>", chat_response, re.DOTALL)
+#         line_result = {'roi': line['roi'], 'meaning': meaning[0]}
+#         print(f'line_result = line_result')
+#         print('\n   '.join(map(str, line_result)))
+#
+#         self.meaning_table.append(line_result)
+#     print(f'table_result =')
+#     print('\n   '.join(map(str, self.meaning_table)))
