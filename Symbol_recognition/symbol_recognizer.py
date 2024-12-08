@@ -184,7 +184,15 @@ def process_template_matches(template_match_data, template_dir, img, iou_thresho
                 match_one_template_shape = template_shape
                 match_one_filtered_results = filtered_results
                 match_one_scale = best_scale
-
+        if debug:
+            print(f'{template_name:<20} | score: {filtered_results[0][2]:.3f} | scale: {best_scale:.3f}')
+    if debug:
+        template = cv2.imread(str(template_dir / f'{match_one_template}.png'), cv2.IMREAD_UNCHANGED)
+        cv2.imshow(match_one_template, template)
+        cv2.imshow('img', img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        print("-----------------------------------")
     if match_one == True:
         template_match_data[match_one_template] = {
             'shape': match_one_template_shape,
@@ -193,7 +201,7 @@ def process_template_matches(template_match_data, template_dir, img, iou_thresho
         }
         return match_one_template, max_score
 
-def process_template_matches_sift(template_dir, target_roi, scale_range, debug=False):
+def process_template_matches_sift(template_dir, target_roi, scale_range, min_matches, ratio_threshold, ransac_threshold, vertical_threshold, horizontal_threshold, debug=False):
     # Initialize SIFT detector and BFMatcher
     sift = cv2.SIFT_create()
     bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)  # Use crossCheck=False for knnMatch
@@ -210,7 +218,7 @@ def process_template_matches_sift(template_dir, target_roi, scale_range, debug=F
     # Preprocess the target ROI using CLAHE
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     target_gray = cv2.cvtColor(target_roi, cv2.COLOR_BGR2GRAY)
-    target_gray = clahe.apply(target_gray)
+    # target_gray = clahe.apply(target_gray)
     target_height, target_width = target_gray.shape[:2]
     
     # Compute keypoints and descriptors for the target ROI
@@ -228,7 +236,7 @@ def process_template_matches_sift(template_dir, target_roi, scale_range, debug=F
         template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
 
         # Preprocess the template using CLAHE
-        template_gray = clahe.apply(template_gray)
+        # template_gray = clahe.apply(template_gray)
         template_height, template_width = template_gray.shape[:2]
         
         # Compute keypoints and descriptors for the template
@@ -239,7 +247,6 @@ def process_template_matches_sift(template_dir, target_roi, scale_range, debug=F
             continue
 
         # Match descriptors using BFMatcher and Lowe's Ratio Test
-        ratio_threshold = 0.8
         matches_knn = bf.knnMatch(descriptors_template, descriptors_target, k=2)
         good_matches = []
         for m, n in matches_knn:
@@ -247,7 +254,7 @@ def process_template_matches_sift(template_dir, target_roi, scale_range, debug=F
                 good_matches.append(m)
 
         # Filter matches based on spatial consistency
-        if len(good_matches) >= 4:  # Need at least 4 matches to compute homography/affine
+        if len(good_matches) >= min_matches:  # Need at least 4 matches to compute homography/affine
             src_pts = np.float32([keypoints_template[m.queryIdx].pt for m in good_matches])
             dst_pts = np.float32([keypoints_target[m.trainIdx].pt for m in good_matches])
 
@@ -257,17 +264,13 @@ def process_template_matches_sift(template_dir, target_roi, scale_range, debug=F
 
             # Calculate the differences in normalized positions
             position_diffs = src_pts_norm - dst_pts_norm
-
-            # Focus on the vertical differences (y-axis)
             vertical_diffs = position_diffs[:, 1]
-
-            # Define a threshold for acceptable vertical differences
-            vertical_threshold = 0.2  # Adjust this value as needed
+            horizontal_diffs = position_diffs[:, 0]
 
             # Filter matches based on vertical position consistency
             position_consistent_matches = []
             for i, m in enumerate(good_matches):
-                if abs(vertical_diffs[i]) <= vertical_threshold:
+                if abs(vertical_diffs[i]) <= vertical_threshold and abs(horizontal_diffs[i]) <= horizontal_threshold:
                     position_consistent_matches.append(m)
 
             # Proceed if we have enough position-consistent matches
@@ -276,7 +279,7 @@ def process_template_matches_sift(template_dir, target_roi, scale_range, debug=F
                 dst_pts_consistent = np.float32([keypoints_target[m.trainIdx].pt for m in position_consistent_matches]).reshape(-1, 1, 2)
 
                 # Estimate affine transformation using RANSAC
-                M, mask_ransac = cv2.estimateAffinePartial2D(src_pts_consistent, dst_pts_consistent, method=cv2.RANSAC, ransacReprojThreshold=20.0)
+                M, mask_ransac = cv2.estimateAffinePartial2D(src_pts_consistent, dst_pts_consistent, method=cv2.RANSAC, ransacReprojThreshold=ransac_threshold)
 
                 if M is not None:
                     matches_mask = mask_ransac.ravel().tolist()
@@ -356,6 +359,7 @@ def process_template_matches_sift(template_dir, target_roi, scale_range, debug=F
         cv2.imshow("Template Keypoints", keypoints_template_img)
         cv2.imshow("Filtered Matches", matches_img)
         print(f'Best match: {best_match} | Matches: {best_num_matches} | Scale: {best_scale:.2f} | Score: {best_score:<10.2f}')
+        print("-----------------------------------")
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
@@ -427,7 +431,6 @@ def draw_grid_on_image(img, grid:BaseGrid, color=(255, 255, 255), thickness=5):
 
 def draw_bboxes_and_icons_on_image(img, template_dir, grid, save_path, icon_size=50):
     color = (255, 255, 255)
-    
     for i in range(grid.row):
         for j in range(grid.col):
             if grid[i, j]["symbol"] is None:

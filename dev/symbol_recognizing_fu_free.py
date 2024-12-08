@@ -1,104 +1,30 @@
 import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
+import cv2
+from Symbol_recognition.grid_recognizer import BaseGridRecognizer
 
-from Symbol_recognition.grid import BaseGrid
-from Symbol_recognition.utils import *
-from Symbol_recognition.symbol_recognizer import *
-
-GAME = 'fu'
 MODE = 'free'
+GAME = 'fu'
 DEBUG = False
 
-grid = None
-border = 0
-template_match_data = {}
+image_dir = Path(f"./images/{GAME}/screenshots/{MODE}_game")
+config_file = Path(f'./Symbol_recognition/configs/{GAME}.json')
+grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=config_file, window_size=(1920, 1080), debug=DEBUG)
 
-template_dir = Path(f'images/{GAME}/symbols/free_game')
-img_dir = Path(f'images/{GAME}/screenshots/free_game')
-output_dir = Path(f'temp/{GAME}_free_game_output')
-output_dir.mkdir(parents=True, exist_ok=True)
-grid_path = Path(f'dev/grid/{GAME}_{MODE}_grid.pkl')
 
-if grid_path.exists():
-    grid = BaseGrid.load(str(grid_path))
-
-for img_path in img_dir.iterdir():
-    if DEBUG:
-        break
-    img_name = img_path.stem
-    img = cv2.imread(str(img_path))
-    print(f'Processing {img_name}...')
+frame_count = 0 # replace it when integrating with the game
+for image_path in image_dir.glob('*.png'): 
+    image_name = image_path.stem
+    if DEBUG and image_name != "6":
+        continue
+    print(f"Processing image: {image_name}")
+    img = cv2.imread(str(image_path))
     
-    # initialize grid
-    if grid is None:
-        process_template_matches(
-            template_match_data=template_match_data, 
-            template_dir=template_dir, 
-            img=img, 
-            iou_threshold=0.1, 
-            scale_range=[0.8, 1.3],
-            scale_step=0.05,
-            threshold=0.95,
-            min_area=5000,
-            border=border,
-            grayscale=True
-        )
-        
-        matched_positions = []
-        for template_name, data in template_match_data.items():
-            w, h = data['shape'][1], data['shape'][0]
-            for (top_left, scale, score) in data['result']:
-                x = top_left[0] + w * scale / 2
-                y = top_left[1] + h * scale / 2
-                matched_positions.append((x, y))
-                # roi = img[top_left[1]:top_left[1]+int(h*scale), top_left[0]:top_left[0]+int(w*scale)]
-                # print(f'template_name: {template_name}, scale: {scale}, area: {w*h*scale*scale}, score: {score}')
-                # cv2.imshow('roi', roi)
-                # cv2.waitKey(0)
-                # cv2.destroyAllWindows()
-        if len(matched_positions) == 0:
-            print("Could not find any matches")
-            break
-        print(f'Found {len(matched_positions)} matches')
-                
-        grid_bbox, grid_shape = get_grid_info(matched_positions)
-        grid = BaseGrid(grid_bbox, grid_shape)
-        grid.save(str(grid_path))
-        print(f'initial grid shape: {grid.row} x {grid.col}')
-        
-        # draw_grid_on_image(img, grid)
-        # img_copy = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
-        # cv2.imshow('grid', img_copy)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-        
-    for i in range(grid.row):
-        for j in range(grid.col):
-            x, y, w, h = grid.get_roi(i, j)
-            roi = img[y-border:y+h+border, x-border:x+w+border]
+    grid_recognizer.initialize_grid(img)
+    grid_recognizer.recognize_roi(img, 2)
+    grid_recognizer.save_annotated_frame(img, image_name)
+    grid_recognizer.save_grid_results(str(frame_count))
 
-            best_match, best_score, num_matches = process_template_matches_sift(template_dir, roi, (0.7, 1.3), False)
-            grid[i, j] = best_match
-
-    output_path = output_dir / f'{img_name}.png'
-    draw_bboxes_and_icons_on_image(img, template_dir, grid, str(output_path))
-
-if DEBUG:
-    img_path = Path('images/fu/screenshots/free_game/vlcsnap-2024-11-10-15h37m09s088.png')
-    # img_path = Path('images/fu/screenshots/free_game/vlcsnap-2024-11-10-15h35m53s352.png')
-    img_name = img_path.stem
-    img = cv2.imread(str(img_path))
-
-    for i in range(grid.row):
-        for j in range(grid.col):
-
-            x, y, w, h = grid.get_roi(i, j)
-            roi = img[y-border:y+h+border, x-border:x+w+border]
-            # roi = img[y:y+h, x:x+w]
-            
-            best_match, best_scale, num_matches = process_template_matches_sift(template_dir, roi, (0.7, 1.3), True)
-            grid[i, j] = best_match
-            
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+    frame_count += 1
+    print("------------------------------------------------------")

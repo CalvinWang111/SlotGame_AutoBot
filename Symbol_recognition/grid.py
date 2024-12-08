@@ -28,11 +28,13 @@ class BaseGrid:
         with open(path, 'wb') as f:
             pickle.dump(self, f)
     
-    def save_results_as_json(self, save_dir: Path, template_dir: Path, frame_count: int):
+    def save_results_as_json(self, save_dir: Path, template_dir: Path, file_name: str):
         output_list = []
         for i in range(self.row):
             for j in range(self.col):
                 cell = self._grid[i][j]
+                if cell["symbol"] is None:
+                    continue
                 if cell is not None:
                     output_dict = {
                         "key": cell["symbol"],
@@ -42,7 +44,7 @@ class BaseGrid:
                         "value": [i, j]
                     }
                     output_list.append(output_dict)
-        with open(str(save_dir / f"{frame_count}.json"), "w") as f:
+        with open(str(save_dir / f"{file_name}.json"), "w") as f:
             json.dump(output_list, f, indent=4)
     
     def __getitem__(self, idx):
