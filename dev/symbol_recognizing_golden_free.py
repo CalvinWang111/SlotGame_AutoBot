@@ -2,9 +2,9 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from TemplateMatching.grid import BaseGrid
-from TemplateMatching.utils import *
-from TemplateMatching.symbol_recognizer import *
+from Symbol_recognition.grid import BaseGrid
+from Symbol_recognition.utils import *
+from Symbol_recognition.symbol_recognizer import *
 
 GAME = 'golden'
 MODE = 'free'

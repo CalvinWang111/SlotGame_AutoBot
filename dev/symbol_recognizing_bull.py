@@ -3,9 +3,9 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 import cv2
 import time
-from TemplateMatching.grid import BullGrid
-from TemplateMatching.symbol_recognizer import *
-from TemplateMatching.utils import *
+from Symbol_recognition.grid import BullGrid
+from Symbol_recognition.symbol_recognizer import *
+from Symbol_recognition.utils import *
 
 MODE = 'base'
 GAME = 'bull'
