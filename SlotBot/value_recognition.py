@@ -1,3 +1,4 @@
+from paddle.base.libpaddle.pir.ops import maximum
 from paddleocr import PaddleOCR
 from ChatGPT.openai_api import OpenAiApi
 from dotenv import load_dotenv
@@ -100,7 +101,11 @@ class ValueRecognition:
             print(line)
 
     def get_meaning(self):
-        list_num = 0
+        for i in range(len(self.value_pos_form)):
+            if len(self.value_pos_form[i]['meaning']) <= 2:
+                self.value_pos_form[i]['meaning'] = []
+        for line in self.value_pos_form:
+            print(line)
         for i in range(10):
             meaning_list = [{'position': line['roi'], 'meanings': line['meaning']} for line in self.value_pos_form]
             chat_response = self.openai_api.get_simplified_meaning(meaning_list)
@@ -110,14 +115,15 @@ class ValueRecognition:
                 {'roi': [int(n) for n in roi.strip('[]').split(',')], 'meaning': meaning}
                 for roi, meaning in tuple_list
             ]
-            if list_num < len(dict_list):
-                list_num = len(dict_list)
+            if self.meaning_table == None:
+                self.meaning_table = dict_list
+            if len(self.meaning_table) < len(dict_list):
                 self.meaning_table = dict_list
 
         print(f'meaning = ')
         print('\n'.join(map(str, meaning_list)))
         print(f'result = ')
-        print('\n'.join(map(str, dict_list)))
+        print('\n'.join(map(str, self.meaning_table)))
 
     def recognize_value(self, image_path):
         ocr_result = self.ocr.ocr(image_path, cls=True)
