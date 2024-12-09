@@ -45,6 +45,7 @@ class StoppingFrameCapture:
             sct = mss.mss()
             frame_time = 1/target_fps
             screenshot = GameScreenshot()
+            count = 1
             
             while not self.__terminated:
                 frame_start_time = time.time() 
@@ -62,7 +63,11 @@ class StoppingFrameCapture:
                     self.__button_available = False
                 '''
                 screenshot.capture_screenshot(window_title=self.window_name, filename=self.Snapshot+'_runtime')
-                avg_intensities = screenshot.clickable(snapshot_path=self.Snapshot+'_runtime',highest_confidence_images=highest_confidence_images)
+                avg_intensities = screenshot.clickable(snapshot_path='./images/'+self.Snapshot+'_runtime.png',highest_confidence_images=highest_confidence_images)
+
+                #print('intial_intensity', intial_intensity)
+                #print('avg_intensities', avg_intensities)
+
                 if screenshot.intensity_check(initial_avg_intensities=intial_intensity, avg_intensities=avg_intensities, intensity_threshold=intensity_threshold):
                     self.__button_available = True
                 else:
@@ -75,6 +80,7 @@ class StoppingFrameCapture:
                     time.sleep(frame_time - frame_elapsed)
                 else:
                     print("Warning: Capture speed lower than target frame rate")
+                count += 1
             sct.close()
             
         def __detect_stopping_frame(self:StoppingFrameCapture,frame_buffer, save_frame_queue):
@@ -185,7 +191,7 @@ class StoppingFrameCapture:
                         print(f"Saving time: {time.time()-start_time}, Queue size: {save_frame_queue.qsize()}")
                 elif elapsed_time > self.time_threshold:
                     GameController.freegame_control(window_name=self.window_name, Snapshot=self.Snapshot)
-                elif elapsed_time >= self.time_threshold + 20:
+                elif elapsed_time >= self.time_threshold + 1:
                     break
                 else:
                     time.sleep(0.01)
