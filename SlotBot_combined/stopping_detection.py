@@ -62,16 +62,22 @@ class StoppingFrameCapture:
                 else:
                     self.__button_available = False
                 '''
+                clickable_start_time = time.time()
                 screenshot.capture_screenshot(window_title=self.window_name, filename=self.Snapshot+'_runtime')
                 avg_intensities = screenshot.clickable(snapshot_path='./images/'+self.Snapshot+'_runtime.png',highest_confidence_images=highest_confidence_images)
-
+                clickable_end_time = time.time()
+                print(f'clickable check time: {clickable_end_time-clickable_start_time}')
+                
                 #print('intial_intensity', intial_intensity)
                 #print('avg_intensities', avg_intensities)
 
+                intensity_start_time = time.time()
                 if screenshot.intensity_check(initial_avg_intensities=intial_intensity, avg_intensities=avg_intensities, intensity_threshold=intensity_threshold):
                     self.__button_available = True
                 else:
                     self.__button_available = False
+                intensity_end_time = time.time()
+                print(f'Intensity check time: {intensity_end_time-intensity_start_time}')
 
                 frame_elapsed = time.time() - frame_start_time
                 if DEBUG:
