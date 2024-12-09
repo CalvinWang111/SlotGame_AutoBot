@@ -46,6 +46,7 @@ class BaseGrid:
                     output_list.append(output_dict)
         with open(str(save_dir / f"{file_name}.json"), "w") as f:
             json.dump(output_list, f, indent=4)
+        print(f'output_list: {output_list}')
     
     def __getitem__(self, idx):
         i, j = idx

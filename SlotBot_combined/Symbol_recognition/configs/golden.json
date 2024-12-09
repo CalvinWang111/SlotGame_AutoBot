@@ -1,7 +1,7 @@
 {
     "template_dir": "./images/{game}/symbols/{mode}_game",
     "save_dir": "./temp/{game}_{mode}_output",
-    "grid_path": "./Symbol_recognition/grids/{game}_{mode}_grid.pkl",
+    "grid_path": "./SlotBot_combined/Symbol_recognition/grids/{game}_{mode}_grid.pkl",
     "output_json_dir": "./output/{game}",
     "cell_border": 10,
     "grid_matching_params": {

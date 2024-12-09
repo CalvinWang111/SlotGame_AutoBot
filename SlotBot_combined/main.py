@@ -80,7 +80,11 @@ def main():
 
     config_file = Path(root_dir / f'./SlotBot_combined/Symbol_recognition/configs/{GAME}.json')
     grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=config_file, window_size=(1920, 1080), debug=False)
-    
+    grid_recognizer.initialize_grid(first_frame)
+    # temp_img = draw_grid_on_image(first_frame, grid_recognizer.grid)
+    # cv2.imshow('grid', temp_img)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     stop_catcher = StoppingFrameCapture(window_name=window_name,grid=grid_recognizer.grid,save_dir=key_frame_dir, Snapshot=Snapshot, elapsed_time_threshold=3)
 
@@ -103,14 +107,17 @@ def main():
             key_frame_name = Path(path).stem
             print(f'Processing key frame: {key_frame_name}')
             img = cv2.imread(path)
-            grid_recognizer.initialize_grid(img)
-            grid_recognizer.recognize_roi(img, 2)
-            # grid_recognizer.save_annotated_frame(img, image_name)
-            grid_recognizer.save_grid_results(str(key_frame_name))
-            save_path = save_dir / f"capture_result{output_counter}.png"
-            output_counter += 1
-            symbol_recognizer.draw_bboxes_and_icons_on_image(img, symbol_template_dir, grid, save_path=save_path)
-            grid.clear()
+            # grid_recognizer.initialize_grid(img)
+            # grid_recognizer.recognize_roi(img, 2)
+            # grid_recognizer.save_annotated_frame(img, key_frame_name)
+            # grid_recognizer.save_grid_results(key_frame_name)
+            cv2.imshow('key_frame', img)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+            # save_path = save_dir / f"capture_result{output_counter}.png"
+            # output_counter += 1
+            # symbol_recognizer.draw_bboxes_and_icons_on_image(img, symbol_template_dir, grid, save_path=save_path)
+            # grid.clear()
         '''
         while(stop_catcher.get_key_frames(intial_intensity=avg_intensities, intensity_threshold=intensity_threshold, highest_confidence_images=highest_confidence_images)):
         #while(screenshot.intensity_check(intial_avg_intensities,avg_intensities,intensity_threshold)):
