@@ -82,12 +82,12 @@ def main():
     grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=config_file, window_size=(1920, 1080), debug=False)
     
 
-    stop_catcher = StoppingFrameCapture(window_name=window_name,grid=grid_recognizer.grid,save_dir=key_frame_dir, Snapshot=Snapshot, elapsed_time_threshold=10)
+    stop_catcher = StoppingFrameCapture(window_name=window_name,grid=grid_recognizer.grid,save_dir=key_frame_dir, Snapshot=Snapshot, elapsed_time_threshold=3)
 
     for i in range(spin_round):
         GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=10)
         print('spin round : ',i)
-        time.sleep(3)
+        #time.sleep(3)
         start_time = time.time()
 
         #設定初始值，以此進入while迴圈
@@ -96,7 +96,7 @@ def main():
             for class_id, intensities in intial_avg_intensities.items()
         }
 
-        key_frame_pathes = stop_catcher.get_key_frames(intial_intensity=avg_intensities,intensity_threshold=intensity_threshold,highest_confidence_images=highest_confidence_images)
+        key_frame_pathes = stop_catcher.get_key_frames(intial_intensity=intial_avg_intensities,intensity_threshold=intensity_threshold,highest_confidence_images=highest_confidence_images)
         
         # process key frames
         for path in key_frame_pathes:
