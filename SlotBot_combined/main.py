@@ -46,8 +46,8 @@ def main():
 
     vit_model_path = os.path.join(root_dir, 'VITModel', 'vit_model.pth')
     sam_model_path = os.path.join(root_dir, 'checkpoints', 'sam2_hiera_large.pt')
-    #sam_model_cfg = os.path.join(root_dir, 'sam2', 'configs', 'sam2', 'sam2_hiera_l.yaml')
-    sam_model_cfg = os.path.join(root_dir, 'sam2_configs', 'sam2_hiera_l.yaml')
+    sam_model_cfg = os.path.join(root_dir, 'sam2', 'configs', 'sam2', 'sam2_hiera_l.yaml')
+    #sam_model_cfg = os.path.join(root_dir, 'sam2','sam2_configs', 'sam2_hiera_l.yaml')
     images_dir = os.path.join(root_dir, 'images')
     
     print('sam_model_path',sam_model_path)

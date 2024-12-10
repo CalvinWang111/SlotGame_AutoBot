@@ -50,23 +50,18 @@ class StoppingFrameCapture:
             while not self.__terminated:
                 frame_start_time = time.time() 
                 frame = np.array(sct.grab(monitor))
+
                 if frame_buffer.qsize() < MAX_BUFFER_SIZE:
                     frame_buffer.put(frame)
                 else:
                     print("Warning: Frame buffer is full")
                 
-                '''
-                intensity = screenshot.clickable_np(frame,highest_confidence_images=highest_confidence_images)
-                if abs(intial_intensity - intensity) < intensity_threshold and time.time()-self.__spin_start_time>1:
-                    self.__button_available = True
-                else:
-                    self.__button_available = False
-                '''
+                #avg_intensities = screenshot.clickable(snapshot_path='./images/'+self.Snapshot+'_runtime.png',highest_confidence_images=highest_confidence_images)
                 clickable_start_time = time.time()
-                screenshot.capture_screenshot(window_title=self.window_name, filename=self.Snapshot+'_runtime')
-                avg_intensities = screenshot.clickable(snapshot_path='./images/'+self.Snapshot+'_runtime.png',highest_confidence_images=highest_confidence_images)
+                avg_intensities = screenshot.clickable(snapshot_array=frame, highest_confidence_images=highest_confidence_images, target_buttons=["button_start_spin"])
                 clickable_end_time = time.time()
-                print(f'clickable check time: {clickable_end_time-clickable_start_time}')
+                #print(f'screenshot elapsed time: {screenshot_end_time-screenshot_start_time}')
+                print(f'clickable elapsed time: {clickable_end_time-clickable_start_time}')
                 
                 #print('intial_intensity', intial_intensity)
                 #print('avg_intensities', avg_intensities)
