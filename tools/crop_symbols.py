@@ -9,7 +9,7 @@ from PIL import Image
 root_dir = Path(__file__).parent.parent
 print(root_dir)
 
-GAME = 'golden'
+GAME = 'fu'
 MODE = 'base'
 
 

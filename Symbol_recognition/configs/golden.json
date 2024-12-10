@@ -6,15 +6,15 @@
     "cell_border": 10,
     "grid_matching_params": {
       "iou_threshold": 0.1,
-      "scale_range": [0.5, 1.5],
+      "scale_range": [0.85, 1.05],
       "scale_step": 0.05,
       "threshold": 0.95,
       "min_area": 3000,
-      "border": 100
+      "border": 150
     },
     "cell_matching_params": {
       "iou_threshold": 0.1,
-      "scale_range": [0.5, 1.5],
+      "scale_range": [0.85, 1.1],
       "scale_step": 0.05,
       "threshold": 0.8,
       "min_area": 3000,
@@ -22,7 +22,7 @@
       "border": 10
     },
     "sift_matching_params": {
-      "scale_range": [0.5, 1.5],
+      "scale_range": [0.8, 1.2],
       "min_matches": 4,
       "ratio_threshold": 0.7,
       "ransac_threshold": 10,
@@ -30,5 +30,7 @@
       "horizontal_threshold": 0.2
     },
     "layout_orientation": "vertical",
-    "initialize_grid_mode": "gray"
+    "initialize_grid_mode": "gray",
+    "cell_size": [135, 110],
+    "non_square_scale": 0.8
 }

@@ -5,16 +5,16 @@
     "output_json_dir": "./output/{game}",
     "cell_border": 10,
     "grid_matching_params": {
-      "iou_threshold": 0.1,
-      "scale_range": [0.8, 1.3],
+      "iou_threshold": 0.01,
+      "scale_range": [0.7, 1.1],
       "scale_step": 0.05,
-      "threshold": 0.95,
+      "threshold": 0.92,
       "min_area": 5000,
-      "border": 100
+      "border": 220
     },
     "cell_matching_params": {
       "iou_threshold": 0.1,
-      "scale_range": [0.8, 1.3],
+      "scale_range": [0.7, 1.3],
       "scale_step": 0.05,
       "threshold": 0.85,
       "min_area": 5000,
@@ -22,13 +22,15 @@
       "border": 10
     },
     "sift_matching_params": {
-      "scale_range": [0.8, 1.3],
-      "min_matches": 5,
-      "ratio_threshold": 0.7,
-      "ransac_threshold": 15,
+      "scale_range": [0.5, 1.5],
+      "min_matches": 4,
+      "ratio_threshold": 0.6,
+      "ransac_threshold": 10,
       "vertical_threshold": 0.2,
       "horizontal_threshold": 0.2
     },
     "layout_orientation": "horizontal",
-    "initialize_grid_mode": "color"
+    "initialize_grid_mode": "color",
+    "cell_size": [150, 222],
+    "non_square_scale": 0.6
 }

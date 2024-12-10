@@ -16,7 +16,7 @@ grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=config_fi
 frame_count = 0 # replace it when integrating with the game
 for image_path in image_dir.glob('*.png'): 
     image_name = image_path.stem
-    if DEBUG and image_name != "6":
+    if DEBUG and image_name != "15":
         continue
     print(f"Processing image: {image_name}")
     img = cv2.imread(str(image_path))

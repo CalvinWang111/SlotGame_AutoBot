@@ -41,7 +41,7 @@ for image_path in image_dir.glob('*.png'):
         process_template_matches(
             template_match_data=template_match_data, 
             template_dir=template_dir, 
-            img=img, 
+            roi=img, 
             iou_threshold=0.1, 
             scale_range=[0.9, 1.5],
             scale_step=0.05,
@@ -92,7 +92,7 @@ for image_path in image_dir.glob('*.png'):
             symbol_name = process_template_matches(
                 template_match_data=template_match_data,
                 template_dir=template_dir,
-                img=cell,
+                roi=cell,
                 iou_threshold=0.1,
                 scale_range=[0.9, 1.5],
                 scale_step=0.02,

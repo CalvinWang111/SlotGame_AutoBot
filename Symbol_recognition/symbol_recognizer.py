@@ -1,7 +1,9 @@
 import cv2
 import numpy as np
 from pathlib import Path
+from typing import List, Dict
 from .grid import BaseGrid
+from .template import Template
 
 def custom_nms_boxes(nms_boxes, sorted_confidences, iou_threshold):
     if len(nms_boxes) == 0:
@@ -88,7 +90,8 @@ def apply_nms_and_filter_by_best_scale(matching_results, template_shape, iou_thr
 
     return filtered_results, best_scale
 
-def template_matching(template, img, scale_range, scale_step, threshold, border, grayscale=False):
+def template_matching(template, roi: np.ndarray, iou_threshold, scale_range, scale_step, threshold, min_area, border, grayscale=False):
+    template_shape = template.shape
     if scale_range[0] == scale_range[1]:
         scales = [scale_range[0]]
     else:
@@ -101,7 +104,7 @@ def template_matching(template, img, scale_range, scale_step, threshold, border,
     mask = cv2.threshold(alpha_channel, 16, 255, cv2.THRESH_BINARY)[1]
     if grayscale:
         template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
     
     matching_results = []  # To store the locations of matches
     
@@ -112,17 +115,17 @@ def template_matching(template, img, scale_range, scale_step, threshold, border,
         result = None
         
         # Ensure the resized template is not larger than the image
-        if resized_template.shape[0] > img.shape[0] or resized_template.shape[1] > img.shape[1]:
-            if resized_template.shape[0] >= img.shape[0] - 2*border and resized_template.shape[1] >= img.shape[1] - 2*border:
+        if resized_template.shape[0] > roi.shape[0] or resized_template.shape[1] > roi.shape[1]:
+            if resized_template.shape[0] >= roi.shape[0] - 2*border and resized_template.shape[1] >= roi.shape[1] - 2*border:
                 # perform reverse matching
-                img_h, img_w = img.shape[:2]
-                img_without_border = img[border+padding:img_h-border-padding, border+padding:img_w-border-padding]
+                img_h, img_w = roi.shape[:2]
+                img_without_border = roi[border+padding:img_h-border-padding, border+padding:img_w-border-padding]
                 result = cv2.matchTemplate(resized_template, img_without_border, cv2.TM_CCORR_NORMED)
             else:
                 continue
         else:
             # Perform template matching
-            result = cv2.matchTemplate(img, resized_template, cv2.TM_CCORR_NORMED, mask=resized_mask)
+            result = cv2.matchTemplate(roi, resized_template, cv2.TM_CCORR_NORMED, mask=resized_mask)
         
         # Find locations where the match is greater than the threshold
         loc = np.where(result >= threshold)
@@ -130,78 +133,96 @@ def template_matching(template, img, scale_range, scale_step, threshold, border,
         # Collect all the matching points
         for pt in zip(*loc[::-1]):  # Switch x and y in zip
             matching_results.append((pt, scale, result[pt[1], pt[0]])) # (top_left, scale, match_val)
-    return matching_results
+            
+    # Apply NMS and filter by best scale
+    filtered_results, match_scale = apply_nms_and_filter_by_best_scale(matching_results, template_shape, iou_threshold=iou_threshold)
+    
+    # Skip if no matches found
+    if match_scale is None or not filtered_results:
+        return None, None, None
+    # Check if the area of the bounding box is less than the minimum area
+    if (template_shape[0] * match_scale) * (template_shape[1] * match_scale) < min_area:
+        return None, None, None
+        
+    match_score = filtered_results[0][2]
+    return match_scale, match_score, filtered_results
 
-def process_template_matches(template_match_data, template_dir, img, iou_threshold, scale_range, scale_step, threshold, min_area, border, grayscale=False, match_one=False, debug=False):
+def process_template_matches(template_list: List[Template], roi: np.ndarray, iou_threshold, scale_range, scale_step, threshold, min_area, border, grayscale=False, match_one=False, debug=False):
     max_score = 0
-    match_one_template = None
-    match_one_template_shape = None
-    match_one_filtered_results = None
+    match_one_template_obj = None
     match_one_scale = None
+    matched_positions = []
     
     # Iterate through each template in the folder
-    for path in template_dir.glob('*.png'):  # Assuming templates are PNG files
-        template_name = path.stem
-        template = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)  # Load template as RGBA
-        template_shape = template.shape  # Get template shape for NMS
+    for template_obj in template_list:  # Assuming templates are PNG files
+        template_name = template_obj.name
+        template = template_obj.img
+        tempalte_shape = template.shape
 
         # Check if this template already has a best scale in the template_match_data
-        if template_name in template_match_data and template_match_data[template_name]['best_scale'] is not None:
-            scale = template_match_data[template_name]['best_scale']
-            matching_results = template_matching(template, img, scale_range=[scale, scale], scale_step=1.0, threshold=threshold, border=border, grayscale=grayscale)
+        if template_obj.best_scale is not None:
+            scale = template_obj.best_scale
+            match_scale, match_score, filtered_results = template_matching(
+                template=template,
+                roi=roi,
+                iou_threshold=iou_threshold,
+                scale_range=[scale, scale],
+                scale_step=1.0,
+                threshold=threshold,
+                min_area=min_area,
+                border=border,
+                grayscale=grayscale
+            )
         else:
-            matching_results = template_matching(template, img, scale_range=scale_range, scale_step=scale_step, threshold=threshold, border=border, grayscale=grayscale)
+            match_scale, match_score, filtered_results = template_matching(
+                template=template,
+                roi=roi,
+                iou_threshold=iou_threshold,
+                scale_range=scale_range,
+                scale_step=scale_step,
+                threshold=threshold,
+                min_area=min_area,
+                border=border,
+                grayscale=grayscale
+            )
         
-        # Apply NMS and filter by best scale
-        filtered_results, best_scale = apply_nms_and_filter_by_best_scale(matching_results, template_shape, iou_threshold=iou_threshold)
-        
-        # Check if the area of the bounding box is less than the minimum area
-        if (best_scale is not None) and (template_shape[0] * best_scale) * (template_shape[1] * best_scale) < min_area:
-            best_scale = None
-            filtered_results = []
-            
-        # Skip if no matches found
-        if best_scale is None or not filtered_results:
+        if match_scale is None or match_score is None or filtered_results is None:
             continue
         
         # Add or update the result in the dictionary
         if not match_one:
-            if template_name not in template_match_data:
-                template_match_data[template_name] = {
-                    'shape': template_shape,
-                    'result': filtered_results,
-                    'best_scale': best_scale
-                }
-            else:
-                template_match_data[template_name]['result'] = filtered_results
-        
-        elif match_one:
-            if max_score < filtered_results[0][2]:
+            if template_obj.best_scale is None:
+                template_obj.best_scale = match_scale
+            for (top_left, scale, _) in filtered_results:
+                matched_positions.append(
+                    (top_left[0] + tempalte_shape[1] * scale / 2 + border,
+                    top_left[1] + tempalte_shape[0] * scale / 2 + border)
+                )
                 if debug:
-                    print(f"Match found for {template_name} with score {filtered_results[0][2]}")
-                max_score = filtered_results[0][2]
-                match_one_template = template_name
-                match_one_template_shape = template_shape
-                match_one_filtered_results = filtered_results
-                match_one_scale = best_scale
+                    roi = cv2.rectangle(roi, top_left, (int(top_left[0] + tempalte_shape[1] * scale), int(top_left[1] + tempalte_shape[0] * scale)), (0, 255, 0), 2)
+                    
+        elif match_one:
+            if max_score < match_score:
+                max_score = match_score
+                match_one_template_obj = template_obj
+                match_one_scale = match_scale
         if debug:
-            print(f'{template_name:<20} | score: {filtered_results[0][2]:.3f} | scale: {best_scale:.3f}')
+            print(f'{template_name:<20} | score: {match_score:.3f} | scale: {match_scale:.3f}')
     if debug:
-        template = cv2.imread(str(template_dir / f'{match_one_template}.png'), cv2.IMREAD_UNCHANGED)
-        cv2.imshow(match_one_template, template)
-        cv2.imshow('img', img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.imshow(match_one_template_obj.name, match_one_template_obj.img)
+        # cv2.imshow('ROI', roi)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
         print("-----------------------------------")
     if match_one == True:
-        template_match_data[match_one_template] = {
-            'shape': match_one_template_shape,
-            'result': match_one_filtered_results,
-            'best_scale': match_one_scale
-        }
-        return match_one_template, max_score
+        if match_one_template_obj is not None:
+            match_one_template_obj.best_scale = match_one_scale
+            return match_one_template_obj, max_score
+        return None, None
+    else:
+        return matched_positions
 
-def process_template_matches_sift(template_dir, target_roi, scale_range, min_matches, ratio_threshold, ransac_threshold, vertical_threshold, horizontal_threshold, debug=False):
+def process_template_matches_sift(template_list: List[Template], roi: np.ndarray, scale_range, min_matches, ratio_threshold, ransac_threshold, vertical_threshold, horizontal_threshold, debug=False):
     # Initialize SIFT detector and BFMatcher
     sift = cv2.SIFT_create()
     bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)  # Use crossCheck=False for knnMatch
@@ -214,11 +235,12 @@ def process_template_matches_sift(template_dir, target_roi, scale_range, min_mat
     best_matches = None
     best_scale = None  # To keep track of the estimated scale between template and target ROI
     best_score = float('inf')
+    best_obj = None
 
     # Preprocess the target ROI using CLAHE
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    target_gray = cv2.cvtColor(target_roi, cv2.COLOR_BGR2GRAY)
-    # target_gray = clahe.apply(target_gray)
+    target_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+    target_gray = clahe.apply(target_gray)
     target_height, target_width = target_gray.shape[:2]
     
     # Compute keypoints and descriptors for the target ROI
@@ -231,12 +253,12 @@ def process_template_matches_sift(template_dir, target_roi, scale_range, min_mat
         return None, None
 
     # Iterate through each template in the directory
-    for template_path in Path(template_dir).iterdir():
-        template = cv2.imread(str(template_path), cv2.IMREAD_UNCHANGED)
+    for template_obj in template_list:
+        template = template_obj.img
         template_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
 
         # Preprocess the template using CLAHE
-        # template_gray = clahe.apply(template_gray)
+        template_gray = clahe.apply(template_gray)
         template_height, template_width = template_gray.shape[:2]
         
         # Compute keypoints and descriptors for the template
@@ -299,7 +321,7 @@ def process_template_matches_sift(template_dir, target_roi, scale_range, min_mat
                         if min_scale <= estimated_scale <= max_scale:
                             num_filtered_matches = len(filtered_matches)
                             if (num_filtered_matches > best_num_matches) or (num_filtered_matches == best_num_matches and score < best_score):
-                                best_match = template_path.stem
+                                best_match = template_obj.name
                                 best_num_matches = num_filtered_matches
                                 best_keypoints = keypoints_target
                                 best_template_keypoints = keypoints_template
@@ -307,23 +329,24 @@ def process_template_matches_sift(template_dir, target_roi, scale_range, min_mat
                                 best_matches = filtered_matches
                                 best_scale = estimated_scale
                                 best_score = score
+                                best_obj = template_obj
                             if debug:
-                                print(f'{template_path.stem:<20} | Matches: {num_filtered_matches:<5} | Scale: {estimated_scale:<6.2f} | Score: {score:<6.2f}')
+                                print(f'{template_obj.name:<20} | Matches: {num_filtered_matches:<5} | Scale: {estimated_scale:<6.2f} | Score: {score:<6.2f}')
                         else:
                             if debug:
-                                print(f'{template_path.stem:<20} | Estimated Scale {estimated_scale:5.2f} out of range')
+                                print(f'{template_obj.name:<20} | Estimated Scale {estimated_scale:5.2f} out of range')
                     else:
                         if debug:
-                            print(f'{template_path.stem:<20} | Insufficient filtered matches after RANSAC ({len(filtered_matches)})')
+                            print(f'{template_obj.name:<20} | Insufficient filtered matches after RANSAC ({len(filtered_matches)})')
                 else:
                     if debug:
-                        print(f'{template_path.stem:<20} | Affine transformation could not be estimated after position filtering')
+                        print(f'{template_obj.name:<20} | Affine transformation could not be estimated after position filtering')
             else:
                 if debug:
-                    print(f'{template_path.stem:<20} | Insufficient position-consistent matches ({len(position_consistent_matches)})')
+                    print(f'{template_obj.name:<20} | Insufficient position-consistent matches ({len(position_consistent_matches)})')
         else:
             if debug:
-                print(f'{template_path.stem:<20} | Insufficient good matches ({len(good_matches)})')
+                print(f'{template_obj.name:<20} | Insufficient good matches ({len(good_matches)})')
 
     if not best_match:
         if debug:
@@ -358,12 +381,12 @@ def process_template_matches_sift(template_dir, target_roi, scale_range, min_mat
         cv2.imshow("Target Keypoints", keypoints_target_img)
         cv2.imshow("Template Keypoints", keypoints_template_img)
         cv2.imshow("Filtered Matches", matches_img)
-        print(f'Best match: {best_match} | Matches: {best_num_matches} | Scale: {best_scale:.2f} | Score: {best_score:<10.2f}')
+        print(f'Best match: {best_obj.name} | Matches: {best_num_matches} | Scale: {best_scale:.2f} | Score: {best_score:<10.2f}')
         print("-----------------------------------")
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-    return best_match, best_score
+    return best_obj, best_score
     
 def get_grid_info(points, tolerance=30):
     # tolerance is in pixel
