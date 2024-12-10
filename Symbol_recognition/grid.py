@@ -33,17 +33,16 @@ class BaseGrid:
         for i in range(self.row):
             for j in range(self.col):
                 cell = self._grid[i][j]
-                if cell["symbol"] is None:
+                if cell is None or cell["symbol"] is None:
                     continue
-                if cell is not None:
-                    output_dict = {
-                        "key": cell["symbol"],
-                        "path": str(template_dir / f'{cell["symbol"]}.png'),
-                        "confidence": float(cell["score"]),
-                        "contour": self.get_roi(i, j),
-                        "value": [i, j]
-                    }
-                    output_list.append(output_dict)
+                output_dict = {
+                    "key": cell["symbol"],
+                    "path": str(template_dir / f'{cell["symbol"]}.png'),
+                    "confidence": float(cell["score"]),
+                    "contour": self.get_roi(i, j),
+                    "value": [i, j]
+                }
+                output_list.append(output_dict)
         with open(str(save_dir / f"{file_name}.json"), "w") as f:
             json.dump(output_list, f, indent=4)
     

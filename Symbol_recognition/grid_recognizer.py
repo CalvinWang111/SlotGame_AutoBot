@@ -19,7 +19,7 @@ class BaseGridRecognizer:
         self.save_dir = Path(self.config["save_dir"].format(game=game, mode=mode))
         self.grid_path = Path(self.config["grid_path"].format(game=game, mode=mode))
         self.output_json_dir = Path(self.config["output_json_dir"].format(game=game, mode=mode))
-        self.save_dir.mkdir(parents=True, st_ok=True)
+        self.save_dir.mkdir(parents=True, exist_ok=True)
         self.output_json_dir.mkdir(parents=True, exist_ok=True)
         
         # Define window size and adjustment ratio
@@ -206,7 +206,6 @@ class BaseGridRecognizer:
                 if method == 0:
                     matched_obj, score = process_template_matches(
                         template_list=self.all_templates,
-                        template_dir=self.template_dir,
                         roi=cell_with_border,
                         **self.cell_matching_params,
                         debug=self.debug
@@ -214,7 +213,6 @@ class BaseGridRecognizer:
                 elif method == 1:
                     matched_obj, score = process_template_matches(
                         template_list=self.all_templates,
-                        template_dir=self.template_dir,
                         roi=cell_with_border,
                         **self.cell_matching_params,
                         grayscale=True,
@@ -260,3 +258,110 @@ class BaseGridRecognizer:
     def save_annotated_frame(self, img, file_name):
         save_path = self.save_dir / f"{file_name}.png"
         draw_bboxes_and_icons_on_image(img, self.template_dir, self.grid, save_path=save_path)
+        
+class BullGridRecognizer(BaseGridRecognizer):
+    def __init__(self, game:str, mode:str, config_file: Path, window_size=(1920, 1080), debug=False):
+        super().__init__(game, mode, config_file, window_size, debug)
+        self.is_init_column_heights = False
+        self.direction = 'up' if self.mode == 'base' else 'down'
+        self.arrow_scale_range = self.config["arrow_scale_range"]
+        
+    def load_templates(self):
+        super().load_templates()
+        arrow_name = "up_arrow" if self.mode == 'base' else "down_arrow"
+        for template_obj in self.all_templates:
+            if template_obj.name == arrow_name:
+                self.arrow_template_obj = template_obj
+                break
+        if self.arrow_template_obj is None:
+            raise ValueError(f"Arrow template '{arrow_name}' not found in templates.")
+        
+    def initialize_grid(self, img):
+        if self.grid is not None:
+            return
+        super().initialize_grid(img)
+        growth_direction = 'up' if self.mode == 'base' else 'down'
+        self.grid = BullGrid(
+            bbox=self.grid.bbox, 
+            shape=(self.grid.row, self.grid.col),
+            growth_direction=growth_direction
+        )
+            
+    def recognize_roi(self, img, method):
+        """
+        method: int
+            0: use template matching
+            1: use template mathhing gray
+            2: use SIFT
+        """
+        if self.grid is None:
+            raise ValueError("Grid has not been initialized")
+        self.grid.clear()
+        
+        for j in range(self.grid.col):
+            row_range = (
+                range(self.grid.row - self.grid.column_heights[j], self.grid.row) if self.mode == 'base'
+                else range(self.grid.column_heights[j])
+            )
+            
+            for i in row_range:
+                roi = self.grid.get_roi(i, j)
+                x, y, w, h = roi
+                x1, x2 = x - self.cell_border, x + w + self.cell_border
+                y1, y2 = y - self.cell_border, y + h + self.cell_border
+                cell_with_border = img[y1:y2, x1:x2]
+                
+                matched_obj, score = process_template_matches(
+                    template_list=self.all_templates,
+                    roi=cell_with_border,
+                    **self.cell_matching_params,
+                    
+                    debug=self.debug
+                )
+                
+                if matched_obj is None:
+                    # if self.debug:
+                    #     cv2.imshow("cell", cell_with_border)
+                    #     cv2.waitKey(0)
+                    #     cv2.destroyAllWindows()
+                    self.grid[i, j] = None
+                    continue
+                self.grid[i, j] = {"symbol": matched_obj.name, "score": score, "value": None}
+        
+        if not self.is_init_column_heights:
+            self.grid.init_column_heights()
+            self.is_init_column_heights = True
+            print("initial column heights:", self.grid.column_heights)
+        
+        #find arrow at each column and update column heights        
+        for j in range(self.grid.col):
+            if self.mode == 'base':
+                index = self.grid.row - self.grid.column_heights[j] - 1
+                position = 'top'
+            elif self.mode == 'free':
+                index = self.grid.column_heights[j]
+                position = 'bottom'
+
+            params = self.cell_matching_params.copy()
+            params['scale_range'] = self.arrow_scale_range
+            roi = self.grid.get_roi(index, j)
+            x, y, w, h = roi
+            cell = img[y:y+h, x:x+w]
+            matched_obj, score = process_template_matches(
+                template_list=[self.arrow_template_obj],
+                roi=cell,
+                **params,
+                debug=self.debug
+            )
+            
+            if matched_obj is not None:
+                self.grid.column_heights[j] += 1
+                if self.grid.column_heights[j] > self.grid.max_height:
+                    self.grid.column_heights[j] = self.grid.base_height
+                print(f'{self.direction} arrow found at column[{j}], update column_heights[{j}] to {self.grid.column_heights[j]}')
+
+                if self.grid.column_heights[j] > self.grid.row:
+                    self.grid.add_row(position=position)
+                    print(f'Updated grid shape: {self.grid.row} x {self.grid.col}')
+                
+        print("column heights:", self.grid.column_heights)

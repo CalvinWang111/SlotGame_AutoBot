@@ -4,7 +4,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 import cv2
 from Symbol_recognition.grid_recognizer import BullGridRecognizer
 
-MODE = 'base'
+MODE = 'free'
 GAME = 'bull'
 DEBUG = False
 

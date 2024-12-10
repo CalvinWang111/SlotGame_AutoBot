@@ -206,14 +206,14 @@ def process_template_matches(template_list: List[Template], roi: np.ndarray, iou
                 max_score = match_score
                 match_one_template_obj = template_obj
                 match_one_scale = match_scale
-        if debug:
-            print(f'{template_name:<20} | score: {match_score:.3f} | scale: {match_scale:.3f}')
-    if debug:
-        # cv2.imshow(match_one_template_obj.name, match_one_template_obj.img)
-        # cv2.imshow('ROI', roi)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-        print("-----------------------------------")
+        # if debug:
+        #     print(f'{template_name:<20} | score: {match_score:.3f} | scale: {match_scale:.3f}')
+    # if debug:
+    #     # cv2.imshow(match_one_template_obj.name, match_one_template_obj.img)
+    #     # cv2.imshow('ROI', roi)
+    #     # cv2.waitKey(0)
+    #     # cv2.destroyAllWindows()
+    #     print("-----------------------------------")
     if match_one == True:
         if match_one_template_obj is not None:
             match_one_template_obj.best_scale = match_one_scale
@@ -456,7 +456,7 @@ def draw_bboxes_and_icons_on_image(img, template_dir, grid, save_path, icon_size
     color = (255, 255, 255)
     for i in range(grid.row):
         for j in range(grid.col):
-            if grid[i, j]["symbol"] is None:
+            if grid[i, j] is None or grid[i, j]["symbol"] is None:
                 continue
             template_name = grid[i, j]["symbol"]
             template_path = template_dir / f"{template_name}.png"

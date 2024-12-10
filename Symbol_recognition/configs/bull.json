@@ -1,0 +1,37 @@
+{
+    "template_dir": "./images/{game}/symbols/{mode}_game",
+    "save_dir": "./temp/{game}_{mode}_output",
+    "grid_path": "./Symbol_recognition/grids/{game}_{mode}_grid.pkl",
+    "output_json_dir": "./output/{game}",
+    "cell_border": 10,
+    "grid_matching_params": {
+      "iou_threshold": 0.1,
+      "scale_range": [0.95, 1.3],
+      "scale_step": 0.05,
+      "threshold": 0.95,
+      "min_area": 3000,
+      "border": 150
+    },
+    "cell_matching_params": {
+      "iou_threshold": 0.1,
+      "scale_range": [0.8, 1.3],
+      "scale_step": 0.05,
+      "threshold": 0.88,
+      "min_area": 3000,
+      "match_one": true,
+      "border": 10
+    },
+    "sift_matching_params": {
+      "scale_range": [0.8, 1.5],
+      "min_matches": 4,
+      "ratio_threshold": 0.7,
+      "ransac_threshold": 10,
+      "vertical_threshold": 0.2,
+      "horizontal_threshold": 0.2
+    },
+    "layout_orientation": "vertical",
+    "initialize_grid_mode": "color",
+    "cell_size": [135, 110],
+    "non_square_scale": 0.8,
+    "arrow_scale_range": [1.5, 3.0]
+}
