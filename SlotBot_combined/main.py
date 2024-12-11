@@ -86,7 +86,7 @@ def main():
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
 
-    stop_catcher = StoppingFrameCapture(window_name=window_name,grid=grid_recognizer.grid,save_dir=key_frame_dir, Snapshot=Snapshot, elapsed_time_threshold=3)
+    stop_catcher = StoppingFrameCapture(window_name=window_name,grid=grid_recognizer.grid,save_dir=key_frame_dir, Snapshot=Snapshot, elapsed_time_threshold=3, game_name=GAME)
 
     for i in range(spin_round):
         GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=10)
@@ -118,7 +118,7 @@ def main():
             # output_counter += 1
             # symbol_recognizer.draw_bboxes_and_icons_on_image(img, symbol_template_dir, grid, save_path=save_path)
             # grid.clear()
-        '''
+        
         while(stop_catcher.get_key_frames(intial_intensity=avg_intensities, intensity_threshold=intensity_threshold, highest_confidence_images=highest_confidence_images)):
         #while(screenshot.intensity_check(intial_avg_intensities,avg_intensities,intensity_threshold)):
 
@@ -187,7 +187,7 @@ def main():
                 break
             elif elapsed_time > 30:
                 break
-        '''
+        
 
 if __name__ == "__main__":
     main()
