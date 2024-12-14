@@ -193,6 +193,7 @@ def process_template_matches(template_list: List[Template], roi: np.ndarray, iou
         if not match_one:
             if template_obj.best_scale is None:
                 template_obj.best_scale = match_scale
+                template_obj.match_score = match_score
             for (top_left, scale, _) in filtered_results:
                 matched_positions.append(
                     (top_left[0] + tempalte_shape[1] * scale / 2 + border,

@@ -9,3 +9,4 @@ class Template:
         self.img = img
         self.best_scale = None
         self.is_square = False
+        self.match_score = 0

@@ -124,8 +124,8 @@ class BaseGridRecognizer:
             else:
                 scale = cell_height / template_shape[0] * self.non_square_scale
                 template_obj.img = cv2.resize(template_obj.img, (0, 0), fx=scale, fy=scale)
-            if self.debug:
-                print(f'{template_obj.name} shape: {template_obj.img.shape}')
+            # if self.debug:
+            #     print(f'{template_obj.name} shape: {template_obj.img.shape}')
         
     def initialize_grid(self, img):
         start_time = time.time()
@@ -157,20 +157,17 @@ class BaseGridRecognizer:
             print(f'found {len(matched_positions)} matches')
             print(f'Grid shape {self.grid.row} x {self.grid.col}')
             print(f'cell size: {self.grid.symbol_width} x {self.grid.symbol_height}')
+            img = draw_grid_on_image(img, self.grid)
 
         elapsed_time = time.time() - start_time
         print(f"Time taken to initialize grid: {elapsed_time:.2f} seconds")
         
-        # reset best_scale for all templates
-        for template_obj in self.all_templates:
-            template_obj.best_scale = None
-            
         if self.debug:
             for pos in matched_positions:
                 img = cv2.circle(img, (int(pos[0]), int(pos[1])), 5, (0, 0, 255), -1)
             for template_obj in self.all_templates:
                 if template_obj.best_scale is not None:
-                    print(f'{template_obj.name} best_scale: {template_obj.best_scale:.3f}')
+                    print(f'{template_obj.name} best_scale: {template_obj.best_scale:.3f} score: {template_obj.match_score:.3f}')
                 else:
                     print(f'{template_obj.name} best_scale: None')
             print()
@@ -180,6 +177,10 @@ class BaseGridRecognizer:
             cv2.imshow("roi", roi)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
+        
+        # reset best_scale for all templates
+        for template_obj in self.all_templates:
+            template_obj.best_scale = None
         
     def recognize_roi(self, img, method):
         """
