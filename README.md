@@ -12,15 +12,13 @@
 SlotBot folder: 模組化操作元件辨識，須將模組(sam2/checkpoints/VITModel資料夾放入SlotGame_AutoBot-combined_grid_module專案資料夾內，sam2/checkpoints/VITModel資料夾雲端連結位置:https://drive.google.com/drive/folders/1cPY8fSodutPBDmM-59n8rNku8dqUU7pP?usp=sharing)
 ![image](GoogleDrive.png)
 
-放置方式如下圖
+### 放置方式如下圖
+
 ![image](FolderLocate.png)
 ，VIT模型檔下載路徑如下
-使用Bluestacks模擬器執行遊戲(不能覆蓋其他視窗在上面)，運行main.py即可執行，
-元件指令如下
+使用Bluestacks模擬器執行遊戲(不能覆蓋其他視窗在上面)，運行SlotGame_AutoBot-combined_grid_module/SlotBot_combined/main.py即可執行，
+操作元件對應圖如下
 ```
-    # 4. 操控遊戲
-    GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=8)
-更換classId 使用底下編號與按鍵對應表
         label_map = {
                     0: "button_max_bet",
                     1: "button_additional_bet",
