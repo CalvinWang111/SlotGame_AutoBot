@@ -14,11 +14,11 @@ root_dir = Path(__file__).parent.parent
 print(root_dir)
 
 
-GAME = 'ROARING STRIKE'
+GAME = 'Plusz_LegendOfRa'
 MODE = 'base'
 SCALE = 1
 
-image_path = root_dir / 'images' / f'{GAME}' / 'info' / '5.png'
+image_path = root_dir / 'images' / f'{GAME}' / 'info' / '2.png'
 image = cv2.imread(str(image_path))
 
 # Create the output directory if it doesn't exist
