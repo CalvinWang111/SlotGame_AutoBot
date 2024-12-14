@@ -9,9 +9,12 @@ sam2/
 sam2_configs/
 VITModel/
 output/
+Lib/
+Scripts/
 
 # game images
 GoldenHoYeah/
+*.mkv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -24,6 +27,7 @@ __pycache__/
 .DS_Store
 *-checkpoint.ipynb
 .venv
+pyvenv.cfg
 *.egg*
 build/*
 _C.*

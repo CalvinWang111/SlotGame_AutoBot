@@ -1,3 +1,4 @@
+import time
 import cv2
 import sys
 from pathlib import Path
@@ -9,11 +10,11 @@ from PIL import Image
 root_dir = Path(__file__).parent.parent
 print(root_dir)
 
-GAME = 'Plusz_Joker_sJewels'
+GAME = 'VIVA FROST VEGAS'
 MODE = 'base'
-SCALE = 0.5
+SCALE = 1
 
-image_path = root_dir / 'images' / f'{GAME}' / 'info' / '2.png'
+image_path = root_dir / 'images' / f'{GAME}' / 'info' / '6.png'
 image = cv2.imread(str(image_path))
 
 # Create the output directory if it doesn't exist
@@ -90,6 +91,6 @@ for i, cropped in enumerate(cropped_images):
 
 for i, output_np in enumerate(processed_images):
     # Save the image with transparency (supports PNG format)
-    output_path = output_dir / f'symbol_{i}.png'
+    output_path = output_dir / f'symbol_{time.time()}.png'
     cv2.imwrite(str(output_path), output_np)
     print(f"Saved processed image to {output_path}")
