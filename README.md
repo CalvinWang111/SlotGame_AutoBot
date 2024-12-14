@@ -9,7 +9,10 @@
 資料夾'material'依需求放入分割完元件或是遊戲畫面截圖
 
 **SlotBot使用方式**
-SlotBot folder: 模組化操作元件辨識，須將模組(sam2_configs/checkpoints資料夾內放入同層，sam2_configs/checkpoints資料夾來自於SAM下載安裝後，直接複製過來即可)如圖放置
+SlotBot folder: 模組化操作元件辨識，須將模組(sam2/checkpoints資料夾內放入同層，sam2/checkpoints/VITModel資料夾雲端連結位置:https://drive.google.com/drive/folders/1cPY8fSodutPBDmM-59n8rNku8dqUU7pP?usp=sharing)
+![image](GoogleDrive.png)
+
+
 ![image](readmeFig.png)
 ，VIT模型檔下載路徑如下
 使用Bluestacks模擬器執行遊戲(不能覆蓋其他視窗在上面)，運行main.py即可執行，
@@ -35,5 +38,5 @@ SlotBot folder: 模組化操作元件辨識，須將模組(sam2_configs/checkpoi
                     14: "stickers",
                 }
 
-最新VIT模型下載路徑
-https://drive.google.com/drive/folders/1cPY8fSodutPBDmM-59n8rNku8dqUU7pP?usp=sharing
+
+
