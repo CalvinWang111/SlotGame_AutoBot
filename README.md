@@ -12,10 +12,15 @@
 SlotBot folder: 模組化操作元件辨識，須將模組(sam2/checkpoints/VITModel資料夾放入SlotGame_AutoBot-combined_grid_module專案資料夾內，sam2/checkpoints/VITModel資料夾雲端連結位置:https://drive.google.com/drive/folders/1cPY8fSodutPBDmM-59n8rNku8dqUU7pP?usp=sharing)
 ![image](GoogleDrive.png)
 
+### 確認SAM 2.0模組正確安裝(IF 曾有裝載過舊版本SAM)
+SAM 請安裝模組完成後，確認路徑指向正確，這邊使用pip show sam-2可以去看到模組正確路徑。
+如果遇到同時安裝SAM2、SAM2.1兩版本工具，會依照模組路徑為主
+
+![image](sam2_module.png)
+
 ### 放置方式如下圖
 
 ![image](FolderLocate.png)
-，VIT模型檔下載路徑如下
 使用Bluestacks模擬器執行遊戲(不能覆蓋其他視窗在上面)，運行SlotGame_AutoBot-combined_grid_module/SlotBot_combined/main.py即可執行，
 操作元件對應圖如下
 ```
