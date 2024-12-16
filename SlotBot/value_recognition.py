@@ -105,9 +105,9 @@ class ValueRecognition:
         for line in self.value_pos_form:
             print(line)
 
-    def get_meaning(self, image_paths):
-        for image_path in image_paths:
-            self.get_board_value(image_path)
+    def get_meaning(self, image_paths, image_amount):
+        for i in range(image_amount):
+            self.get_board_value(image_paths[i])
 
         for i in range(len(self.value_pos_form)):
             if len(self.value_pos_form[i]['meaning']) <= 2:
@@ -206,7 +206,7 @@ class ValueRecognition:
 
             sample_files = random.sample(files, min(10, len(files)))
 
-            self.get_meaning(sample_files)
+            self.get_meaning(sample_files, 10)
             ocr_total_run_time = time.time() - ocr_start_time
             print(f'round: {i} ocr_total_run_time = {ocr_total_run_time}')
 

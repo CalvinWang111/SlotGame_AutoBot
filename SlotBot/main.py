@@ -59,17 +59,7 @@ def main():
     for i in range(spin_round):
         GameController.Windowcontrol(GameController, highest_confidence_images=highest_confidence_images, classId=10)
         print('spin round : ', i)
-        if i == 0:
-            valuerec.get_board_value(intialshot_path)
-        elif i <= 9:
-            valuerec.get_board_value(snapshot_path)
-        else:
-            valuerec.recognize_value(snapshot_path)
 
-        if i == 9:
-            valuerec.get_meaning()
-            ocr_total_run_time = time.time() - ocr_start_time
-            print(f'ocr_total_run_time = {ocr_total_run_time}')
         time.sleep(3)
         start_time = time.time()
 
