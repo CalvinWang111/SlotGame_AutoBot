@@ -1,2 +1,18 @@
-# created by virtualenv automatically
-*
+# ignored folders
+material/
+result/
+.idea
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# api key
+.env
+
+*.pt
+*.png
+*.pth
+*.json
+*.yaml

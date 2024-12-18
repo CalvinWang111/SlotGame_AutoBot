@@ -1,6 +1,7 @@
 import base64
 from pathlib import Path
 from openai import OpenAI
+from ChatGPT.prompt_format import PromptFormat, GetValuePromptFormat, GetSimplifiedMeaningPromptFormat
 
 class OpenAiApi:
 
