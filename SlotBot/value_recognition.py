@@ -211,6 +211,5 @@ class ValueRecognition:
             print(f'round: {i} ocr_total_run_time = {ocr_total_run_time}')
 
 
-if __name__ == "__main__":
-    valuerec = ValueRecognition()
-    valuerec.auto_test()
+valuerec = ValueRecognition()
+valuerec.auto_test()
