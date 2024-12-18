@@ -194,8 +194,8 @@ class ValueRecognition:
             cv2.imwrite(rf'./images/value/value+{timestamp}.png', frame)
 
     def auto_test(self):
-        folder_path = './test_images'
-        files = ['./test_images/' + filename for filename in os.listdir(folder_path) if
+        folder_path = './test_images/jp'
+        files = [folder_path + '/' + filename for filename in os.listdir(folder_path) if
                  os.path.isfile(os.path.join(folder_path, filename))]
         for i in range(20):
             #init
@@ -205,7 +205,7 @@ class ValueRecognition:
             self.test_count = i
 
             sample_files = random.sample(files, min(10, len(files)))
-
+            print(sample_files)
             self.get_meaning(sample_files, 10)
             ocr_total_run_time = time.time() - ocr_start_time
             print(f'round: {i} ocr_total_run_time = {ocr_total_run_time}')
