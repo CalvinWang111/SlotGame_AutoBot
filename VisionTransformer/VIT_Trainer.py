@@ -13,7 +13,7 @@ from PIL import Image
 import os
 
 class VisionTransformerTrainer:
-    def __init__(self, train_path, val_path, test_path=None, plot_output=True, batch_size=32, num_epochs=15, learning_rate=1e-5, weight_decay = 0.01,save_dir = './'):
+    def __init__(self, train_path, val_path, test_path=None, plot_output=True, batch_size=32, num_epochs=15, learning_rate=1e-5, weight_decay = 0.01):
         self.train_path = train_path
         self.val_path = val_path
         self.test_path = test_path
@@ -22,8 +22,6 @@ class VisionTransformerTrainer:
         self.num_epochs = num_epochs
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
-        self.save_dir = save_dir
-        os.makedirs(self.save_dir, exist_ok=True)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Initialize data loaders, model, optimizer, and loss function
@@ -36,7 +34,6 @@ class VisionTransformerTrainer:
         self.val_losses = []
         self.train_accuracies = []
         self.val_accuracies = []
-        self.best_val_accuracy = 0.0
 
     def _prepare_data(self):
         transform = transforms.Compose([
@@ -84,14 +81,6 @@ class VisionTransformerTrainer:
             avg_val_loss, val_accuracy = self.validate()
             self.val_losses.append(avg_val_loss)
             self.val_accuracies.append(val_accuracy)
-
-            # Save the best model
-            if val_accuracy > self.best_val_accuracy:
-                self.best_val_accuracy = val_accuracy
-                best_model_path = os.path.join(self.save_dir, "best_model.pth")
-                torch.save(self.model.state_dict(), best_model_path)
-                print(f"New best model saved at epoch {epoch + 1} with validation accuracy {val_accuracy:.2f}%")
-
 
             # Print epoch metrics
             print(f"Epoch {epoch + 1}/{self.num_epochs}")
