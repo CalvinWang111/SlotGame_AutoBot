@@ -26,6 +26,7 @@ class StoppingFrameCapture:
         self.window_name = window_name
         self.save_dir = save_dir
         self.__output_counter = 0
+        self.free_gamestate = False
         self.__button_available = False
         self.__terminated = False
         self.__spin_start_time = 0      
@@ -64,7 +65,7 @@ class StoppingFrameCapture:
                 avg_intensities = screenshot.clickable(snapshot_array=frame, highest_confidence_images=highest_confidence_images, target_buttons=["button_start_spin"])
                 clickable_end_time = time.time()
                 #print(f'screenshot elapsed time: {screenshot_end_time-screenshot_start_time}')
-                print(f'clickable elapsed time: {clickable_end_time-clickable_start_time}')
+                #print(f'clickable elapsed time: {clickable_end_time-clickable_start_time}')
                 
                 #print('intial_intensity', intial_intensity)
                 #print('avg_intensities', avg_intensities)
@@ -75,7 +76,7 @@ class StoppingFrameCapture:
                 else:
                     self.__button_available = False
                 intensity_end_time = time.time()
-                print(f'Intensity check time: {intensity_end_time-intensity_start_time}')
+                #print(f'Intensity check time: {intensity_end_time-intensity_start_time}')
 
                 frame_elapsed = time.time() - frame_start_time
                 if DEBUG:
@@ -128,6 +129,7 @@ class StoppingFrameCapture:
             last_capture_frame = -999
             frame_number = 0
             arrow_combo = 0
+            elapsed_start_time = time.time()
 
             while not (self.__terminated==True and frame_buffer.qsize()==0):
                 if not frame_buffer.empty():
@@ -225,6 +227,14 @@ class StoppingFrameCapture:
                 # prevent busy waiting
                 else:
                     time.sleep(0.01) 
+
+                #Free Game state
+                elapsed__time = (time.time() - elapsed_start_time)
+                if elapsed__time >= 10 and elapsed__time % 5 == 0 and self.__button_available == False:
+                    GameController.freegame_control()
+                    self.free_gamestate = True
+                elif elapsed__time > 30:
+                    self.__terminated = True
 
                 # Termination condition
                 if self.__button_available==True:

@@ -8,6 +8,7 @@ from matplotlib.patches import Rectangle
 # 使用 Matplotlib 的交互工具 
 from matplotlib.widgets import RectangleSelector 
 from tkinter import Tk, simpledialog 
+import time
  
 class GameScreenshot: 
     @staticmethod 
@@ -16,7 +17,8 @@ class GameScreenshot:
         try: 
             # Find the window by title 
             window = gw.getWindowsWithTitle(window_title)[0]  # Get the first matching window 
-            # window.activate()  # Bring the window to the foreground if needed 
+            window.activate()  # Bring the window to the foreground if needed
+            time.sleep(1)
              
             # Get window position and size 
             x, y, width, height = window.left, window.top, window.width, window.height 
