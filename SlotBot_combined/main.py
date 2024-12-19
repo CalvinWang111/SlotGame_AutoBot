@@ -18,6 +18,8 @@ from Symbol_recognition.grid_recognizer import *
 import cv2
 from value_recognition import ValueRecognition
 import threading
+import cProfile
+import pstats
 
 MODE = 'base'
 GAME = 'golden'
@@ -96,6 +98,14 @@ def main():
 
     def keyframes_wrapper(module_instance, key_frame_pathes):
         key_frame_pathes = stop_catcher.get_key_frames(intial_intensity=intial_avg_intensities,intensity_threshold=intensity_threshold,highest_confidence_images=highest_confidence_images)
+    def profiled_keyframes_wrapper(module_instance, key_frame_pathes):
+        profiler = cProfile.Profile()
+        profiler.enable()
+        keyframes_wrapper(module_instance, key_frame_pathes)
+        profiler.disable()
+        stats = pstats.Stats(profiler)
+        stats.sort_stats('cumtime')  # 按累計時間排序
+        stats.print_stats(10)  
 
     for i in range(spin_round):
         GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=10)
@@ -108,19 +118,21 @@ def main():
             class_id: [value + intensity_threshold for value in intensities]
             for class_id, intensities in intial_avg_intensities.items()
         }
-
+    
+    
+        '''
         key_frame_pathes = stop_catcher.get_key_frames(intial_intensity=intial_avg_intensities,intensity_threshold=intensity_threshold,highest_confidence_images=highest_confidence_images)
 
         '''
         key_frame_pathes = []
-        stop_catcher_thread = threading.Thread(target=keyframes_wrapper, args=(stop_catcher, key_frame_pathes))
+        stop_catcher_thread = threading.Thread(target=profiled_keyframes_wrapper, args=(stop_catcher, key_frame_pathes))
         stop_catcher_thread.start()
 
         while stop_catcher_thread.is_alive():
             time.sleep(1)
             if stop_catcher.free_gamestate:
                 print('超過10秒未能恢復操作，判定已經進入免費遊戲')
-        '''
+        
         # process key frames
         for path in key_frame_pathes:
             key_frame_name = Path(path).stem
