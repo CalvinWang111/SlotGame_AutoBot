@@ -9,11 +9,11 @@ import time
 root_dir = Path(__file__).parent.parent
 print(root_dir)
 
-GAME_NAME = 'VIVA FROST VEGAS'
-symbol_number = (4,5)
+GAME_NAME = 'Plusz_ImmortalWaysBuffalo'
+symbol_number = (5,6)
 start_frame = 0
 
-SAVE = False
+SAVE = True
 SET_ROI = True
 DEBUG = True
 bull_mode = False
@@ -62,6 +62,7 @@ def point_in_rect(point,rect):
 stop_times = 0
 while True:
     ret, frame = video.read()
+    frame = frame
     if not ret:
         break
     
@@ -148,12 +149,12 @@ while True:
     if(len(rolling_record)==rolling_record_size):
         if True in rolling_record:
             if ((rolling_record.index(True) == 0 and rolling_record.count(True) == 1) or frame_number-last_capture_frame==25) and (rolling_frames >= min_rolling_frames or (arrow_flag==True and noice_count <= max_noice and arrow_combo<5)):
+                if SAVE:
+                    cv2.imwrite(str(save_path)+f"/{GAME_NAME}_frame{video.get(cv2.CAP_PROP_POS_FRAMES)}.png", frame)
                 if DEBUG:
                     cv2.rectangle(frame, (roi_x, roi_y), (roi_x + roi_w, roi_y + roi_h), (0, 255, 255), 2)
                     waiting_time = 1000
                     cv2.putText(frame,"rolling frames: "+str(rolling_frames),(roi_x,roi_y-20),cv2.FONT_HERSHEY_PLAIN,2,(0,0,255),3)
-                if SAVE:
-                    cv2.imwrite(str(save_path)+f"/{GAME_NAME}_frame{video.get(cv2.CAP_PROP_POS_FRAMES)}.png", frame)
                 if(arrow_flag):
                     arrow_combo += 1
                 else:

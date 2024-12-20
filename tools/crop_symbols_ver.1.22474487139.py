@@ -14,15 +14,16 @@ root_dir = Path(__file__).parent.parent
 print(root_dir)
 
 
-GAME = 'Plusz_LegendOfRa'
+GAME = 'Plusz_CoinStrikeHoldAndWin'
 MODE = 'base'
 SCALE = 1
 
-image_path = root_dir / 'images' / f'{GAME}' / 'info' / '2.png'
+#image_path = root_dir / 'images' / f'{GAME}' / 'info' / 'info (0).png'
+image_path = root_dir / 'images' / f'{GAME}' / 'screenshots' / 'base_game' / 'Plusz_CoinStrikeHoldAndWin_frame6605.0.png'
 image = cv2.imread(str(image_path))
 
 # Create the output directory if it doesn't exist
-output_dir = root_dir / 'images' / f'{GAME}' / 'symbols'
+output_dir = root_dir / 'images' / f'{GAME}' / 'symbols' / 'base_game'
 output_dir.mkdir(parents=True, exist_ok=True)
 
 # Check if the image was loaded successfully
