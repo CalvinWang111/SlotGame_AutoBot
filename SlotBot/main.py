@@ -26,6 +26,7 @@ def main():
 
     vit_model_path = os.path.join(root_dir, 'VITModel', 'vit_model.pth')
     sam_model_path = os.path.join(root_dir, 'checkpoints', 'sam2_hiera_large.pt')
+    #sam_model_cfg = os.path.join(root_dir, 'sam2', 'configs', 'sam2', 'sam2_hiera_l.yaml')
     sam_model_cfg = os.path.join(root_dir, 'sam2_configs', 'sam2_hiera_l.yaml')
     images_dir = os.path.join(root_dir, 'images')
     
@@ -82,10 +83,20 @@ def main():
                     print('into try loop')
                     screenshot.capture_screenshot(window_title=window_name, filename=Snapshot+'freegame')
 
+                    # try template
+                    freegame_screenshot = os.path.join(root_dir, 'images', Snapshot+'freegame.png')
+                    all_freegame_btn_json_path = os.path.join(root_dir, 'marquee_tool', Snapshot + '_runtime', Snapshot + '_runtime_regions.json')
+                    all_freegame_btn_json = json.load(open(all_freegame_btn_json_path, encoding='utf=8'))
+                    matched_loc = test_template_matching(freegame_screenshot, all_freegame_btn_json)
+                    if len(matched_loc) > 0:
+                        loc = random.choice(matched_loc)
+                        GameController.click_in_window(window_title=window_name, x_offset=loc[0] + loc[2]//2, y_offset=loc[1] + loc[3]//2)
+                        break
+
                     # Segment the image
                     maskDict_path = os.path.join(images_dir, Snapshot+'freegame' + ".png")
                     maskDict = sam.segment_image(maskDict_path)
-
+         
                     # Classify components
                     vit = ViTRecognition(
                         Snapshot=Snapshot, 

@@ -15,24 +15,27 @@ from game_controller import GameController
 
 target_fps = 30
 MAX_BUFFER_SIZE = 32
-SAVE_THREAD = False     # enable this if you need faster storage speed
 DEBUG = False
 SET_ROI = False         # For testing, will not use data of grid but manually select
 if SET_ROI:
     symbol_number = (4,5)
 
 class StoppingFrameCapture:
-    def __init__(self,window_name,grid:BullGrid,save_dir, Snapshot, elapsed_time_threshold):
+    def __init__(self,window_name,grid:BullGrid,save_dir, Snapshot, elapsed_time_threshold,game_name):
         self.grid = grid
         self.window_name = window_name
         self.save_dir = save_dir
-        self.state = "based"
         self.__output_counter = 0
+        self.free_gamestate = False
         self.__button_available = False
         self.__terminated = False
         self.__spin_start_time = 0      
         self.Snapshot = Snapshot
         self.time_threshold = elapsed_time_threshold
+        if(game_name=="bull"):
+            self.bull_mode = True
+        else:
+            self.bull_mode = False
         if DEBUG:
             print("bbox:",grid.bbox)
 
@@ -46,28 +49,34 @@ class StoppingFrameCapture:
             sct = mss.mss()
             frame_time = 1/target_fps
             screenshot = GameScreenshot()
+            count = 1
             
             while not self.__terminated:
                 frame_start_time = time.time() 
                 frame = np.array(sct.grab(monitor))
+
                 if frame_buffer.qsize() < MAX_BUFFER_SIZE:
                     frame_buffer.put(frame)
                 else:
                     print("Warning: Frame buffer is full")
+                
+                #avg_intensities = screenshot.clickable(snapshot_path='./images/'+self.Snapshot+'_runtime.png',highest_confidence_images=highest_confidence_images)
+                clickable_start_time = time.time()
+                avg_intensities = screenshot.clickable(snapshot_array=frame, highest_confidence_images=highest_confidence_images, target_buttons=["button_start_spin"])
+                clickable_end_time = time.time()
+                #print(f'screenshot elapsed time: {screenshot_end_time-screenshot_start_time}')
+                #print(f'clickable elapsed time: {clickable_end_time-clickable_start_time}')
+                
+                #print('intial_intensity', intial_intensity)
+                #print('avg_intensities', avg_intensities)
 
-                '''
-                intensity = screenshot.clickable_np(frame,highest_confidence_images=highest_confidence_images)
-                if abs(intial_intensity - intensity) < intensity_threshold and time.time()-self.__spin_start_time>1:
+                intensity_start_time = time.time()
+                if screenshot.intensity_check(initial_avg_intensities=intial_intensity, avg_intensities=avg_intensities, intensity_threshold=intensity_threshold):
                     self.__button_available = True
                 else:
                     self.__button_available = False
-                '''
-                screenshot.capture_screenshot(window_title=self.window_name, filename=self.Snapshot+'_runtime')
-                avg_intensities = screenshot.clickable(snapshot_path=self.Snapshot+'_runtime',highest_confidence_images=highest_confidence_images)
-                if screenshot.intensity_check(avg_intensities=avg_intensities, intensity_threshold=intensity_threshold):
-                    self.__button_available = True
-                else:
-                    self.__button_available = False
+                intensity_end_time = time.time()
+                #print(f'Intensity check time: {intensity_end_time-intensity_start_time}')
 
                 frame_elapsed = time.time() - frame_start_time
                 if DEBUG:
@@ -76,12 +85,18 @@ class StoppingFrameCapture:
                     time.sleep(frame_time - frame_elapsed)
                 else:
                     print("Warning: Capture speed lower than target frame rate")
+                count += 1
             sct.close()
             
-        def __detect_stopping_frame(self:StoppingFrameCapture,frame_buffer, save_frame_queue):
+        def __detect_stopping_frame(self:StoppingFrameCapture,frame_buffer):
             roi_x, roi_y, roi_w, roi_h = self.grid.bbox
             sh = self.grid.symbol_height
             sw = self.grid.symbol_width
+            # adjust detecting area into 3 * 5, whitch can make things easy
+            if self.bull_mode:
+                roi_h = 3*sh
+                if self.grid.growth_direction=="up":
+                    roi_y += (self.grid.row - 3)*sh
 
             # setting Shi-Tomasi
             feature_params = dict(maxCorners=50000, qualityLevel=0.01, minDistance=20, blockSize=20)
@@ -89,10 +104,12 @@ class StoppingFrameCapture:
             # setting Lucas-Kanade optical flow
             lk_params = dict(winSize=(int(sh/7), int(sw/10)), maxLevel=3, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
 
+
             # setting my parameter
             rolling_record_size = 9
             min_moving_down_distance = sh/5
             min_point_number = min(int(roi_w*roi_h/100000+1),10)
+            print("min_point_number:",min_point_number)
             max_error = 25
             min_rolling_frames = 15
             max_degree = 5
@@ -104,6 +121,15 @@ class StoppingFrameCapture:
             is_first = True
             last_capture_time = time.time()
             capture_number = 0
+            # some thing about arrow detection
+            arrow_rolling_point_number = 0
+            arrow_flag = False
+            noice_count = 0
+            max_noice = 1
+            last_capture_frame = -999
+            frame_number = 0
+            arrow_combo = 0
+            elapsed_start_time = time.time()
 
             while not (self.__terminated==True and frame_buffer.qsize()==0):
                 if not frame_buffer.empty():
@@ -115,16 +141,20 @@ class StoppingFrameCapture:
                         continue
                     
                     new_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)[roi_y:roi_y+roi_h,roi_x:roi_x+roi_w]
-                    p0 = cv2.goodFeaturesToTrack(new_frame, mask=None, **feature_params)
                     rolling_now = False
                     rolling_point_number = 0
                     if(len(rolling_record)==rolling_record_size):
                         rolling_record.pop(0)
-                        point_record.pop(0)
+
+                    # get Optical Flow
+                    p0 = cv2.goodFeaturesToTrack(new_frame, mask=None, **feature_params)
                     p1, st, err = cv2.calcOpticalFlowPyrLK(old_frame, new_frame, p0, None, **lk_params)
+                    horizontal_range = [9999,-1]
+
                     if p1 is not None:
                         good_new = p1[st == 1]
                         good_old = p0[st == 1]
+                        # get the points moving down
                         for i, (new, old) in enumerate(zip(good_new, good_old)):
                             if err[i]<max_error:
                                 a, b = int(new.ravel()[0])+roi_x,int(new.ravel()[1])+roi_y
@@ -134,83 +164,96 @@ class StoppingFrameCapture:
                                     rolling_point_number += 1
                                     if rolling_point_number >= min_point_number:
                                         rolling_now = True
-                                        # break
+
+                                # arrow detection
+                                if self.bull_mode == True and 8 <= frame_number-last_capture_frame <= 25:
+                                    if noice_count <= max_noice:
+                                        video_height = frame.shape[0]
+                                        if video_height*0.004 < dx**2+dy**2 < video_height*2.8:
+                                            horizontal_range[0] = min(horizontal_range[0],a,c)
+                                            horizontal_range[1] = max(horizontal_range[1],a,c)
+                                            if video_height*0.004 < abs(dy) < video_height*0.02 and abs(dx/dy) <= max_tan:
+                                                arrow_rolling_point_number += 1
+                                    
+                    # more arrow detection
+                    if self.bull_mode == True and 8 <= frame_number-last_capture_frame <= 25:
+                        points_width = horizontal_range[1]-horizontal_range[0]
+                        if(DEBUG):
+                            print(points_width)
+                        if self.bull_mode == True and points_width <= 2*sw and points_width > 0 and arrow_rolling_point_number>0:
+                            arrow_flag = True
+                            rolling_now = True
+                        elif points_width > 2*sw:
+                            noice_count += 1
+                    else:
+                        if DEBUG and frame_number-last_capture_frame == 26:
+                            print(arrow_flag,noice_count,arrow_combo)
+                        noice_count = 0
+                        arrow_flag = False
+
                     rolling_record.append(rolling_now)
-                    point_record.append(rolling_point_number)
                     old_frame = new_frame.copy()
-                    is_first = False
                     if(len(rolling_record)==rolling_record_size):
                         if True in rolling_record:
-                            if rolling_record.index(True) == 0 and rolling_record.count(True) == 1 and rolling_frames >= min_rolling_frames:
-                                if not SAVE_THREAD:
-                                    cv2.imwrite(f"{self.save_dir}\\key_frame{self.__output_counter}.png", frame)
-                                    key_image_pathes.append(f"{self.save_dir}\\key_frame{self.__output_counter}.png")
-                                    print("Get stopping frame, Saved to path:", f"{self.save_dir}\\key_frame{self.__output_counter}.png")
-                                    self.__output_counter+=1
-                                    last_capture_time = time.time()
+                            if ((rolling_record.index(True) == 0 and rolling_record.count(True) == 1) or frame_number-last_capture_frame==25) and (rolling_frames >= min_rolling_frames or (arrow_flag==True and noice_count <= max_noice and arrow_combo<5)):
+                                # the wheel is stop right now, save the image
+                                cv2.imwrite(f"{self.save_dir}\\key_frame{self.__output_counter}.png", frame)
+                                key_image_pathes.append(f"{self.save_dir}\\key_frame{self.__output_counter}.png")
+                                if arrow_flag:
+                                    print("Get arrow stopping frame, Saved to path:", f"{self.save_dir}\\key_frame{self.__output_counter}.png")
+                                    if(DEBUG):
+                                        print(arrow_flag,noice_count,arrow_combo)
+                                    arrow_combo += 1
                                 else:
-                                    if save_frame_queue.qsize() < MAX_BUFFER_SIZE:
-                                        save_frame_queue.put(frame)
-                                    else:
-                                        print("Warning: saving queue is full, skipping frame...")
+                                    print("Get stopping frame, Saved to path:", f"{self.save_dir}\\key_frame{self.__output_counter}.png")
+                                    arrow_combo = 0
+                                self.__output_counter+=1
+                                last_capture_time = time.time()
+                                last_capture_frame = frame_number
                                 capture_number += 1
                             else:
-                                rolling_frames+=1
-                            
+                                if frame_number-last_capture_frame>25:
+                                    # the wheel is still rolling
+                                    rolling_frames+=1
+                                else:
+                                    rolling_frames = 0
                         else:
                             rolling_frames = 0
                     if DEBUG:
                         print(f"Stopping-judgment time: {time.time()-start_time}, Buffer size: {frame_buffer.qsize()}")
-                        
+                    
+                    frame_number += 1
+                
+                # prevent busy waiting
                 else:
                     time.sleep(0.01) 
 
+                #Free Game state
+                elapsed__time = (time.time() - elapsed_start_time)
+                if elapsed__time >= 10 and elapsed__time % 5 == 0 and self.__button_available == False:
+                    GameController.freegame_control()
+                    self.free_gamestate = True
+                elif elapsed__time > 30:
+                    self.__terminated = True
+
+                # Termination condition
                 if self.__button_available==True:
                     if time.time()-last_capture_time>5 :
                         self.__terminated = True
-
-        def save_frame(self:StoppingFrameCapture,save_frame_queue):
-            start_time = time.time()
-
-            while not self.__terminated:
-                elapsed_time = time.time() - start_time
-                if not save_frame_queue.empty():
-                    start_time = time.time()
-                    cv2.imwrite(f"{self.save_dir}\\key_frame{self.__output_counter}.png", save_frame_queue.get())
-                    key_image_pathes.append(f"{self.save_dir}\\key_frame{self.__output_counter}.png")
-                    print("Get stopping frame, Saved to path:", f"{self.save_dir}\\key_frame{self.__output_counter}.png")
-                    self.__output_counter+=1
-                    if DEBUG:
-                        print(f"Saving time: {time.time()-start_time}, Queue size: {save_frame_queue.qsize()}")
-                elif elapsed_time > self.time_threshold:
-                    if GameController.freegame_control(window_name=self.window_name, Snapshot=self.Snapshot):
-                        self.state = "free"
-                elif elapsed_time >= self.time_threshold + 20:
-                    break
-                else:
-                    time.sleep(0.01)
                 
         frame_buffer = Queue()
-        save_frame_queue = Queue()
         self.__button_available = False
         self.__terminated = False
         self.__spin_start_time = time.time()
-        self.state = "based"
 
         capture_thread = threading.Thread(target=__get_window_frame, args=(self,frame_buffer))
-        process_thread = threading.Thread(target=__detect_stopping_frame, args=(self,frame_buffer, save_frame_queue))
-        if SAVE_THREAD:
-            save_thread = threading.Thread(target=save_frame, args=(self,save_frame_queue))   # not necessary for now
+        process_thread = threading.Thread(target=__detect_stopping_frame, args=(self,frame_buffer))
 
         capture_thread.start()
         process_thread.start()
-        if SAVE_THREAD:
-            save_thread.start()
 
         capture_thread.join()
         process_thread.join()
-        if SAVE_THREAD:
-            save_thread.join()
 
         print("round over")
         return(key_image_pathes)

@@ -2,10 +2,10 @@ from TemplateMatching.grid import BullGrid
 from TemplateMatching.symbol_recognizer import *
 from TemplateMatching.utils import *
 
-STRAIGHT_VERSION = False
+STRAIGHT_VERSION = True
 template_match_data = {}
 if STRAIGHT_VERSION:
-    zoom_rate = 0.5
+    zoom_rate = 0.5625
 else:
     zoom_rate = 1.0
 
@@ -13,7 +13,11 @@ def get_symbol_positions(template_dir,image):
     process_template_matches(
         template_match_data=template_match_data, 
         template_dir=template_dir, 
-        img=image, 
+        img=image,
+
+        #adaptive 世承建議改法
+        zoom_rate = image.shape[0]/1080,
+
         iou_threshold=0.1*zoom_rate, 
         scale_range=[0.8*zoom_rate, 1.5*zoom_rate],
         scale_step=0.05*zoom_rate,

@@ -8,21 +8,17 @@ from matplotlib.patches import Rectangle
 # 使用 Matplotlib 的交互工具 
 from matplotlib.widgets import RectangleSelector 
 from tkinter import Tk, simpledialog 
+import time
  
 class GameScreenshot: 
     @staticmethod 
-    def capture_screenshot(window_title,filename,region=None): 
+    def capture_screenshot(window_title,filename,region=None, np_return = False): 
         """取得遊戲畫面截圖""" 
         try: 
-            # Define the directory where the screenshot will be saved 
-            save_directory = os.path.join('./images/')
-                 
-            # Create the directory if it does not exist 
-            os.makedirs(save_directory, exist_ok=True) 
-             
             # Find the window by title 
             window = gw.getWindowsWithTitle(window_title)[0]  # Get the first matching window 
-            # window.activate()  # Bring the window to the foreground if needed 
+            window.activate()  # Bring the window to the foreground if needed
+            time.sleep(1)
              
             # Get window position and size 
             x, y, width, height = window.left, window.top, window.width, window.height 
@@ -30,11 +26,21 @@ class GameScreenshot:
              
             # Capture the specified region 
             screenshot = pyautogui.screenshot(region=(x, y, width, height)) 
+
+            if np_return:
+                return np.array(screenshot)
+
+            # Define the directory where the screenshot will be saved 
+            save_directory = os.path.join('./images/')
+                 
+            # Create the directory if it does not exist 
+            os.makedirs(save_directory, exist_ok=True) 
              
             # Save the screenshot to the specified file 
             full_path = os.path.join(save_directory, filename + '.png') 
             screenshot.save(full_path) 
             print(f"Screenshot saved as {full_path}") 
+
         except IndexError: 
             print(f"Window titled '{window_title}' not found.") 
  
@@ -47,7 +53,112 @@ class GameScreenshot:
     def move_to(position): 
         """移動滑鼠到指定位置""" 
         pyautogui.moveTo(position) 
- 
+
+
+    @staticmethod
+    def clickable(snapshot_path=None, snapshot_array=None, highest_confidence_images=None, target_buttons=None, draw_and_show=False):
+        """
+        Analyze the intensity of button regions in the snapshot to determine their clickable state.
+
+        Args:
+            snapshot_path (str): Path to the snapshot image.
+            snapshot_array (np.ndarray): NumPy array of the snapshot image.
+            highest_confidence_images (dict): A dictionary containing bounding box info for detected buttons.
+            target_buttons (list): List of button names to analyze. If None, analyze all buttons.
+            draw_and_show (bool): Whether to draw bounding boxes and display the image.
+
+        Returns:
+            avg_intensities (dict): A dictionary mapping each class_id to a list of average intensities.
+        """
+        # Define the label mapping
+        label_map = {
+            0: "button_max_bet",
+            1: "button_additional_bet",
+            2: "button_close",
+            3: "button_decrease_bet",
+            4: "button_home",
+            5: "button_increase_bet",
+            6: "button_info",
+            7: "button_speedup_spin",
+            8: "button_start_spin",
+            9: "button_three_dot",
+            10: "gold_coin",
+            11: "gold_ingot",
+            12: "stickers"
+        }
+
+        # Convert target_buttons to class_ids for efficient filtering
+        target_class_ids = [class_id for class_id, name in label_map.items() if target_buttons is None or name in target_buttons]
+
+        avg_intensities = {}  # To store average intensities for each class_id
+
+        # Load the snapshot image
+        try:
+            if snapshot_array is not None:
+                # Convert NumPy array to grayscale directly
+                gray_img = snapshot_array if len(snapshot_array.shape) == 2 else np.mean(snapshot_array, axis=2)
+            elif snapshot_path is not None:
+                # Load image from file path and convert to grayscale
+                img = Image.open(snapshot_path)
+                gray_img = np.array(img.convert("L"))
+            else:
+                raise ValueError("Either snapshot_path or snapshot_array must be provided.")
+
+            if draw_and_show:
+                draw = ImageDraw.Draw(img)
+
+            for class_id, info in highest_confidence_images.items():
+                if class_id not in target_class_ids:  # Skip non-target buttons
+                    continue
+
+                avg_intensities[class_id] = []  # Initialize list for each class_id
+
+                if isinstance(info, list):  # Multiple bounding boxes for the class
+                    for info_item in info:
+                        (x, y, w, h) = info_item['contour']
+
+                        # Crop the region specified by the bounding box
+                        cropped_gray = gray_img[y:y + h, x:x + w]
+
+                        # Calculate the average intensity of the grayscale button region
+                        avg_intensity = cropped_gray.mean()
+                        avg_intensities[class_id].append(avg_intensity)
+
+                        if draw_and_show:
+                            # Draw bounding box
+                            draw.rectangle([x, y, x + w, y + h], outline="red", width=5)
+
+                else:  # Single bounding box for the class
+                    (x, y, w, h) = info['contour']
+
+                    # Crop the region specified by the bounding box
+                    cropped_gray = gray_img[y:y + h, x:x + w]
+
+                    # Calculate the average intensity of the grayscale button region
+                    avg_intensity = cropped_gray.mean()
+                    avg_intensities[class_id].append(avg_intensity)
+
+                    if draw_and_show:
+                        # Draw bounding box
+                        draw.rectangle([x, y, x + w, y + h], outline="red", width=5)
+
+            if draw_and_show:
+                # Display the image with bounding boxes
+                plt.figure(figsize=(10, 6))
+                plt.imshow(img)
+                plt.axis('off')
+                plt.show()
+
+        except FileNotFoundError:
+            print(f"Snapshot not found at {snapshot_path}")
+        except ValueError as e:
+            print(f"Error: {e}")
+
+        return avg_intensities
+
+
+
+    '''   
     @staticmethod 
     def clickable(snapshot_path, highest_confidence_images, draw_and_show=False): 
         """ 
@@ -133,7 +244,8 @@ class GameScreenshot:
             print(f"Snapshot not found at {snapshot_path}") 
  
         return avg_intensities 
-     
+    ''' 
+
     @staticmethod 
     def intensity_check(initial_avg_intensities, avg_intensities, intensity_threshold): 
         """ 
@@ -164,9 +276,9 @@ class GameScreenshot:
             # Check each pair of intensities 
             for i in range(min(len(initial_intensities), len(current_intensities))): 
                 if abs(initial_intensities[i] - current_intensities[i]) >= intensity_threshold: 
-                    return True  # Return False if any intensity exceeds the threshold 
+                    return False  # Return False if any intensity exceeds the threshold 
  
-        return False  # Return True if all intensity differences are within the threshold 
+        return True  # Return True if all intensity differences are within the threshold 
      
     @staticmethod 
     def interactive_labeling(image_path,Snapshot): 
