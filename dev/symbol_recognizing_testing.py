@@ -5,8 +5,8 @@ import cv2
 from Symbol_recognition.grid_recognizer import BaseGridRecognizer
 
 MODE = 'base'
-GAME = 'Plusz_Joker_sJewels'
-DEBUG = True
+GAME = 'Plusz_ImmortalWaysBuffalo'
+DEBUG = False
 image_dir = Path(f"./images/{GAME}/screenshots/{MODE}_game")
 config_file = Path(f'./Symbol_recognition/configs/{GAME}.json')
 grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=config_file, window_size=(1920, 1080), debug=DEBUG)
