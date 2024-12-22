@@ -404,14 +404,24 @@ def get_grid_info(points, tolerance=30):
     col_width = []
     for i in range(len(col_x)-1):
         col_width.append(col_x[i+1] - col_x[i])
-    grouped_col_width = min(get_cluster_center(col_width))
-
-    avg_col_width = grouped_col_width
+    if (get_cluster_center(col_width) != []):
+        avg_col_width = min(get_cluster_center(col_width))
+    else:
+        avg_col_width = 0
     
     row_height = []
     for i in range(len(row_y)-1):
         row_height.append(row_y[i+1] - row_y[i])
-    avg_row_height = min(get_cluster_center(row_height))
+    if(get_cluster_center(row_height) != []):
+        avg_row_height = min(get_cluster_center(row_height))
+    else:
+        if(avg_col_width!=0):
+            avg_row_height = avg_col_width
+        else:
+            print("Error: only got one symbol")
+            return None
+    if(avg_col_width == 0):
+        avg_col_width = avg_row_height
 
     display_x      = int(min(col_x) - avg_col_width/2)
     display_y      = int(min(row_y) - avg_row_height/2)
@@ -419,6 +429,7 @@ def get_grid_info(points, tolerance=30):
     display_height = int(max(row_y) + avg_row_height/2 - display_y)
     m = round((max(row_y)-min(row_y))/avg_row_height+1)
     n = round((max(col_x)-min(col_x))/avg_col_width+1)
+
     
     return (display_x, display_y, display_width, display_height), (m,n)
 
