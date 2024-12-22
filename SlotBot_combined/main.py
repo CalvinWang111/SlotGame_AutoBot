@@ -42,7 +42,7 @@ def main():
     screenshot = GameScreenshot()
     window_name = 'BlueStacks App Player'
     Snapshot = 'GoldenHoYeah'
-    intensity_threshold = 10
+    intensity_threshold = 20
     cell_border = 20
     spin_round = 100
     value_recognize_signal = False

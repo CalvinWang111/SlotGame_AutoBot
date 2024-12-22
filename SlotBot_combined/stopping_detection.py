@@ -66,9 +66,6 @@ class StoppingFrameCapture:
                 clickable_end_time = time.time()
                 #print(f'screenshot elapsed time: {screenshot_end_time-screenshot_start_time}')
                 #print(f'clickable elapsed time: {clickable_end_time-clickable_start_time}')
-                
-                #print('intial_intensity', intial_intensity)
-                #print('avg_intensities', avg_intensities)
 
                 intensity_start_time = time.time()
                 if screenshot.intensity_check(initial_avg_intensities=intial_intensity, avg_intensities=avg_intensities, intensity_threshold=intensity_threshold):
@@ -230,8 +227,11 @@ class StoppingFrameCapture:
 
                 #Free Game state
                 elapsed__time = (time.time() - elapsed_start_time)
-                if elapsed__time >= 10 and elapsed__time % 5 == 0 and self.__button_available == False:
-                    GameController.freegame_control()
+                #print('elapsed_time', elapsed__time)
+                if int(elapsed__time) >= 10 and int(elapsed__time) % 5 == 0 and self.__button_available == False:
+                    print('into freegame_control')
+                    #print('button state', self.__button_available)
+                    GameController.freegame_control(Snapshot=self.Snapshot)
                     self.free_gamestate = True
                 elif elapsed__time > 30:
                     self.__terminated = True
