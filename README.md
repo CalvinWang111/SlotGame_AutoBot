@@ -23,6 +23,9 @@ SAM 請安裝模組完成後，確認路徑指向正確，這邊使用pip show s
 ![image](FolderLocate.png)
 使用Bluestacks模擬器執行遊戲(不能覆蓋其他視窗在上面)，運行SlotGame_AutoBot-combined_grid_module/SlotBot_combined/main.py即可執行，
 操作元件對應圖如下
+### json統一輸出路經應在專案目錄下output資料夾，依照GAME(main.py的設定參數)新建該遊戲資料夾
+![image](output_json (2).png)
+
 ```
         label_map = {
                     0: "button_max_bet",
