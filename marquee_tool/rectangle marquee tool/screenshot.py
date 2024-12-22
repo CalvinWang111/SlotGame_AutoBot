@@ -204,8 +204,8 @@ class GameScreenshot:
  
             print('請依照框選區域，使用代號命名該按鍵功用',label_map) 
  
-            x1, y1 = eclick.xdata, eclick.ydata 
-            x2, y2 = erelease.xdata, erelease.ydata 
+            x1, y1 = eclick.xdata, eclick.ydata
+            x2, y2 = erelease.xdata, erelease.ydata
  
             # 確保坐標是正確的 (x, y, w, h) 
             x = min(x1, x2) 
@@ -223,47 +223,47 @@ class GameScreenshot:
                     cropped_img = img.crop((x, y, x + w, y + h)) 
  
                 # 保存裁剪圖像 
-                cropped_img_path = os.path.join(output_dir, f"{button_class}.png") 
+                cropped_img_path = os.path.join(output_dir, f"{button_class}.png")
                 cropped_img.save(cropped_img_path) 
                  
                 # 填充 regions 字典 
                 regions[button_class] = { 
-                    'path': cropped_img_path, 
+                    'path': os.path.join('marquee_tool', Snapshot, 'template', f'{button_class}.png'), 
                     'confidence': 1,  # 默認信心值 
                     'contour': (x, y, w, h) 
                 } 
- 
+
                 # 畫出選中的矩形 
                 rect = Rectangle((x, y), w, h, linewidth=2, edgecolor='red', facecolor='none') 
                 ax.add_patch(rect) 
                 selected_rectangles.append(rect) 
                 plt.draw() 
+
+        # Define the directory where the screenshot will be saved
+        output_dir = os.path.join(output_dir, 'template')
+        os.makedirs(output_dir, exist_ok=True)
  
-        # Define the directory where the screenshot will be saved 
-        output_dir = os.path.join(output_dir, 'template') 
-        os.makedirs(output_dir, exist_ok=True) 
- 
-        # Clear output directory if it exists, or create it if it doesn't 
+        # Clear output directory if it exists, or create it if it doesn't
         if os.path.exists(output_dir): 
-            # Clear the output folder if it exists 
-            for filename in os.listdir(output_dir): 
-                file_path = os.path.join(output_dir, filename) 
+            # Clear the output folder if it exists
+            for filename in os.listdir(output_dir):
+                file_path = os.path.join(output_dir, filename)
                 try: 
-                    if os.path.isfile(file_path) or os.path.islink(file_path): 
-                        os.unlink(file_path)  # Remove the file 
-                    elif os.path.isdir(file_path): 
-                        os.rmdir(file_path)  # Remove the sub-directory (only works if empty) 
+                    if os.path.isfile(file_path) or os.path.islink(file_path):
+                        os.unlink(file_path)  # Remove the file
+                    elif os.path.isdir(file_path):
+                        os.rmdir(file_path)  # Remove the sub-directory (only works if empty)
                 except Exception as e: 
-                    print(f"Failed to delete {file_path}. Reason: {e}") 
- 
+                    print(f"Failed to delete {file_path}. Reason: {e}")
+
         # 修正：移除 drawtype 
-        toggle_selector = RectangleSelector(ax, onselect, interactive=True, button=[1], 
-                                            minspanx=5, minspany=5, spancoords='pixels') 
+        toggle_selector = RectangleSelector(ax, onselect, interactive=True, button=[1],
+                                            minspanx=5, minspany=5, spancoords='pixels')
  
-        # 顯示圖像並等待用戶操作 
-        plt.show() 
- 
-        # 關閉 Tkinter 
-        root.destroy() 
- 
+        # 顯示圖像並等待用戶操作
+        plt.show()
+
+        # 關閉 Tkinter
+        root.destroy()
+
         return regions

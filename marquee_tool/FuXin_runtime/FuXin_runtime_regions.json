@@ -1,0 +1,22 @@
+{
+    "FuXin_fg_btn1": {
+        "path": "marquee_tool\\FuXin_runtime\\template\\FuXin_fg_btn1.png",
+        "confidence": 1,
+        "contour": [
+            481.1646868034329,
+            438.25015015816643,
+            201.8125759132954,
+            74.47845063466855
+        ]
+    },
+    "FuXin_fg_btn2": {
+        "path": "marquee_tool\\FuXin_runtime\\template\\FuXin_fg_btn2.png",
+        "confidence": 1,
+        "contour": [
+            913.6202066176372,
+            495.91088613339366,
+            182.59233058821974,
+            54.05693997677554
+        ]
+    }
+}
