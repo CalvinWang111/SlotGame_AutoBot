@@ -124,8 +124,8 @@ class BaseGridRecognizer:
             else:
                 scale = cell_height / template_shape[0] * self.non_square_scale
                 template_obj.img = cv2.resize(template_obj.img, (0, 0), fx=scale, fy=scale)
-            # if self.debug:
-            #     print(f'{template_obj.name} shape: {template_obj.img.shape}')
+            if self.debug:
+                print(f'{template_obj.name} shape: {template_obj.img.shape}')
         
     def initialize_grid(self, img):
         start_time = time.time()
@@ -136,10 +136,10 @@ class BaseGridRecognizer:
         grid_border = self.grid_matching_params["border"]
         roi = img[grid_border: -grid_border, grid_border: -grid_border]
         
-        if self.debug:
-            cv2.imshow("roi", roi)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+        # if self.debug:
+        #     cv2.imshow("roi", roi)
+        #     cv2.waitKey(0)
+        #     cv2.destroyAllWindows()
         
         matched_positions = process_template_matches(
             template_list=self.all_templates,
@@ -176,9 +176,9 @@ class BaseGridRecognizer:
                 else:
                     print(f'{template_obj.name} best_scale: None')
             print()
-            img = cv2.resize(img, (0, 0), fx=0.5, fy=0.5)
+            # img = cv2.resize(img, (0, 0), fx=0.5, fy=0.5)
+            # roi = cv2.resize(roi, (0, 0), fx=0.5, fy=0.5)
             cv2.imshow("grid", img)
-            roi = cv2.resize(roi, (0, 0), fx=0.5, fy=0.5)
             cv2.imshow("roi", roi)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
