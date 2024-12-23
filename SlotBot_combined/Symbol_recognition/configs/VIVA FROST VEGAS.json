@@ -1,12 +1,12 @@
 {
     "template_dir": "./images/{game}/symbols/{mode}_game",
     "save_dir": "./temp/{game}_{mode}_output",
-    "grid_path": "./Symbol_recognition/grids/{game}_{mode}_grid.pkl",
-    "output_json_dir": "./output/{game}",
+    "grid_path": "./SlotBot_combined/Symbol_recognition/grids/{game}_{mode}_grid.pkl",
+    "output_json_dir": "./output/{game}/symbols/",
     "cell_border": 10,
     "grid_matching_params": {
       "iou_threshold": 0.01,
-      "scale_range": [0.7, 1.0],
+      "scale_range": [0.4, 1.0],
       "scale_step": 0.05,
       "threshold": 0.92,
       "min_area": 5000,
@@ -14,7 +14,7 @@
     },
     "cell_matching_params": {
       "iou_threshold": 0.1,
-      "scale_range": [0.5, 1.5],
+      "scale_range": [0.4, 1.5],
       "scale_step": 0.05,
       "threshold": 0.85,
       "min_area": 5000,

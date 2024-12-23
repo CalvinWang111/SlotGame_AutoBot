@@ -59,7 +59,7 @@ def main():
     print('sam_model_cfg',sam_model_cfg)
 
     sam = SAMSegmentation(Snapshot=Snapshot, sam2_checkpoint=sam_model_path, model_cfg=sam_model_cfg)
-    valuerec = ValueRecognition()
+    # valuerec = ValueRecognition()
 
     # 1. 截圖
     screenshot.capture_screenshot(window_title=window_name, filename=Snapshot)
@@ -83,10 +83,10 @@ def main():
     first_frame = cv2.imread(intialshot_path)
     #first_frame = cv2.imread(r"./images/"+Snapshot+"_runtime.png")
     print(first_frame, type(first_frame))
-    valuerec.get_board_value(intialshot_path)
+    # valuerec.get_board_value(intialshot_path)
 
     config_file = Path(root_dir / f'./SlotBot_combined/Symbol_recognition/configs/{GAME}.json')
-    grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=config_file, window_size=(1920, 1080), debug=False)
+    grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=config_file, window_size=(1920, 1080), debug=True)
     grid_recognizer.initialize_grid(first_frame)
     # temp_img = draw_grid_on_image(first_frame, grid_recognizer.grid)
     # cv2.imshow('grid', temp_img)
@@ -148,8 +148,8 @@ def main():
             #cv2.destroyAllWindows()
 
             numerical_round_count += 1
-            if value_recognize_signal:
-                valuerec.recognize_value([path])
+            # if value_recognize_signal:
+                # valuerec.recognize_value([path])
 
             # save_path = save_dir / f"capture_result{output_counter}.png"
             # output_counter += 1
@@ -166,7 +166,7 @@ def main():
              # Collect the first `file_count` files
             all_keyframes = all_keyframes[:numerical_round_count]
             # numerical_round_cound減少1，key_frame編號記錄從0開始，round從1開始
-            valuerec.get_meaning(all_keyframes, numerical_round_count - 1)
+            # valuerec.get_meaning(all_keyframes, numerical_round_count - 1)
             value_recognize_signal = True
 
 if __name__ == "__main__":
