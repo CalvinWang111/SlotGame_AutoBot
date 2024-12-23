@@ -20,6 +20,7 @@ from value_recognition import ValueRecognition
 import threading
 import cProfile
 import pstats
+import queue
 
 MODE = 'base'
 GAME = 'golden'
@@ -71,7 +72,7 @@ def main():
     # put your own VIT model path here 
     vit = ViTRecognition(Snapshot=Snapshot, maskDict=maskDict,model_path=vit_model_path)
     highest_confidence_images, template_folder = vit.classify_components()
-    vit.output_json(template_folder=template_folder, highest_confidence_images=highest_confidence_images)
+    vit.output_json(template_folder=os.path.join(root_dir, f"./output/{GAME}/button_recognize/"), highest_confidence_images=highest_confidence_images)
 
 
     # 4. 操控遊戲
@@ -98,6 +99,8 @@ def main():
 
     def keyframes_wrapper(module_instance, key_frame_pathes):
         key_frame_pathes = stop_catcher.get_key_frames(intial_intensity=intial_avg_intensities,intensity_threshold=intensity_threshold,highest_confidence_images=highest_confidence_images)
+        result_queue.put(key_frame_pathes)
+
     def profiled_keyframes_wrapper(module_instance, key_frame_pathes):
         profiler = cProfile.Profile()
         profiler.enable()
@@ -106,6 +109,9 @@ def main():
         stats = pstats.Stats(profiler)
         stats.sort_stats('cumtime')  # 按累計時間排序
         stats.print_stats(10)  
+
+    # 使用隊列
+    result_queue = queue.Queue()
 
     for i in range(spin_round):
         GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=10)
@@ -133,6 +139,8 @@ def main():
             if stop_catcher.free_gamestate:
                 print('超過10秒未能恢復操作，判定已經進入免費遊戲')
         
+        key_frame_pathes = result_queue.get()
+
         # process key frames
         for path in key_frame_pathes:
             key_frame_name = Path(path).stem
@@ -147,16 +155,17 @@ def main():
             #cv2.waitKey(0)
             #cv2.destroyAllWindows()
 
-            numerical_round_count += 1
+            numerical_round_count = numerical_round_count + 1
             # if value_recognize_signal:
-                # valuerec.recognize_value([path])
+            #     valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=[path])
 
             # save_path = save_dir / f"capture_result{output_counter}.png"
             # output_counter += 1
             # symbol_recognizer.draw_bboxes_and_icons_on_image(img, symbol_template_dir, grid, save_path=save_path)
             # grid.clear()
             
-        print(key_frame_dir, numerical_round_count)
+        print('key_frame_dir', key_frame_dir)
+        print('numerical_round_count',numerical_round_count)
         #數值組 
         if i == 10:
             all_keyframes = [os.path.join(key_frame_dir, file) for file in os.listdir(key_frame_dir)]
@@ -166,6 +175,8 @@ def main():
              # Collect the first `file_count` files
             all_keyframes = all_keyframes[:numerical_round_count]
             # numerical_round_cound減少1，key_frame編號記錄從0開始，round從1開始
+            print('all_keyframes', all_keyframes)
+            print('numerical_round_count', numerical_round_count)
             # valuerec.get_meaning(all_keyframes, numerical_round_count - 1)
             value_recognize_signal = True
 
