@@ -18,7 +18,7 @@ class ValueRecognition:
         dotenv_path = Path(env_path)
         load_dotenv(dotenv_path=dotenv_path, override=True)
 
-        #os.environ["OPENAI_API_KEY"]
+        #os.environ["OPENAI_API_KEY"] =
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.openai_api = OpenAiApi(self.api_key)
 
@@ -36,8 +36,8 @@ class ValueRecognition:
     #
     def get_board_value(self, image_path):
         # Path to your image
-        #chat_response = self.openai_api.get_value_response(image_path)
-        chat_response = self.openai_api.get_gpt_response(image_path)
+        chat_response = self.openai_api.get_value_response(image_path)
+        #chat_response = self.openai_api.get_gpt_response(image_path)
         print(chat_response)
         tuple_list = re.findall(r"<number>(.*?)</number>.*?<meaning>(.*?)</meaning>", chat_response, re.DOTALL)
         table = [
@@ -138,16 +138,23 @@ class ValueRecognition:
         print(f'result = ')
         print('\n'.join(map(str, self.meaning_table)))
 
-    def recognize_value(self, image_paths):
+    def recognize_value(self, root_dir, mode, image_paths):
         for image_path in image_paths:
             ocr_result = self.ocr.ocr(image_path, cls=True)
             ocr_result = ocr_result[0]
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            game_name = mode
             json_data = {}
             
             #*********************************************
             #filename = f"./json/data_{timestamp}.json"
-            filename = f"./output/data_{timestamp}.json"
+            # 定義完整路徑
+            output_dir = os.path.join(root_dir, f"output/{game_name}/numerical")
+            filename = os.path.join(output_dir, f"data_{timestamp}.json")
+
+            # 檢查並創建目錄
+            os.makedirs(output_dir, exist_ok=True)
+            #filename = os.path.join(root_dir, f"./output/{game_name}/numerical/data_{timestamp}.json")
             #*********************************************
 
             for line in self.meaning_table:
