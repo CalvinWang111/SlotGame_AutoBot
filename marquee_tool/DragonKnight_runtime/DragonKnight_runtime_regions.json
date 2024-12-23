@@ -1,52 +1,52 @@
 {
     "DragonKnight_fg_btn1": {
-        "path": "marquee_tool\\DragonKnight\\template\\DragonKnight_fg_btn1.png",
+        "path": "marquee_tool\\DragonKnight_runtime\\template\\DragonKnight_fg_btn1.png",
         "confidence": 1,
         "contour": [
-            371.11290322580635,
-            301.8225806451612,
-            185.8064516129034,
-            150.9677419354839
+            362.7113826563981,
+            292.47419949012954,
+            207.57864951081797,
+            456.9613326036758
         ]
     },
     "DragonKnight_fg_btn2": {
-        "path": "marquee_tool\\DragonKnight\\template\\DragonKnight_fg_btn2.png",
+        "path": "marquee_tool\\DragonKnight_runtime\\template\\DragonKnight_fg_btn2.png",
         "confidence": 1,
         "contour": [
-            611.1129032258066,
-            297.95161290322585,
-            193.54838709677415,
-            143.2258064516128
+            610.6525473498751,
+            295.3572362888908,
+            207.5786495108182,
+            452.63677740553385
         ]
     },
     "DragonKnight_fg_btn3": {
-        "path": "marquee_tool\\DragonKnight\\template\\DragonKnight_fg_btn3.png",
+        "path": "marquee_tool\\DragonKnight_runtime\\template\\DragonKnight_fg_btn3.png",
         "confidence": 1,
         "contour": [
-            854.983870967742,
-            294.08064516129025,
-            205.1612903225805,
-            158.70967741935488
+            855.7106752445911,
+            292.4741994901295,
+            203.254094312676,
+            458.4028510030566
         ]
     },
     "DragonKnight_fg_btn4": {
         "path": "marquee_tool\\DragonKnight_runtime\\template\\DragonKnight_fg_btn4.png",
         "confidence": 1,
         "contour": [
-            1098.854838709677,
-            305.6935483870968,
-            216.7741935483873,
-            147.0967741935483
+            1100.7688031393068,
+            293.91571788951023,
+            200.37105751391482,
+            456.9613326036758
         ]
     },
     "DragonKnight_fg_btn5": {
         "path": "marquee_tool\\DragonKnight_runtime\\template\\DragonKnight_fg_btn5.png",
         "confidence": 1,
         "contour": [
-            1358.2096774193549,
-            297.95161290322585,
-            181.9354838709678,
-            150.9677419354838
+            1342.9438942352613,
+            293.9157178895103,
+            211.9032047089604,
+            458.4028510030566
         ]
     }
 }
