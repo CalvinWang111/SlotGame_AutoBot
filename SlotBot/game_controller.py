@@ -33,7 +33,7 @@ class GameController:
             # Move and click at the calculated position
             pyautogui.click(click_x, click_y, clicks=clicks, interval=interval, button=button)
             
-            # print(f"Clicked at ({click_x}, {click_y}) in window '{window_title}'")
+            print(f"Clicked at ({click_x}, {click_y}) in window '{window_title}'")
             
         except IndexError:
             print(f"Window titled '{window_title}' not found.")
@@ -45,5 +45,5 @@ class GameController:
                 x_offset = x + w / 2
                 y_offset = y + h / 2
 
-                # print(x_offset, y_offset)
+                print(x_offset, y_offset)
                 self.click_in_window('BlueStacks App Player',x_offset, y_offset)
