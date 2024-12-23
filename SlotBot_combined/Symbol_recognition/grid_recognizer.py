@@ -136,10 +136,10 @@ class BaseGridRecognizer:
         grid_border = self.grid_matching_params["border"]
         roi = img[grid_border: -grid_border, grid_border: -grid_border]
         
-        # if self.debug:
-        #     cv2.imshow("roi", roi)
-        #     cv2.waitKey(0)
-        #     cv2.destroyAllWindows()
+        if self.debug:
+            cv2.imshow("roi", roi)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
         
         matched_positions = process_template_matches(
             template_list=self.all_templates,
@@ -191,8 +191,7 @@ class BaseGridRecognizer:
         """
         method: int
             0: use template matching
-            1: use template mathhing gray
-            2: use SIFT
+            1: use SIFT
         """
         if self.grid is None:
             raise ValueError("Grid has not been initialized")
@@ -214,17 +213,10 @@ class BaseGridRecognizer:
                         template_list=self.all_templates,
                         roi=cell_with_border,
                         **self.cell_matching_params,
+                        grayscale=self.use_gray,
                         debug=self.debug
                     )
                 elif method == 1:
-                    matched_obj, score = process_template_matches(
-                        template_list=self.all_templates,
-                        roi=cell_with_border,
-                        **self.cell_matching_params,
-                        grayscale=True,
-                        debug=self.debug
-                    )
-                elif method == 2:
                     matched_obj, score = process_template_matches_sift(
                         template_list=self.all_templates,
                         roi=cell, 

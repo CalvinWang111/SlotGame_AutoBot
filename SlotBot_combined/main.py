@@ -86,8 +86,10 @@ def main():
     print(first_frame, type(first_frame))
     # valuerec.get_board_value(intialshot_path)
 
-    config_file = Path(root_dir / f'./SlotBot_combined/Symbol_recognition/configs/{GAME}.json')
-    grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=config_file, window_size=(1920, 1080), debug=True)
+    first_frame_width = first_frame.shape[1]
+    first_frame_height = first_frame.shape[0]
+    grid_recognizer_config_file = Path(root_dir / f'./SlotBot_combined/Symbol_recognition/configs/{GAME}.json')
+    grid_recognizer = BaseGridRecognizer(game=GAME, mode='base', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
     grid_recognizer.initialize_grid(first_frame)
     # temp_img = draw_grid_on_image(first_frame, grid_recognizer.grid)
     # cv2.imshow('grid', temp_img)
@@ -140,14 +142,20 @@ def main():
                 print('超過10秒未能恢復操作，判定已經進入免費遊戲')
         
         key_frame_pathes = result_queue.get()
-
+        
+        # 切換盤面辨識模式
+        if grid_recognizer.mode == 'base' and stop_catcher.free_gamestate:
+            grid_recognizer = BaseGridRecognizer(game=GAME, mode='free', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
+        elif grid_recognizer.mode == 'free' and not stop_catcher.free_gamestate:
+            grid_recognizer = BaseGridRecognizer(game=GAME, mode='base', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
+            
         # process key frames
         for path in key_frame_pathes:
             key_frame_name = Path(path).stem
             print(f'Processing key frame: {key_frame_name}')
             img = cv2.imread(path)
             grid_recognizer.initialize_grid(img)
-            grid_recognizer.recognize_roi(img, 2)
+            grid_recognizer.recognize_roi(img, 1)
             grid_recognizer.save_annotated_frame(img, key_frame_name)
             grid_recognizer.save_grid_results(key_frame_name)
             

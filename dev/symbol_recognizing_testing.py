@@ -5,11 +5,15 @@ import cv2
 from SlotBot_combined.Symbol_recognition.grid_recognizer import BaseGridRecognizer
 
 MODE = 'base'
-GAME = 'Plusz_ImmortalWaysBuffalo'
+GAME = 'golden'
 DEBUG = False
+
+vertical_size = (1080, 1920)
+horizontal_size = (1920, 1080)
+
 image_dir = Path(f"./images/{GAME}/screenshots/{MODE}_game")
 config_file = Path(f'./SlotBot_combined/Symbol_recognition/configs/{GAME}.json')
-grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=config_file, window_size=(1920, 1080), debug=DEBUG)
+grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=config_file, window_size=vertical_size, debug=DEBUG)
 
 
 frame_count = 0 # replace it when integrating with the game
@@ -18,6 +22,7 @@ for image_path in image_dir.glob('*.png'):
     # if DEBUG and image_name != "6":
     #     continue
     print(f"Processing image: {image_name}")
+    print(f'image size: {cv2.imread(str(image_path)).shape}')
     img = cv2.imread(str(image_path))
     
     grid_recognizer.initialize_grid(img)

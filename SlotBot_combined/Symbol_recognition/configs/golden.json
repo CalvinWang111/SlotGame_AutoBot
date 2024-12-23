@@ -6,9 +6,9 @@
     "cell_border": 10,
     "grid_matching_params": {
       "iou_threshold": 0.1,
-      "scale_range": [0.5, 1.5],
+      "scale_range": [0.85, 1.05],
       "scale_step": 0.05,
-      "threshold": 0.92,
+      "threshold": 0.95,
       "min_area": 3000,
       "border": 150
     },
