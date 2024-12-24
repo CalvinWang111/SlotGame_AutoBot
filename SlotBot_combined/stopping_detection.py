@@ -230,9 +230,24 @@ class StoppingFrameCapture:
 
                 #Free Game state
                 elapsed__time = (time.time() - elapsed_start_time)
-                if elapsed__time >= 10 and elapsed__time % 5 == 0 and self.__button_available == False:
-                    GameController.freegame_control()
-                    self.free_gamestate = True
+                if int(elapsed__time) >= 10 and int(elapsed__time) % 5 == 0:
+
+                    # free game判定前再次確認使否恢復可按壓狀態
+                    avg_intensities = screenshot.clickable(
+                    snapshot_array=frame,
+                    highest_confidence_images=highest_confidence_images,
+                    target_buttons=["button_start_spin"]
+                    )
+                    if screenshot.intensity_check(initial_avg_intensities=intial_intensity, avg_intensities=avg_intensities, intensity_threshold=intensity_threshold):
+                        self.__button_available = True
+                    else:
+                        self.__button_available = False
+
+                    if self.__button_available == False:    
+                        print('into freegame_control')
+                        #print('button state', self.__button_available)
+                        GameController.freegame_control(Snapshot=self.Snapshot)
+                        self.free_gamestate = True
                 elif elapsed__time > 30:
                     self.__terminated = True
 

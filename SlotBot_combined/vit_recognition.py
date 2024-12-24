@@ -70,6 +70,9 @@ class ViTRecognition:
             new_key = self.label_map.get(key, str(key))  # Default to string key if no mapping
             transformed_dict[new_key] = value
 
+        # 確保 template_folder 存在
+        os.makedirs(template_folder, exist_ok=True)
+
         # Define the output file path
         output_file = os.path.join(template_folder, "_controlcompoment.json")
 
