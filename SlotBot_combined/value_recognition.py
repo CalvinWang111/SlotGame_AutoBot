@@ -18,6 +18,7 @@ class ValueRecognition:
         dotenv_path = Path(env_path)
         load_dotenv(dotenv_path=dotenv_path, override=True)
 
+        #os.environ["OPENAI_API_KEY"] =
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.openai_api = OpenAiApi(self.api_key)
 
