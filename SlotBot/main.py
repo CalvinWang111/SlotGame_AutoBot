@@ -18,20 +18,17 @@ def main():
     # 初始化模組
     screenshot = GameScreenshot()
     window_name = 'BlueStacks App Player'
-    Snapshot = 'GoldenHoYeah'
+    Snapshot = 'FuXin'
     intensity_threshold = 10
-    spin_round = 3
+    spin_round = 10000
     root_dir = Path(__file__).parent.parent
-    print('rootdir',root_dir)
 
     vit_model_path = os.path.join(root_dir, 'VITModel', 'vit_model.pth')
     sam_model_path = os.path.join(root_dir, 'checkpoints', 'sam2_hiera_large.pt')
-    #sam_model_cfg = os.path.join(root_dir, 'sam2', 'configs', 'sam2', 'sam2_hiera_l.yaml')
-    sam_model_cfg = os.path.join(root_dir, 'sam2_configs', 'sam2_hiera_l.yaml')
+    sam_model_cfg = os.path.join(root_dir, 'sam2', 'configs', 'sam2', 'sam2_hiera_l.yaml')
+    # sam_model_cfg = os.path.join(root_dir, 'sam2_configs', 'sam2_hiera_l.yaml')
     images_dir = os.path.join(root_dir, 'images')
-    
-    print('sam_model_path',sam_model_path)
-    print('sam_model_cfg',sam_model_cfg)
+
 
     sam = SAMSegmentation(Snapshot=Snapshot, sam2_checkpoint=sam_model_path, model_cfg=sam_model_cfg)
 
@@ -83,39 +80,32 @@ def main():
                     print('into try loop')
                     screenshot.capture_screenshot(window_title=window_name, filename=Snapshot+'freegame')
 
-                    # try template
-                    freegame_screenshot = os.path.join(root_dir, 'images', Snapshot+'freegame.png')
-                    all_freegame_btn_json_path = os.path.join(root_dir, 'marquee_tool', Snapshot + '_runtime', Snapshot + '_runtime_regions.json')
-                    all_freegame_btn_json = json.load(open(all_freegame_btn_json_path, encoding='utf=8'))
-                    matched_loc = test_template_matching(freegame_screenshot, all_freegame_btn_json)
-                    if len(matched_loc) > 0:
-                        loc = random.choice(matched_loc)
-                        GameController.click_in_window(window_title=window_name, x_offset=loc[0] + loc[2]//2, y_offset=loc[1] + loc[3]//2)
-                        break
 
-                    # Segment the image
-                    maskDict_path = os.path.join(images_dir, Snapshot+'freegame' + ".png")
-                    maskDict = sam.segment_image(maskDict_path)
+                    # # Segment the image
+                    # maskDict_path = os.path.join(images_dir, Snapshot+'freegame' + ".png")
+                    # maskDict = sam.segment_image(maskDict_path)
          
-                    # Classify components
-                    vit = ViTRecognition(
-                        Snapshot=Snapshot, 
-                        maskDict=maskDict, 
-                        model_path=vit_model_path
-                    )
-                    highest_confidence_images, template_folder = vit.classify_components()
-                    vit.output_json(template_folder=template_folder, highest_confidence_images=highest_confidence_images)
+                    # # Classify components
+                    # vit = ViTRecognition(
+                    #     Snapshot=Snapshot,
+                    #     maskDict=maskDict,
+                    #     model_path=vit_model_path
+                    # )
+                    # highest_confidence_images, template_folder = vit.classify_components()
+                    # vit.output_json(template_folder=template_folder, highest_confidence_images=highest_confidence_images)
          
-                    # Check for specific predictions
-                    if any(key in [3,8,12, 13] for key in highest_confidence_images.keys()):
-                        key = [key in [3,8,12,13] for key in highest_confidence_images.keys()]
-                        print('detecting 金元寶或金幣')
-                        GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=key[0])
-                        break  # Exit the loop
+                    # # Check for specific predictions
+                    # if any(key in [3,8,12, 13] for key in highest_confidence_images.keys()):
+                    #     key = [key in [3,8,12,13] for key in highest_confidence_images.keys()]
+                    #     print('detecting 金元寶或金幣')
+                    #     GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=key[0])
+                    #     break  # Exit the loop
 
                     # try template
+
                     freegame_screenshot_path = os.path.join(root_dir, 'images', Snapshot+'freegame.png')
-                    all_freegame_btn_json_path = os.path.join(root_dir, 'marquee_tool', Snapshot + '_runtime', Snapshot + '_runtime_regions.json')
+                    all_freegame_btn_json_path = os.path.join(root_dir, 'marquee_tool', Snapshot, Snapshot + '_regions.json')
+                    print(all_freegame_btn_json_path)
 
                     matched_loc = test_template_matching(freegame_screenshot_path, all_freegame_btn_json_path)
                     if len(matched_loc) > 0:

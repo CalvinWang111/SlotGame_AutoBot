@@ -69,35 +69,34 @@ class GameController:
             print('into try loop')
             screenshot.capture_screenshot(window_title=window_name, filename=Snapshot+'freegame')
 
+            # # try VIT model
+            # maskDict_path = os.path.join(images_dir, Snapshot+'freegame' + ".png")
+            # sam = SAMSegmentation(Snapshot=Snapshot, sam2_checkpoint=sam_model_path, model_cfg=sam_model_cfg)
+            # maskDict = sam.segment_image(maskDict_path)
+                
+            # # Classify components
+            # vit = ViTRecognition(
+            #         Snapshot=Snapshot, 
+            #         maskDict=maskDict, 
+            #         model_path=vit_model_path
+            #     )
+            # highest_confidence_images, template_folder = vit.classify_components()
+            # vit.output_json(template_folder=template_folder, highest_confidence_images=highest_confidence_images)
+                
+            # # Check for specific predictions
+            # if any(key in [3,8,12, 13] for key in highest_confidence_images.keys()):
+            #     key = [key in [3,8,12,13] for key in highest_confidence_images.keys()]
+            #     print('detecting 金元寶或金幣')
+            #     GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=key[0])
+            #     success_continue = True
+
             # try template
             freegame_screenshot = os.path.join(root_dir, 'images', Snapshot+'freegame.png')
             all_freegame_btn_json_path = os.path.join(root_dir, 'marquee_tool', Snapshot + '_runtime', Snapshot + '_runtime_regions.json')
-            all_freegame_btn_json = json.load(open(all_freegame_btn_json_path, encoding='utf=8'))
-            matched_loc = test_template_matching(freegame_screenshot, all_freegame_btn_json)
+            matched_loc = test_template_matching(freegame_screenshot, all_freegame_btn_json_path)
             if len(matched_loc) > 0:
                 loc = random.choice(matched_loc)
                 GameController.click_in_window(window_title=window_name, x_offset=loc[0] + loc[2]//2, y_offset=loc[1] + loc[3]//2)
-                success_continue = True
-
-            # try VIT model
-            maskDict_path = os.path.join(images_dir, Snapshot+'freegame' + ".png")
-            sam = SAMSegmentation(Snapshot=Snapshot, sam2_checkpoint=sam_model_path, model_cfg=sam_model_cfg)
-            maskDict = sam.segment_image(maskDict_path)
-                
-            # Classify components
-            vit = ViTRecognition(
-                    Snapshot=Snapshot, 
-                    maskDict=maskDict, 
-                    model_path=vit_model_path
-                )
-            highest_confidence_images, template_folder = vit.classify_components()
-            vit.output_json(template_folder=template_folder, highest_confidence_images=highest_confidence_images)
-                
-            # Check for specific predictions
-            if any(key in [3,8,12, 13] for key in highest_confidence_images.keys()):
-                key = [key in [3,8,12,13] for key in highest_confidence_images.keys()]
-                print('detecting 金元寶或金幣')
-                GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=key[0])
                 success_continue = True
             
         except Exception as e:

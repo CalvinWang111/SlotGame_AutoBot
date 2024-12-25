@@ -13,7 +13,6 @@ def template_matching(game_screenshot, template, threshold=0.7, method=cv2.TM_CC
     res = cv2.matchTemplate(game_scene_gray, template_gray, method)
 
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    print(max_val)
     # if max_val >= threshold:
     #     x, y = max_loc
     #     return [x, y, w, h]
@@ -27,10 +26,12 @@ def test_template_matching(game_screenshot_path, all_freegame_btn_json_path):
     game_screenshot = cv2.imread(game_screenshot_path)
     display_game_screenshot = game_screenshot.copy()
     matched_loc = []
-    all_freegame_btn_json = json.load(open(all_freegame_btn_json_path, encoding='utf=8'))
 
+    all_freegame_btn_json = json.load(open(all_freegame_btn_json_path, mode='r', encoding='utf=8'))
     for key, value in all_freegame_btn_json.items():
-        template = cv2.imread(value['path'])
+        template_path = os.path.join(root_dir, value['path'])
+        
+        template = cv2.imread(template_path)
         if template_matching(game_screenshot, template):
             matched_loc.append(value['contour'])
             x,y,w,h = value['contour']
@@ -42,16 +43,14 @@ def test_template_matching(game_screenshot_path, all_freegame_btn_json_path):
 
 
 if __name__ == '__main__':
-    # root_dir = Path(__file__).parent.parent
-    # game_screenshot_path = os.path.join(root_dir, 'images', 'FuXinfreegame.png')
-    # template_path = os.path.join(root_dir, 'marquee_tool', 'FuXin_runtime', 'template', 'free_btn.png')
-    # all_freegame_btn_json_path = os.path.join(root_dir, 'marquee_tool', 'FuXin_runtime', 'FuXin_runtime_regions.json')
+    root_dir = Path(__file__).parent.parent
+    game_screenshot_path = os.path.join(root_dir, 'images', 'FuXinfreegame.png')
+    Snapshot = 'FuXin'
+    freegame_screenshot_path = os.path.join(root_dir, 'images', Snapshot+'freegame.png')
+    all_freegame_btn_json_path = os.path.join(root_dir, 'marquee_tool', Snapshot + '_runtime', Snapshot + '_runtime_regions.json')
     # all_freegame_btn_json = json.load(open(all_freegame_btn_json_path, encoding='utf=8'))
-    # game_screenshot = cv2.imread(game_screenshot_path)
-    # template = cv2.imread(template_path)
-    # loc = template_matching(game_screenshot, template)
 
-    # loc = test_template_matching(game_screenshot_path, all_freegame_btn_json)
-    pass
+    loc = test_template_matching(game_screenshot_path, all_freegame_btn_json_path)
+
 
     

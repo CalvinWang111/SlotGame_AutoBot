@@ -27,7 +27,7 @@ def test_template_matching(game_screenshot_path, all_freegame_btn_json_path):
     game_screenshot = cv2.imread(game_screenshot_path)
     display_game_screenshot = game_screenshot.copy()
     matched_loc = []
-    all_freegame_btn_json = json.load(open(all_freegame_btn_json_path, encoding='utf=8'))
+    all_freegame_btn_json = json.load(open(all_freegame_btn_json_path, mode='r', encoding='utf=8'))
     for key, value in all_freegame_btn_json.items():
         template = cv2.imread(value['path'])
         if template_matching(game_screenshot, template):
@@ -35,7 +35,7 @@ def test_template_matching(game_screenshot_path, all_freegame_btn_json_path):
             x,y,w,h = value['contour']
             cv2.rectangle(display_game_screenshot, (int(x),int(y)), (int(x+w), int(y+h)), (255,255,255), 3, cv2.LINE_AA)
     saved_image_path = os.path.join(root_dir, 'images', 'matched_image.png')
-    # cv2.imwrite(saved_image_path, display_game_screenshot)
+    cv2.imwrite(saved_image_path, display_game_screenshot)
     return matched_loc
 
 
