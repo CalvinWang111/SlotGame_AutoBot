@@ -69,35 +69,55 @@ class GameScreenshot:
         """
         # Define the label mapping
         label_map = {
-            0: "button_max_bet",
-            1: "button_additional_bet",
-            2: "button_close",
-            3: "button_decrease_bet",
-            4: "button_home",
-            5: "button_increase_bet",
-            6: "button_info",
-            7: "button_speedup_spin",
-            8: "button_start_spin",
-            9: "button_three_dot",
-            10: "gold_coin",
-            11: "gold_ingot",
-            12: "stickers"
-        }
+                    0: "button_max_bet",
+                    1: "button_additional_bet",
+                    2: "button_close",
+                    3: "confirm",
+                    4: "button_decrease_bet",
+                    5: "button_home",
+                    6: "button_increase_bet",
+                    7: "button_info",
+                    8: "receive",
+                    9: "button_speedup_spin",
+                    10: "button_start_spin",
+                    11: "button_three_dot",
+                    12: "gold_coin",
+                    13: "gold_ingot",
+                    14: "stickers",
+                }
 
         # Convert target_buttons to class_ids for efficient filtering
         target_class_ids = [class_id for class_id, name in label_map.items() if target_buttons is None or name in target_buttons]
 
         avg_intensities = {}  # To store average intensities for each class_id
 
+
+        # Assuming `gray_img` is your grayscale image in NumPy array format
+        def save_gray_image(gray_img, save_path="./output_gray.png"):
+            try:
+                # Ensure the image is in the correct range (0-255)
+                if gray_img.max() > 255 or gray_img.min() < 0:
+                    gray_img = (255 * (gray_img - gray_img.min()) / (gray_img.max() - gray_img.min())).astype(np.uint8)
+
+                # Convert NumPy array back to a PIL image and save
+                gray_image = Image.fromarray(gray_img.astype(np.uint8))
+                gray_image.save(save_path)
+                #print(f"Grayscale image saved at {os.path.abspath(save_path)}")
+            except Exception as e:
+                print(f"Error saving grayscale image: {e}")
+
         # Load the snapshot image
         try:
             if snapshot_array is not None:
                 # Convert NumPy array to grayscale directly
+                img = Image.fromarray(snapshot_array)
                 gray_img = snapshot_array if len(snapshot_array.shape) == 2 else np.mean(snapshot_array, axis=2)
+                #save_gray_image(gray_img=gray_img)
             elif snapshot_path is not None:
                 # Load image from file path and convert to grayscale
                 img = Image.open(snapshot_path)
                 gray_img = np.array(img.convert("L"))
+                
             else:
                 raise ValueError("Either snapshot_path or snapshot_array must be provided.")
 
@@ -135,6 +155,8 @@ class GameScreenshot:
                     avg_intensity = cropped_gray.mean()
                     avg_intensities[class_id].append(avg_intensity)
 
+                    #print('in screenshot clickable 142 lines','info', info)
+                   # print('avg_intensity', avg_intensity, 'avg_intensities', avg_intensities)
                     if draw_and_show:
                         # Draw bounding box
                         draw.rectangle([x, y, x + w, y + h], outline="red", width=5)
@@ -306,22 +328,23 @@ class GameScreenshot:
             """ 
  
             # Define the label mapping 
-            label_map = { 
-                0: "button_max_bet", 
-                1: "button_additional_bet", 
-                2: "button_close", 
-                3: "button_decrease_bet", 
-                4: "button_home", 
-                5: "button_increase_bet", 
-                6: "button_info", 
-                7: "button_speedup_spin", 
-                8: "button_start_spin", 
-                9: "button_three_dot", 
-                10: "gold_coin", 
-                11: "gold_ingot", 
-                12: "stickers" 
-            } 
- 
+            label_map = {
+                    0: "button_max_bet",
+                    1: "button_additional_bet",
+                    2: "button_close",
+                    3: "confirm",
+                    4: "button_decrease_bet",
+                    5: "button_home",
+                    6: "button_increase_bet",
+                    7: "button_info",
+                    8: "receive",
+                    9: "button_speedup_spin",
+                    10: "button_start_spin",
+                    11: "button_three_dot",
+                    12: "gold_coin",
+                    13: "gold_ingot",
+                    14: "stickers",
+                }
             print('請依照框選區域，使用代號命名該按鍵功用',label_map) 
  
             x1, y1 = eclick.xdata, eclick.ydata 
