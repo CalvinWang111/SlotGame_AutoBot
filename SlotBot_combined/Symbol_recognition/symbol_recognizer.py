@@ -101,7 +101,7 @@ def template_matching(template, roi: np.ndarray, iou_threshold, scale_range, sca
     # Split template into RGB and alpha channel
     b_channel, g_channel, r_channel, alpha_channel = cv2.split(template)
     template = cv2.merge((b_channel, g_channel, r_channel))
-    mask = cv2.threshold(alpha_channel, 16, 255, cv2.THRESH_BINARY)[1]
+    mask = cv2.threshold(alpha_channel, 250, 255, cv2.THRESH_BINARY)[1]
     if grayscale:
         template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
         roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
@@ -210,7 +210,9 @@ def process_template_matches(template_list: List[Template], roi: np.ndarray, iou
         if debug:
             print(f'{template_name:<20} | score: {match_score:.3f} | scale: {match_scale:.3f}')
     if debug:
-        cv2.imshow(match_one_template_obj.name, match_one_template_obj.img)
+        matched_copy = match_one_template_obj.img
+        matched_copy = cv2.resize(matched_copy, (0, 0), fx=match_one_scale, fy=match_one_scale)
+        cv2.imshow(match_one_template_obj.name, matched_copy)
         cv2.imshow('ROI', roi)
         cv2.waitKey(0)
         cv2.destroyAllWindows()

@@ -35,15 +35,15 @@ class BaseGridRecognizer:
         # Multiply the adjustment ratio to the grid matching parameters
         self.cell_border = int(self.config["cell_border"] * self.adjustment_ratio)
         self.grid_matching_params = self.config["grid_matching_params"]
-        self.grid_matching_params['scale_range'][0] *= self.adjustment_ratio
-        self.grid_matching_params['scale_range'][1] *= self.adjustment_ratio
-        self.grid_matching_params['scale_step'] *= self.adjustment_ratio
+        # self.grid_matching_params['scale_range'][0] *= self.adjustment_ratio
+        # self.grid_matching_params['scale_range'][1] *= self.adjustment_ratio
+        # self.grid_matching_params['scale_step'] *= self.adjustment_ratio
         self.grid_matching_params['min_area'] = int(self.grid_matching_params['min_area'] * (self.adjustment_ratio ** 2))
         self.grid_matching_params['border'] = int(self.grid_matching_params['border'] * self.adjustment_ratio)
         self.cell_matching_params = self.config["cell_matching_params"]
-        self.cell_matching_params['scale_range'][0] *= self.adjustment_ratio
-        self.cell_matching_params['scale_range'][1] *= self.adjustment_ratio
-        self.cell_matching_params['scale_step'] *= self.adjustment_ratio
+        # self.cell_matching_params['scale_range'][0] *= self.adjustment_ratio
+        # self.cell_matching_params['scale_range'][1] *= self.adjustment_ratio
+        # self.cell_matching_params['scale_step'] *= self.adjustment_ratio
         self.cell_matching_params['min_area'] = int(self.cell_matching_params['min_area'] * (self.adjustment_ratio ** 2))
         self.cell_matching_params['border'] = int(self.cell_matching_params['border'] * self.adjustment_ratio)
         self.sift_matching_params = self.config["sift_matching_params"]

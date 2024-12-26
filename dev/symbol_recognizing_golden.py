@@ -6,7 +6,7 @@ from SlotBot_combined.Symbol_recognition.grid_recognizer import BaseGridRecogniz
 
 MODE = 'base'
 GAME = 'golden'
-DEBUG = True
+DEBUG = False
 
 image_dir = Path(f"./images/{GAME}/screenshots/{MODE}_game")
 image_dir = Path(f"./test_images/")
