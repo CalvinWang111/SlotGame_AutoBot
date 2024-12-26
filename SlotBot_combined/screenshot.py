@@ -12,37 +12,34 @@ import time
  
 class GameScreenshot: 
     @staticmethod 
-    def capture_screenshot(window_title,filename,region=None, np_return = False): 
+    def capture_screenshot(window_title, images_dir, filename, region=None, np_return = False): 
         """取得遊戲畫面截圖""" 
         try: 
             # Find the window by title 
-            window = gw.getWindowsWithTitle(window_title)[0]  # Get the first matching window 
+            window = gw.getWindowsWithTitle(window_title)[0]  # Get the first matching window
             window.activate()  # Bring the window to the foreground if needed
             time.sleep(1)
-             
-            # Get window position and size 
+
+            # Get window position and size
             x, y, width, height = window.left, window.top, window.width, window.height 
-            print(f"Window position and size: x={x}, y={y}, width={width}, height={height}") 
-             
+            print(f"Window position and size: x={x}, y={y}, width={width}, height={height}")
+
             # Capture the specified region 
             screenshot = pyautogui.screenshot(region=(x, y, width, height)) 
 
             if np_return:
                 return np.array(screenshot)
-
-            # Define the directory where the screenshot will be saved 
-            save_directory = os.path.join('./images/')
-                 
+  
             # Create the directory if it does not exist 
-            os.makedirs(save_directory, exist_ok=True) 
-             
+            os.makedirs(images_dir, exist_ok=True)
+
             # Save the screenshot to the specified file 
-            full_path = os.path.join(save_directory, filename + '.png') 
+            full_path = os.path.join(images_dir, filename + '.png')
             screenshot.save(full_path) 
-            print(f"Screenshot saved as {full_path}") 
+            print(f"Screenshot saved as {full_path}")
 
         except IndexError: 
-            print(f"Window titled '{window_title}' not found.") 
+            print(f"Window titled '{window_title}' not found.")
  
     @staticmethod 
     def click(position): 

@@ -42,48 +42,44 @@ def main():
     # 初始化模組
     screenshot = GameScreenshot()
     window_name = 'BlueStacks App Player'
-    Snapshot = 'GoldenHoYeah'
-    intensity_threshold = 20
+    Snapshot = 'fu'
+    intensity_threshold = 10
     cell_border = 20
     spin_round = 20
     value_recognize_signal = False
     root_dir = Path(__file__).parent.parent
-    print('rootdir',root_dir)
 
     vit_model_path = os.path.join(root_dir, 'VITModel', 'vit_model.pth')
     sam_model_path = os.path.join(root_dir, 'checkpoints', 'sam2_hiera_large.pt')
     sam_model_cfg = os.path.join(root_dir, 'sam2', 'configs', 'sam2', 'sam2_hiera_l.yaml')
-    #sam_model_cfg = os.path.join(root_dir, 'sam2','sam2_configs', 'sam2_hiera_l.yaml')
-    images_dir = os.path.join(root_dir, 'images')
-    
-    print('sam_model_path',sam_model_path)
-    print('sam_model_cfg',sam_model_cfg)
 
-    sam = SAMSegmentation(Snapshot=Snapshot, sam2_checkpoint=sam_model_path, model_cfg=sam_model_cfg)
+    images_dir = os.path.join(root_dir, 'images', Snapshot)
+
+    sam = SAMSegmentation(Snapshot=Snapshot, images_dir=images_dir, sam2_checkpoint=sam_model_path, model_cfg=sam_model_cfg)
     valuerec = ValueRecognition()
 
     # 1. 截圖
-    screenshot.capture_screenshot(window_title=window_name, filename=Snapshot)
+    screenshot.capture_screenshot(window_title=window_name, images_dir=images_dir, filename=Snapshot)
     
     # 2. SAM 分割
-    maskDict = sam.segment_image(os.path.join(root_dir, 'images', Snapshot + ".png"))
+    maskDict = sam.segment_image(os.path.join(images_dir, Snapshot + ".png"))
     
     # 3. ViT 辨識
-    # put your own VIT model path here 
-    vit = ViTRecognition(Snapshot=Snapshot, maskDict=maskDict,model_path=vit_model_path)
+    # put your own VIT model path here
+    vit = ViTRecognition(Snapshot=Snapshot, images_dir=images_dir, maskDict=maskDict,model_path=vit_model_path)
+    #highest_confidence_images, template_folder = vit.classify_components()
+    #vit.output_json(template_folder=os.path.join(root_dir, f"./output/{GAME}/button_recognize/"), highest_confidence_images=highest_confidence_images)
     highest_confidence_images, template_folder = vit.classify_components()
-    vit.output_json(template_folder=os.path.join(root_dir, f"./output/{GAME}/button_recognize/"), highest_confidence_images=highest_confidence_images)
-
+    vit.output_json(template_folder=template_folder, highest_confidence_images=highest_confidence_images)
 
     # 4. 操控遊戲
-    screenshot.capture_screenshot(window_title=window_name, filename=Snapshot+'_intialshot')
+    screenshot.capture_screenshot(window_title=window_name, images_dir=images_dir, filename=Snapshot+'_intialshot')
 
     intialshot_path = os.path.join(images_dir, Snapshot+"_intialshot.png")
-    print('intialshot_path', intialshot_path)
+
     intial_avg_intensities = screenshot.clickable(snapshot_path=intialshot_path,highest_confidence_images=highest_confidence_images)
     first_frame = cv2.imread(intialshot_path)
-    #first_frame = cv2.imread(r"./images/"+Snapshot+"_runtime.png")
-    print(first_frame, type(first_frame))
+
     valuerec.get_board_value(intialshot_path)
 
     config_file = Path(root_dir / f'./SlotBot_combined/Symbol_recognition/configs/{GAME}.json')
