@@ -61,6 +61,7 @@ class StoppingFrameCapture:
                     print("Warning: Frame buffer is full")
                 
                 #avg_intensities = screenshot.clickable(snapshot_path='./images/'+self.Snapshot+'_runtime.png',highest_confidence_images=highest_confidence_images)
+                '''
                 clickable_start_time = time.time()
                 avg_intensities = screenshot.clickable(snapshot_array=frame, highest_confidence_images=highest_confidence_images, target_buttons=["button_start_spin"])
                 clickable_end_time = time.time()
@@ -74,7 +75,7 @@ class StoppingFrameCapture:
                     self.__button_available = False
                 intensity_end_time = time.time()
                 #print(f'Intensity check time: {intensity_end_time-intensity_start_time}')
-
+                '''
                 frame_elapsed = time.time() - frame_start_time
                 if DEBUG:
                     print(f"Frame read time: {frame_elapsed}, Buffer size: {frame_buffer.qsize()}")
@@ -190,6 +191,7 @@ class StoppingFrameCapture:
 
                     rolling_record.append(rolling_now)
                     old_frame = new_frame.copy()
+                    screenshot = GameScreenshot()
                     if(len(rolling_record)==rolling_record_size):
                         if True in rolling_record:
                             if ((rolling_record.index(True) == 0 and rolling_record.count(True) == 1) or frame_number-last_capture_frame==25) and (rolling_frames >= min_rolling_frames or (arrow_flag==True and noice_count <= max_noice and arrow_combo<5)):
@@ -208,6 +210,12 @@ class StoppingFrameCapture:
                                 last_capture_time = time.time()
                                 last_capture_frame = frame_number
                                 capture_number += 1
+
+                                avg_intensities = screenshot.clickable(snapshot_array=frame, highest_confidence_images=highest_confidence_images, target_buttons=["button_start_spin"])
+                                if screenshot.intensity_check(initial_avg_intensities=intial_intensity, avg_intensities=avg_intensities, intensity_threshold=intensity_threshold):
+                                    self.__button_available = True
+                                else:
+                                    self.__button_available = False
                             else:
                                 if frame_number-last_capture_frame>25:
                                     # the wheel is still rolling
@@ -228,11 +236,20 @@ class StoppingFrameCapture:
                 #Free Game state
                 elapsed__time = (time.time() - elapsed_start_time)
                 #print('elapsed_time', elapsed__time)
-                if int(elapsed__time) >= 10 and int(elapsed__time) % 5 == 0 and self.__button_available == False:
-                    print('into freegame_control')
-                    #print('button state', self.__button_available)
-                    GameController.freegame_control(Snapshot=self.Snapshot)
-                    self.free_gamestate = True
+
+
+                if int(elapsed__time) >= 10 and int(elapsed__time) % 5 == 0:
+                    avg_intensities = screenshot.clickable(snapshot_array=frame, highest_confidence_images=highest_confidence_images, target_buttons=["button_start_spin"])
+                    if screenshot.intensity_check(initial_avg_intensities=intial_intensity, avg_intensities=avg_intensities, intensity_threshold=intensity_threshold):
+                        self.__button_available = True
+                    else:
+                        self.__button_available = False
+                        
+                    if self.__button_available == False:
+                        print('into freegame_control')
+                        #print('button state', self.__button_available)
+                        GameController.freegame_control(Snapshot=self.Snapshot)
+                        self.free_gamestate = True
                 elif elapsed__time > 30:
                     self.__terminated = True
 

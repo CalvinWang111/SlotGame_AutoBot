@@ -45,7 +45,7 @@ def main():
     Snapshot = 'GoldenHoYeah'
     intensity_threshold = 20
     cell_border = 20
-    spin_round = 100
+    spin_round = 20
     value_recognize_signal = False
     root_dir = Path(__file__).parent.parent
     print('rootdir',root_dir)
