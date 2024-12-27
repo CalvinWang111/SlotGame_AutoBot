@@ -60,35 +60,35 @@ class GameController:
         screenshot = GameScreenshot()
         vit_model_path = os.path.join(root_dir, 'VITModel', 'vit_model.pth')
         sam_model_path = os.path.join(root_dir, 'checkpoints', 'sam2_hiera_large.pt')
-        #sam_model_cfg = os.path.join(root_dir, 'sam2', 'configs', 'sam2', 'sam2_hiera_l.yaml')
-        sam_model_cfg = os.path.join(root_dir, 'sam2_configs', 'sam2_hiera_l.yaml')
+        sam_model_cfg = os.path.join(root_dir, 'sam2', 'configs', 'sam2', 'sam2_hiera_l.yaml')
+        #sam_model_cfg = os.path.join(root_dir, 'sam2_configs', 'sam2_hiera_l.yaml')
         images_dir = os.path.join(root_dir, 'images')
         success_continue = False
 
         try:
             print('into try loop')
-            screenshot.capture_screenshot(window_title=window_name, filename=Snapshot+'freegame')
+            screenshot.capture_screenshot(window_title=window_name, images_dir=images_dir, filename=Snapshot+'freegame')
 
-            # # try VIT model
-            # maskDict_path = os.path.join(images_dir, Snapshot+'freegame' + ".png")
-            # sam = SAMSegmentation(Snapshot=Snapshot, sam2_checkpoint=sam_model_path, model_cfg=sam_model_cfg)
-            # maskDict = sam.segment_image(maskDict_path)
+            #try VIT model
+            maskDict_path = os.path.join(images_dir, Snapshot+'freegame' + ".png")
+            sam = SAMSegmentation(Snapshot=Snapshot,images_dir=images_dir, sam2_checkpoint=sam_model_path, model_cfg=sam_model_cfg)
+            maskDict = sam.segment_image(maskDict_path)
                 
-            # # Classify components
-            # vit = ViTRecognition(
-            #         Snapshot=Snapshot, 
-            #         maskDict=maskDict, 
-            #         model_path=vit_model_path
-            #     )
-            # highest_confidence_images, template_folder = vit.classify_components()
-            # vit.output_json(template_folder=template_folder, highest_confidence_images=highest_confidence_images)
+            #Classify components
+            vit = ViTRecognition(
+                     Snapshot=Snapshot, 
+                     maskDict=maskDict, 
+                     model_path=vit_model_path
+            )
+            highest_confidence_images, template_folder = vit.classify_components()
+            vit.output_json(template_folder=template_folder, highest_confidence_images=highest_confidence_images)
                 
-            # # Check for specific predictions
-            # if any(key in [3,8,12, 13] for key in highest_confidence_images.keys()):
-            #     key = [key in [3,8,12,13] for key in highest_confidence_images.keys()]
-            #     print('detecting 金元寶或金幣')
-            #     GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=key[0])
-            #     success_continue = True
+            # Check for specific predictions
+            if any(key in [3,8,12, 13] for key in highest_confidence_images.keys()):
+                key = [key in [3,8,12,13] for key in highest_confidence_images.keys()]
+                print('detecting 金元寶或金幣')
+                GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=key[0])
+                success_continue = True
 
             # try template
             freegame_screenshot = os.path.join(root_dir, 'images', Snapshot+'freegame.png')
