@@ -42,7 +42,7 @@ def main():
     # 初始化模組
     screenshot = GameScreenshot()
     window_name = 'BlueStacks App Player'
-    Snapshot = 'fu'
+    Snapshot = GAME
     intensity_threshold = 10
     cell_border = 20
     spin_round = 100

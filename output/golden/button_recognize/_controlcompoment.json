@@ -1,0 +1,90 @@
+{
+    "stickers": {
+        "path": "c:\\NTUST\\GameLab\\Project\\Automatic_Slot_Bot\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_110_contour_0.png",
+        "confidence": 0.9650048017501831,
+        "contour": [
+            59,
+            766,
+            34,
+            28
+        ],
+        "value": null
+    },
+    "button_start_spin": {
+        "path": "c:\\NTUST\\GameLab\\Project\\Automatic_Slot_Bot\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_17_contour_1.png",
+        "confidence": 0.7481006383895874,
+        "contour": [
+            390,
+            869,
+            83,
+            58
+        ],
+        "value": null
+    },
+    "button_additional_bet": {
+        "path": "c:\\NTUST\\GameLab\\Project\\Automatic_Slot_Bot\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_45_contour_0.png",
+        "confidence": 0.3838048577308655,
+        "contour": [
+            46,
+            846,
+            121,
+            26
+        ],
+        "value": null
+    },
+    "button_three_dot": {
+        "path": "c:\\NTUST\\GameLab\\Project\\Automatic_Slot_Bot\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_59_contour_0.png",
+        "confidence": 0.457475483417511,
+        "contour": [
+            458,
+            83,
+            43,
+            44
+        ],
+        "value": null
+    },
+    "button_increase_bet": {
+        "path": "c:\\NTUST\\GameLab\\Project\\Automatic_Slot_Bot\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_61_contour_0.png",
+        "confidence": 0.6001423597335815,
+        "contour": [
+            149,
+            868,
+            25,
+            60
+        ],
+        "value": null
+    },
+    "button_speedup_spin": {
+        "path": "c:\\NTUST\\GameLab\\Project\\Automatic_Slot_Bot\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_63_contour_0.png",
+        "confidence": 0.353695273399353,
+        "contour": [
+            336,
+            898,
+            49,
+            29
+        ],
+        "value": null
+    },
+    "button_max_bet": {
+        "path": "c:\\NTUST\\GameLab\\Project\\Automatic_Slot_Bot\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_65_contour_0.png",
+        "confidence": 0.5002835988998413,
+        "contour": [
+            336,
+            869,
+            49,
+            29
+        ],
+        "value": null
+    },
+    "button_decrease_bet": {
+        "path": "c:\\NTUST\\GameLab\\Project\\Automatic_Slot_Bot\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_70_contour_0.png",
+        "confidence": 0.5986794233322144,
+        "contour": [
+            35,
+            870,
+            23,
+            56
+        ],
+        "value": null
+    }
+}

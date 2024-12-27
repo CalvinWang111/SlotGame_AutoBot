@@ -3,11 +3,10 @@ material/
 images/
 result/
 checkpoints/
-VITrun_ver6/
-inputTest/
 SAM_2.egg-info/
 sam2/
 segmented_image/
+VITModel/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
