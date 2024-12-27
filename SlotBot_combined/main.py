@@ -43,9 +43,9 @@ def main():
     screenshot = GameScreenshot()
     window_name = 'BlueStacks App Player'
     Snapshot = GAME
-    intensity_threshold = 10
+    intensity_threshold = 20
     cell_border = 20
-    spin_round = 100
+    spin_round = 20
     value_recognize_signal = False
     root_dir = Path(__file__).parent.parent
 
@@ -67,9 +67,10 @@ def main():
     # 3. ViT 辨識
     # put your own VIT model path here
     vit = ViTRecognition(Snapshot=Snapshot, images_dir=images_dir, maskDict=maskDict,model_path=vit_model_path)
+    #highest_confidence_images, template_folder = vit.classify_components()
+    #vit.output_json(template_folder=os.path.join(root_dir, f"./output/{GAME}/button_recognize/"), highest_confidence_images=highest_confidence_images)
     highest_confidence_images, template_folder = vit.classify_components()
     vit.output_json(template_folder=os.path.join(root_dir, f"./output/{GAME}/button_recognize/"), highest_confidence_images=highest_confidence_images)
-
 
     # 4. 操控遊戲
     screenshot.capture_screenshot(window_title=window_name, images_dir=images_dir, filename=Snapshot+'_intialshot')
