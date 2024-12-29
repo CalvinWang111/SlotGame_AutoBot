@@ -46,7 +46,7 @@ class BaseGridRecognizer:
         self.initialize_grid_mode = self.config["initialize_grid_mode"]
         
         self.grid = None
-        self.load_grid()
+        # self.load_grid()
         self.template_match_data = {}
         self.debug = debug
         
