@@ -18,7 +18,7 @@ class ValueRecognition:
         dotenv_path = Path(env_path)
         load_dotenv(dotenv_path=dotenv_path, override=True)
 
-        #os.environ["OPENAI_API_KEY"] =
+        #os.environ["OPENAI_API_KEY"] = 
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.openai_api = OpenAiApi(self.api_key)
 
@@ -150,7 +150,13 @@ class ValueRecognition:
             #filename = f"./json/data_{timestamp}.json"
             # 定義完整路徑
             output_dir = os.path.join(root_dir, f"output/{game_name}/numerical")
-            filename = os.path.join(output_dir, f"data_{timestamp}.json")
+            #filename = os.path.join(output_dir, f"data_{timestamp}.json")
+
+            # 還原 file 名稱
+            filename = os.path.basename(image_path) 
+            filename = os.path.join(output_dir, filename.split('.')[0]+'.json')
+
+
 
             # 檢查並創建目錄
             os.makedirs(output_dir, exist_ok=True)

@@ -184,7 +184,7 @@ def main():
         grid_recognizer.save_grid_results(filename)
 
         #數值組 
-        if i == 10:
+        if i == 1:
             '''
             all_keyframes = [os.path.join(key_frame_dir, file) for file in os.listdir(key_frame_dir)]
 
@@ -200,7 +200,9 @@ def main():
             value_recognize_signal = True
             '''
             all_rounds = [os.path.join(image_dir, file)for file in os.listdir(image_dir)]
+            print('all rounds round images pathes:', all_rounds)
             valuerec.get_meaning(all_rounds, i)
+            valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=all_rounds)
             value_recognize_signal = True
 
 if __name__ == "__main__":
