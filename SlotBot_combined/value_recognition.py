@@ -18,7 +18,7 @@ class ValueRecognition:
         dotenv_path = Path(env_path)
         load_dotenv(dotenv_path=dotenv_path, override=True)
 
-        #os.environ["OPENAI_API_KEY"] = 
+        # os.environ["OPENAI_API_KEY"] =
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.openai_api = OpenAiApi(self.api_key)
 
@@ -29,7 +29,7 @@ class ValueRecognition:
 
         self.meaning_table = None
 
-        #testing
+        # testing
         self.test_count = 0
 
     # def set_position_to_meaning(self, frame_list):
@@ -37,7 +37,7 @@ class ValueRecognition:
     def get_board_value(self, image_path):
         # Path to your image
         chat_response = self.openai_api.get_value_response(image_path)
-        #chat_response = self.openai_api.get_gpt_response(image_path)
+        # chat_response = self.openai_api.get_gpt_response(image_path)
         print(chat_response)
         tuple_list = re.findall(r"<number>(.*?)</number>.*?<meaning>(.*?)</meaning>", chat_response, re.DOTALL)
         table = [
@@ -51,11 +51,11 @@ class ValueRecognition:
 
         # compare
         for data in ocr_result:
-            #去除數字英文以外的字元
+            # 去除數字英文以外的字元
             number_of_OCR = data[1][0]
             for char in data[1][0]:
                 if not ('9' >= char >= '0' or 'Z' >= char >= 'A' or 'z' >= char >= 'a'):
-                    number_of_OCR = number_of_OCR.replace(char,"")
+                    number_of_OCR = number_of_OCR.replace(char, "")
             for meaning in table:
                 # 去除數字英文以外的字元
                 number_of_GPT = meaning[0]
@@ -107,36 +107,64 @@ class ValueRecognition:
         for line in self.value_pos_form:
             print(line)
 
-    def get_meaning(self, image_paths, image_amount):
-        for i in range(image_amount):
-            self.get_board_value(image_paths[i])
+    def get_meaning(self, root_dir, game, mode, image_paths, image_amount):
+        """
+            整理數值意義與位置對應
 
-        for i in range(len(self.value_pos_form)):
-            if len(self.value_pos_form[i]['meaning']) <= 2:
-                self.value_pos_form[i]['meaning'] = []
-        for line in self.value_pos_form:
-            print(line)
-        for i in range(10):
-            meaning_list = [{'position': line['roi'], 'meanings': line['meaning']} for line in self.value_pos_form]
-            chat_response = self.openai_api.get_simplified_meaning(meaning_list)
-            print(f'chat_response = {chat_response}')
-            tuple_list = re.findall(r"<position>(.*?)</position>.*?<meaning>(.*?)</meaning>", chat_response, re.DOTALL)
-            dict_list = [
-                {'roi': [int(n) for n in roi.strip('[]').split(',')], 'meaning': meaning}
-                for roi, meaning in tuple_list
-            ]
-            if self.meaning_table == None:
-                self.meaning_table = dict_list
-            if len(self.meaning_table) < len(dict_list):
-                self.meaning_table = dict_list
-        #testing
-        with open(f"./json/format{self.test_count}.json", "w", encoding="utf-8") as file:
-            json.dump(self.meaning_table, file, ensure_ascii=False, indent=4)
+            Args:
+                root_dir(str): 專案根目錄
+                game(str): 遊戲名稱 ex:golden
+                mode(str): 模式名稱 ex:base
+                image_paths(list[str]): 存圖片路徑的list
+                image_amount(int): 要用幾張list的圖片
+            Returns:
+                None
+            Raises:
+                None
+        """
+        json_file_name = f"{game}_{mode}.json"
+        file_path = rf"{root_dir}\{json_file_name}"
+        print(file_path)
+        # 確保中間資料夾存在
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-        print(f'meaning = ')
-        print('\n'.join(map(str, meaning_list)))
-        print(f'result = ')
-        print('\n'.join(map(str, self.meaning_table)))
+        # 檢查檔案是否存在
+        if os.path.exists(file_path):
+            # 檔案存在，讀取 JSON
+            with open(file_path, "r", encoding="utf-8") as file:
+                self.meaning_table = json.load(file)
+                print("已讀取檔案內容：", self.meaning_table)
+        else:
+            # 檔案不存在，創建新檔案
+            with open(file_path, "w", encoding="utf-8") as file:
+                # 初始化
+                self.value_pos_form = []
+
+                for i in range(image_amount):
+                    self.get_board_value(image_paths[i])
+                for i in range(len(self.value_pos_form)):
+                    if len(self.value_pos_form[i]['meaning']) <= 2:
+                        self.value_pos_form[i]['meaning'] = []
+                for line in self.value_pos_form:
+                    print(line)
+                for i in range(10):
+                    meaning_list = [{'position': line['roi'], 'meanings': line['meaning']} for line in
+                                    self.value_pos_form]
+                    chat_response = self.openai_api.get_simplified_meaning(meaning_list)
+                    print(f'chat_response = {chat_response}')
+                    tuple_list = re.findall(r"<position>(.*?)</position>.*?<meaning>(.*?)</meaning>", chat_response,
+                                            re.DOTALL)
+                    dict_list = [
+                        {'roi': [int(n) for n in roi.strip('[]').split(',')], 'meaning': meaning}
+                        for roi, meaning in tuple_list
+                    ]
+                    if self.meaning_table is None:
+                        self.meaning_table = dict_list
+                    if len(self.meaning_table) < len(dict_list):
+                        self.meaning_table = dict_list
+
+                json.dump(self.meaning_table, file, ensure_ascii=False, indent=4)
+                print("檔案不存在，已創建新檔案，內容為：", self.meaning_table)
 
     def recognize_value(self, root_dir, mode, image_paths):
         for image_path in image_paths:
@@ -145,23 +173,21 @@ class ValueRecognition:
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             game_name = mode
             json_data = {}
-            
-            #*********************************************
-            #filename = f"./json/data_{timestamp}.json"
+
+            # *********************************************
+            # filename = f"./json/data_{timestamp}.json"
             # 定義完整路徑
             output_dir = os.path.join(root_dir, f"output/{game_name}/numerical")
-            #filename = os.path.join(output_dir, f"data_{timestamp}.json")
+            # filename = os.path.join(output_dir, f"data_{timestamp}.json")
 
             # 還原 file 名稱
-            filename = os.path.basename(image_path) 
-            filename = os.path.join(output_dir, filename.split('.')[0]+'.json')
-
-
+            filename = os.path.basename(image_path)
+            filename = os.path.join(output_dir, filename.split('.')[0] + '.json')
 
             # 檢查並創建目錄
             os.makedirs(output_dir, exist_ok=True)
-            #filename = os.path.join(root_dir, f"./output/{game_name}/numerical/data_{timestamp}.json")
-            #*********************************************
+            # filename = os.path.join(root_dir, f"./output/{game_name}/numerical/data_{timestamp}.json")
+            # *********************************************
 
             for line in self.meaning_table:
                 json_each_line = {}
@@ -187,9 +213,11 @@ class ValueRecognition:
                         json_data[line['meaning']] = json_each_line
                         break
                     # right side similar
-                    elif line['roi'][0] + line['roi'][2] + self.threshold > new_value_pos['roi'][0] + new_value_pos['roi'][
-                        2] > line['roi'][0] + line['roi'][2] - self.threshold and middle[1] + self.threshold > new_middle[
-                        1] > middle[
+                    elif line['roi'][0] + line['roi'][2] + self.threshold > new_value_pos['roi'][0] + \
+                            new_value_pos['roi'][
+                                2] > line['roi'][0] + line['roi'][2] - self.threshold and middle[1] + self.threshold > \
+                            new_middle[
+                                1] > middle[
                         1] - self.threshold:
                         print(new_value_pos['value'], line['meaning'])
                         json_each_line['confidence'] = data[1][1]
@@ -214,11 +242,14 @@ class ValueRecognition:
             cv2.imwrite(rf'./images/value/value+{timestamp}.png', frame)
 
     def auto_test(self):
-        folder_path = './test_images'
-        files = ['./test_images/' + filename for filename in os.listdir(folder_path) if
+        folder_path = './test_images/ch'
+        files = ['./test_images/ch/' + filename for filename in os.listdir(folder_path) if
                  os.path.isfile(os.path.join(folder_path, filename))]
+        root_dir = Path(__file__).parent.parent
+        MODE = 'base'
+        GAME = 'golden'
         for i in range(20):
-            #init
+            # init
             ocr_start_time = time.time()
             self.value_pos_form = []
             self.meaning_table = None
@@ -226,10 +257,11 @@ class ValueRecognition:
 
             sample_files = random.sample(files, min(10, len(files)))
 
-            self.get_meaning(sample_files, 10)
+            self.get_meaning(root_dir, GAME, MODE, sample_files, 10)
             ocr_total_run_time = time.time() - ocr_start_time
             print(f'round: {i} ocr_total_run_time = {ocr_total_run_time}')
 
 
-#valuerec = ValueRecognition()
-#valuerec.auto_test()
+if __name__ == "__main__":
+    valuerec = ValueRecognition()
+    valuerec.auto_test()
