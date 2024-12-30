@@ -1,9 +1,11 @@
 import pickle
 from pathlib import Path
 import json
+from typing import Tuple
 
 class BaseGrid:
-    def __init__(self, bbox, shape):
+    def __init__(self, bbox, shape, window_size=(1920, 1080)):
+        self.window_size = window_size
         self.bbox = bbox
         self.row, self.col = shape
         x, y, w, h = bbox
@@ -20,9 +22,17 @@ class BaseGrid:
             for j in range(self.col):
                 self._grid[i][j] = None
     
-    def load(path: str):
+    def load(path: str, window_size: Tuple[int, int]):
         with open(path, 'rb') as f:
-            return pickle.load(f)
+            grid:BaseGrid = pickle.load(f)
+            if grid.window_size != window_size:
+                print(f"Resizing grid from {grid.window_size} to {window_size}")
+                scale = window_size[0] / grid.window_size[0]
+                grid.window_size = window_size
+                grid.bbox = (int(grid.bbox[0] * scale), int(grid.bbox[1] * scale), int(grid.bbox[2] * scale), int(grid.bbox[3] * scale))
+                grid.symbol_width = grid.bbox[2] // grid.col
+                grid.symbol_height = grid.bbox[3] // grid.row
+            return grid
         
     def save(self, path: str):
         with open(path, 'wb') as f:

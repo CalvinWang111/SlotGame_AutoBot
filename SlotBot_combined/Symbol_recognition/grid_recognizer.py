@@ -24,6 +24,7 @@ class BaseGridRecognizer:
         
         # Define window size and adjustment ratio
         self.layout_orientation = self.config["layout_orientation"]
+        self.window_size = window_size
         horizontal_base_size = (1920, 1080)
         vertical_base_size = (1080, 1920)
         if self.layout_orientation == "horizontal":
@@ -85,7 +86,7 @@ class BaseGridRecognizer:
         
     def load_grid(self):
         if self.grid_path.exists():
-            self.grid = BaseGrid.load(str(self.grid_path))
+            self.grid = BaseGrid.load(str(self.grid_path), self.window_size)
     
     @staticmethod
     def load_config(config_file: Path):
@@ -153,7 +154,7 @@ class BaseGridRecognizer:
             raise ValueError("Could not find any matches")
         
         grid_bbox, grid_shape = get_grid_info(matched_positions)
-        self.grid = BaseGrid(grid_bbox, grid_shape)
+        self.grid = BaseGrid(grid_bbox, grid_shape, self.window_size)
         if not self.grid_path.parent.exists():
             self.grid_path.parent.mkdir(parents=True, exist_ok=True)
         self.grid.save(str(self.grid_path))
@@ -202,6 +203,7 @@ class BaseGridRecognizer:
                 if self.debug:
                     print(f"Processing roi({i}, {j})")
                 roi = self.grid.get_roi(i, j)
+                # print(self.grid.window_size)
                 x, y, w, h = roi
                 x1, x2 = x - self.cell_border, x + w + self.cell_border
                 y1, y2 = y - self.cell_border, y + h + self.cell_border

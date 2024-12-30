@@ -117,10 +117,13 @@ def template_matching(template, roi: np.ndarray, iou_threshold, scale_range, sca
         # Ensure the resized template is not larger than the image
         if resized_template.shape[0] > roi.shape[0] or resized_template.shape[1] > roi.shape[1]:
             if resized_template.shape[0] >= roi.shape[0] - 2*border and resized_template.shape[1] >= roi.shape[1] - 2*border:
-                # perform reverse matching
-                img_h, img_w = roi.shape[:2]
-                img_without_border = roi[border+padding:img_h-border-padding, border+padding:img_w-border-padding]
-                result = cv2.matchTemplate(resized_template, img_without_border, cv2.TM_CCORR_NORMED)
+                try:
+                    # perform reverse matching
+                    img_h, img_w = roi.shape[:2]
+                    img_without_border = roi[border+padding:img_h-border-padding, border+padding:img_w-border-padding]
+                    result = cv2.matchTemplate(resized_template, img_without_border, cv2.TM_CCORR_NORMED)
+                except:
+                    continue
             else:
                 continue
         else:

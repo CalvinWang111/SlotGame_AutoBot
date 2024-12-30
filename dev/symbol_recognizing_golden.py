@@ -8,7 +8,7 @@ MODE = 'base'
 GAME = 'golden'
 DEBUG = False
 
-image_dir = Path(f"./images/{GAME}/screenshots/{MODE}_game")
+# image_dir = Path(f"./images/{GAME}/screenshots/{MODE}_game")
 image_dir = Path(f"./test_images/")
 config_file = Path(f'./SlotBot_combined/Symbol_recognition/configs/{GAME}.json')
 grid_recognizer = None
@@ -17,6 +17,9 @@ grid_recognizer = None
 
 frame_count = 0 # replace it when integrating with the game
 for image_path in image_dir.glob('*.png'): 
+    if frame_count == 0:
+        frame_count = 1
+        continue
     image_name = image_path.stem
     # if DEBUG and image_name != "2":
     #     continue
@@ -34,3 +37,4 @@ for image_path in image_dir.glob('*.png'):
 
     frame_count += 1
     print("------------------------------------------------------")
+    
