@@ -15,6 +15,7 @@ from stopping_detection import StoppingFrameCapture
 from TemplateMatching import symbol_recognizer,grid
 from symbol_recognizing import get_symbol_positions,recoglize_symbol
 from Symbol_recognition.grid_recognizer import *
+from json_to_excel import Excel_parser
 import cv2
 from value_recognition import ValueRecognition
 import threading
@@ -46,7 +47,7 @@ def main():
     Snapshot = GAME
     intensity_threshold = 20
     cell_border = 20
-    spin_round = 20
+    spin_round = 15
     value_recognize_signal = False
     root_dir = Path(__file__).parent.parent
 
@@ -184,7 +185,7 @@ def main():
         grid_recognizer.save_grid_results(filename)
 
         #數值組 
-        if i == 1:
+        if i == 10:
             '''
             all_keyframes = [os.path.join(key_frame_dir, file) for file in os.listdir(key_frame_dir)]
 
@@ -207,4 +208,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-    print(keyframe_list)
+    ex = Excel_parser()
+    ex.json_to_excel(GAME, MODE)
+    

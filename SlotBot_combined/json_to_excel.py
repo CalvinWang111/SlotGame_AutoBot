@@ -2,6 +2,7 @@ import json
 import os
 from openpyxl import Workbook
 import pandas as pd
+from pathlib import Path
 
 
 
@@ -9,11 +10,16 @@ class Excel_parser:
     def __init__(self):
         self.symbol_path = ""
         self.value_path = ""
+        self.root_dir = Path(__file__).parent.parent
 
     def json_to_excel(self, game_type, game_state):
-        save_path = f"../excel/{game_type}_{game_state}.xlsx"
-        self.symbol_path = f"../output/{game_type}/symbols"
-        self.value_path = f"../output/{game_type}/numerical"
+        #save_path = f"../excel/{game_type}_{game_state}.xlsx"
+        #self.symbol_path = f"../output/{game_type}/symbols"
+        #self.value_path = f"../output/{game_type}/numerical"
+        
+        save_path = os.path.join(self.root_dir, f'excel/{game_type}_{game_state}.xlsx')
+        self.symbol_path = os.path.join(self.root_dir, f'output/{game_type}/symbols')
+        self.value_path = os.path.join(self.root_dir, f'output/{game_type}/numerical')
         # 建立資料
         excel = {
             "遊戲名稱": [],
@@ -104,7 +110,8 @@ class Excel_parser:
         # 儲存檔案
         df.to_excel(save_path)
         print("檔案已成功儲存！")
-
+'''
 if __name__ == "__main__":
     ex = Excel_parser()
     ex.json_to_excel("golden","base")
+'''
