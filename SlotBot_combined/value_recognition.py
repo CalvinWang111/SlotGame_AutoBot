@@ -10,6 +10,7 @@ import re
 import cv2
 import random
 import time
+from PIL import Image
 
 
 class ValueRecognition:
@@ -31,6 +32,8 @@ class ValueRecognition:
 
         # testing
         self.test_count = 0
+
+        self.window_size = {}
 
     # def set_position_to_meaning(self, frame_list):
     #
@@ -123,17 +126,51 @@ class ValueRecognition:
                 None
         """
         json_file_name = f"{game}_{mode}.json"
-        file_path = rf"{root_dir}\{json_file_name}"
-        print(file_path)
+        file_path = rf"{root_dir}\json\{json_file_name}"
+        print(f'file_path = {file_path}')
+
         # 確保中間資料夾存在
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+        # 獲取圖片大小 (寬, 高)
+        image = Image.open(image_paths[0])
+        width, height = image.size
+        self.window_size = {'window_size': [width, height]}
 
         # 檢查檔案是否存在
         if os.path.exists(file_path):
             # 檔案存在，讀取 JSON
-            with open(file_path, "r", encoding="utf-8") as file:
-                self.meaning_table = json.load(file)
-                print("已讀取檔案內容：", self.meaning_table)
+            with open(file_path, "r+", encoding="utf-8") as file:
+                json_data = json.load(file)
+                print("已讀取檔案內容：", json_data)
+                # 分離 window_size 和其他物件
+                json_window_size = None
+                json_meaning_table = []
+                for item in json_data:
+                    if "window_size" in item:
+                        json_window_size = item["window_size"]
+                    else:
+                        json_meaning_table.append(item)
+                if self.window_size['window_size'] == json_window_size:
+                    self.meaning_table = json_meaning_table
+                else:
+                    # 計算縮放比例
+                    scale_x = self.window_size['window_size'][0] / json_window_size[0]
+                    scale_y = self.window_size['window_size'][1] / json_window_size[1]
+                    for obj in json_meaning_table:
+                        obj["roi"] = [
+                            int(obj["roi"][0] * scale_x),  # x
+                            int(obj["roi"][1] * scale_y),  # y
+                            int(obj["roi"][2] * scale_x),  # width
+                            int(obj["roi"][3] * scale_y)  # height
+                        ]
+                    self.meaning_table = json_meaning_table
+                    scaled_data = self.meaning_table + [self.window_size]
+                    # 將資料寫入 JSON 檔案
+                    file.seek(0)
+                    json.dump(scaled_data, file, ensure_ascii=False, indent=4)
+                    file.truncate()
+                    print(f"縮放後的資料已成功寫入檔案：{file_path}")
         else:
             # 檔案不存在，創建新檔案
             with open(file_path, "w", encoding="utf-8") as file:
@@ -163,8 +200,9 @@ class ValueRecognition:
                     if len(self.meaning_table) < len(dict_list):
                         self.meaning_table = dict_list
 
-                json.dump(self.meaning_table, file, ensure_ascii=False, indent=4)
-                print("檔案不存在，已創建新檔案，內容為：", self.meaning_table)
+                data = self.meaning_table + [self.window_size]
+                json.dump(data, file, ensure_ascii=False, indent=4)
+                print("檔案不存在，已創建新檔案，內容為：", data)
 
     def recognize_value(self, root_dir, mode, image_paths):
         for image_path in image_paths:
