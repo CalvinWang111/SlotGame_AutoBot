@@ -9,7 +9,7 @@ import mss
 import time
 from queue import Queue
 import threading
-from grid import BullGrid
+from Symbol_recognition.grid import BullGrid
 from screenshot import GameScreenshot
 from game_controller import GameController
 
