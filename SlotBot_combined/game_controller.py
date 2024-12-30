@@ -85,7 +85,7 @@ class GameController:
                 
             # Check for specific predictions
             if any(key in [3,8,12, 13] for key in highest_confidence_images.keys()):
-                key = [key in [3,8,12,13] for key in highest_confidence_images.keys()]
+                key = [key for key in highest_confidence_images.keys() if key in [3,8,12,13] ]
                 print('detecting 金元寶或金幣')
                 GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=key[0])
                 success_continue = True

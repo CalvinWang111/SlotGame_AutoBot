@@ -33,6 +33,9 @@ class StoppingFrameCapture:
         self.__spin_start_time = 0      
         self.Snapshot = Snapshot
         self.time_threshold = elapsed_time_threshold
+
+        self.pause_event = threading.Event()  # 控制線程的事件
+        self.pause_event.set()  # 初始化為未暫停狀態
         if(game_name=="bull"):
             self.bull_mode = True
         else:
@@ -53,6 +56,7 @@ class StoppingFrameCapture:
             count = 1
             
             while not self.__terminated:
+                self.pause_event.wait()  # 等待事件被設置
                 frame_start_time = time.time() 
                 frame = np.array(sct.grab(monitor))
 
@@ -132,6 +136,7 @@ class StoppingFrameCapture:
 
             while not (self.__terminated==True and frame_buffer.qsize()==0):
                 if not frame_buffer.empty():
+                    self.pause_event.wait()  # 等待事件被設置
                     start_time = time.time()
                     frame = frame_buffer.get()
                     if is_first:
@@ -248,7 +253,9 @@ class StoppingFrameCapture:
                     if self.__button_available == False:
                         print('into freegame_control')
                         print('button state', self.__button_available)
+                        self.pause_event.clear()  # 暫停線程
                         success_continue = GameController.freegame_control(Snapshot=self.Snapshot)
+                        self.pause_event.set()  # 恢復線程
                         print('freegame control success to contunue: ', success_continue)
                         self.free_gamestate = True
                 elif elapsed__time > 30:

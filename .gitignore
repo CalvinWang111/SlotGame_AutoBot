@@ -8,6 +8,7 @@ inputTest/
 SAM_2.egg-info/
 sam2/
 segmented_image/
+.idea/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -16,3 +17,10 @@ __pycache__/
 
 # api key
 .env
+
+*.png
+*.json
+*.pyc
+*.pth
+*.pt
+*.xlsx
