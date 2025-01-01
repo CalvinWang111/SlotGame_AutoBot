@@ -47,7 +47,7 @@ def main():
     Snapshot = GAME
     intensity_threshold = 20
     cell_border = 20
-    spin_round = 15
+    spin_round = 20
     value_recognize_signal = False
     root_dir = Path(__file__).parent.parent
 
@@ -101,14 +101,14 @@ def main():
     stop_catcher = StoppingFrameCapture(window_name=window_name,grid=grid_recognizer.grid,save_dir=key_frame_dir, Snapshot=Snapshot, elapsed_time_threshold=3, game_name=GAME)
     numerical_round_count = 0
 
-    def keyframes_wrapper(module_instance, key_frame_pathes):
-        key_frame_pathes = stop_catcher.get_key_frames(intial_intensity=intial_avg_intensities,intensity_threshold=intensity_threshold,highest_confidence_images=highest_confidence_images)
+    def keyframes_wrapper(module_instance, key_frame_pathes, save_images):
+        key_frame_pathes = stop_catcher.get_key_frames(intial_intensity=intial_avg_intensities,intensity_threshold=intensity_threshold,highest_confidence_images=highest_confidence_images,save_images = save_images)
         result_queue.put(key_frame_pathes)
 
-    def profiled_keyframes_wrapper(module_instance, key_frame_pathes):
+    def profiled_keyframes_wrapper(module_instance, key_frame_pathes, save_images = True):
         # profiler = cProfile.Profile()
         # profiler.enable()
-        keyframes_wrapper(module_instance, key_frame_pathes)
+        keyframes_wrapper(module_instance, key_frame_pathes, save_images)
         # profiler.disable()
         # stats = pstats.Stats(profiler)
         # stats.sort_stats('cumtime')  # 按累計時間排序
@@ -123,7 +123,7 @@ def main():
         start_time = time.time()
 
         key_frame_pathes = []
-        stop_catcher_thread = threading.Thread(target=profiled_keyframes_wrapper, args=(stop_catcher, key_frame_pathes))
+        stop_catcher_thread = threading.Thread(target=profiled_keyframes_wrapper, args=(stop_catcher, key_frame_pathes, False))
         stop_catcher_thread.start()
 
         while stop_catcher_thread.is_alive():
@@ -168,9 +168,10 @@ def main():
         #print('numerical_round_count',numerical_round_count)
         keyframe_list.append([i, numerical_round_count])
         '''
-
+        
         filename = Snapshot + f'_round_{i}'
-        screenshot.capture_screenshot(window_title=window_name, images_dir=image_dir,filename=filename)
+        # screenshot.capture_screenshot(window_title=window_name, images_dir=image_dir,filename=filename)
+        stop_catcher.get_static_frame(images_dir=image_dir,filename=filename)
         path = os.path.join(image_dir, filename + '.png')
         img = cv2.imread(path)
 
