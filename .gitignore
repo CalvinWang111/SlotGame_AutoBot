@@ -36,3 +36,6 @@ outputs/*
 checkpoints/*.pt
 test.ipynb
 temp/
+
+*.png
+*grid.pkl
