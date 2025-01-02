@@ -6,7 +6,7 @@
     "cell_border": 10,
     "grid_matching_params": {
       "iou_threshold": 0.01,
-      "scale_range": [0.5, 1.0],
+      "scale_range": [0.8, 1.2],
       "scale_step": 0.05,
       "threshold": 0.93,
       "min_area": 5000,
@@ -31,6 +31,6 @@
     },
     "layout_orientation": "horizontal",
     "initialize_grid_mode": "gray",
-    "cell_size": [228, 247],
+    "cell_size": [140, 140],
     "non_square_scale": 0.9
 }

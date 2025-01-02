@@ -9,16 +9,18 @@ from .symbol_recognizer import *
 from .utils import *
 from typing import List, Dict
 
+root_dir = Path(__file__).parent.parent.parent
+
 class BaseGridRecognizer:
     def __init__(self, game:str, mode:str, config_file: Path, window_size=(1920, 1080), debug=False):
         self.game = game
         self.mode = mode
         self.debug = debug
         self.config = self.load_config(config_file)
-        self.template_dir = Path(self.config["template_dir"].format(game=game, mode=mode))
-        self.save_dir = Path(self.config["save_dir"].format(game=game, mode=mode))
-        self.grid_path = Path(self.config["grid_path"].format(game=game, mode=mode))
-        self.output_json_dir = Path(self.config["output_json_dir"].format(game=game, mode=mode))
+        self.template_dir = root_dir / Path(self.config["template_dir"].format(game=game, mode=mode))
+        self.save_dir = root_dir / Path(self.config["save_dir"].format(game=game, mode=mode))
+        self.grid_path = root_dir / Path(self.config["grid_path"].format(game=game, mode=mode))
+        self.output_json_dir = root_dir / Path(self.config["output_json_dir"].format(game=game, mode=mode))
         self.save_dir.mkdir(parents=True, exist_ok=True)
         self.output_json_dir.mkdir(parents=True, exist_ok=True)
         
@@ -69,6 +71,7 @@ class BaseGridRecognizer:
         
     
     def load_templates(self):
+        print(str(self.template_dir.absolute()))
         for path in self.template_dir.glob('*.png'):
             img = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
             alpha_channel = img[:, :, 3]

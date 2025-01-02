@@ -212,7 +212,7 @@ def process_template_matches(template_list: List[Template], roi: np.ndarray, iou
                 match_one_scale = match_scale
         if debug:
             print(f'{template_name:<20} | score: {match_score:.3f} | scale: {match_scale:.3f}')
-    if debug:
+    if debug and match_one:
         matched_copy = match_one_template_obj.img
         matched_copy = cv2.resize(matched_copy, (0, 0), fx=match_one_scale, fy=match_one_scale)
         cv2.imshow(match_one_template_obj.name, matched_copy)
