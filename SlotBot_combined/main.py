@@ -180,7 +180,7 @@ def main():
 
         #盤面組，每一輪建立盤面以及辨識盤面symbol
         grid_recognizer.initialize_grid(img)
-        grid_recognizer.recognize_roi(img, 2)
+        grid_recognizer.recognize_roi(img, 1)
         grid_recognizer.save_annotated_frame(img, filename)
         grid_recognizer.save_grid_results(filename)
 
