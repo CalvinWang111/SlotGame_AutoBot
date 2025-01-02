@@ -67,6 +67,9 @@ class BaseGridRecognizer:
         self.resize_templates_by_cell_size()
         
         self.grid = None
+        # self.load_grid()
+        self.template_match_data = {}
+        self.debug = debug
         self.load_grid()
         
     
@@ -261,6 +264,7 @@ class BaseGridRecognizer:
     def save_annotated_frame(self, img, file_name):
         save_path = self.save_dir / f"{file_name}.png"
         draw_bboxes_and_icons_on_image(img, self.template_dir, self.grid, save_path=save_path)
+
         
 class BullGridRecognizer(BaseGridRecognizer):
     def __init__(self, game:str, mode:str, config_file: Path, window_size=(1920, 1080), debug=False):

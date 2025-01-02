@@ -27,11 +27,15 @@ class StoppingFrameCapture:
         self.save_dir = save_dir
         self.__output_counter = 0
         self.free_gamestate = False
+        self.processfail = False
         self.__button_available = False
         self.__terminated = False
         self.__spin_start_time = 0      
         self.Snapshot = Snapshot
         self.time_threshold = elapsed_time_threshold
+
+        self.pause_event = threading.Event()  # 控制線程的事件
+        self.pause_event.set()  # 初始化為未暫停狀態
         if(game_name=="bull"):
             self.bull_mode = True
         else:
@@ -52,6 +56,7 @@ class StoppingFrameCapture:
             count = 1
             
             while not self.__terminated:
+                self.pause_event.wait()  # 等待事件被設置
                 frame_start_time = time.time() 
                 frame = np.array(sct.grab(monitor))
 
@@ -61,6 +66,7 @@ class StoppingFrameCapture:
                     print("Warning: Frame buffer is full")
                 
                 #avg_intensities = screenshot.clickable(snapshot_path='./images/'+self.Snapshot+'_runtime.png',highest_confidence_images=highest_confidence_images)
+                '''
                 clickable_start_time = time.time()
                 avg_intensities = screenshot.clickable(snapshot_array=frame, highest_confidence_images=highest_confidence_images, target_buttons=["button_start_spin"])
                 clickable_end_time = time.time()
@@ -74,7 +80,7 @@ class StoppingFrameCapture:
                     self.__button_available = False
                 intensity_end_time = time.time()
                 #print(f'Intensity check time: {intensity_end_time-intensity_start_time}')
-
+                '''
                 frame_elapsed = time.time() - frame_start_time
                 if DEBUG:
                     print(f"Frame read time: {frame_elapsed}, Buffer size: {frame_buffer.qsize()}")
@@ -130,6 +136,7 @@ class StoppingFrameCapture:
 
             while not (self.__terminated==True and frame_buffer.qsize()==0):
                 if not frame_buffer.empty():
+                    self.pause_event.wait()  # 等待事件被設置
                     start_time = time.time()
                     frame = frame_buffer.get()
                     if is_first:
@@ -190,6 +197,7 @@ class StoppingFrameCapture:
 
                     rolling_record.append(rolling_now)
                     old_frame = new_frame.copy()
+                    screenshot = GameScreenshot()
                     if(len(rolling_record)==rolling_record_size):
                         if True in rolling_record:
                             if ((rolling_record.index(True) == 0 and rolling_record.count(True) == 1) or frame_number-last_capture_frame==25) and (rolling_frames >= min_rolling_frames or (arrow_flag==True and noice_count <= max_noice and arrow_combo<5)):
@@ -208,6 +216,12 @@ class StoppingFrameCapture:
                                 last_capture_time = time.time()
                                 last_capture_frame = frame_number
                                 capture_number += 1
+
+                                avg_intensities = screenshot.clickable(snapshot_array=frame, highest_confidence_images=highest_confidence_images, target_buttons=["button_start_spin"])
+                                if screenshot.intensity_check(initial_avg_intensities=intial_intensity, avg_intensities=avg_intensities, intensity_threshold=intensity_threshold):
+                                    self.__button_available = True
+                                else:
+                                    self.__button_available = False
                             else:
                                 if frame_number-last_capture_frame>25:
                                     # the wheel is still rolling
@@ -227,14 +241,27 @@ class StoppingFrameCapture:
 
                 #Free Game state
                 elapsed__time = (time.time() - elapsed_start_time)
-                #print('elapsed_time', elapsed__time)
-                if int(elapsed__time) >= 10 and int(elapsed__time) % 5 == 0 and self.__button_available == False:
-                    print('into freegame_control')
-                    #print('button state', self.__button_available)
-                    GameController.freegame_control(Snapshot=self.Snapshot)
-                    self.free_gamestate = True
+
+                # Perform checks if elapsed time exceeds 10 seconds and is a multiple of 5
+                if elapsed__time >= 10 and (int(elapsed__time) - 10) % 5 == 0:
+                    avg_intensities = screenshot.clickable(snapshot_array=frame, highest_confidence_images=highest_confidence_images, target_buttons=["button_start_spin"])
+                    if screenshot.intensity_check(initial_avg_intensities=intial_intensity, avg_intensities=avg_intensities, intensity_threshold=intensity_threshold):
+                        self.__button_available = True
+                    else:
+                        self.__button_available = False
+                        
+                    if self.__button_available == False:
+                        print('into freegame_control')
+                        print('button state', self.__button_available)
+                        self.pause_event.clear()  # 暫停線程
+                        success_continue = GameController.freegame_control(Snapshot=self.Snapshot)
+                        self.pause_event.set()  # 恢復線程
+                        print('freegame control success to contunue: ', success_continue)
+                        self.free_gamestate = True
                 elif elapsed__time > 30:
+                    print('Slotgame AutoBot fail to process')
                     self.__terminated = True
+                    self.processfail = True
 
                 # Termination condition
                 if self.__button_available==True:

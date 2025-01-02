@@ -14,7 +14,7 @@ import json
 
 class ViTRecognition:
     # put your own model path here
-    def __init__(self, Snapshot, maskDict, model_path=r'C:\Users\13514\button_recognition\VITrun_ver6\best_model.pth'):
+    def __init__(self, Snapshot, images_dir, maskDict, model_path=r'C:\Users\13514\button_recognition\VITrun_ver6\best_model.pth'):
         # Define the label mapping
         label_map = {
                     0: "button_max_bet",
@@ -53,7 +53,8 @@ class ViTRecognition:
         model.to(self.device)
         model.eval()
 
-        self.test_folder = "./" + Snapshot
+        self.images_dir = images_dir
+        self.segmented_image_folder = os.path.join(images_dir, "segmented_image")
         self.label_map = label_map
         self.confidence_threshold = confidence_threshold
         self.true_labels = []
@@ -69,9 +70,6 @@ class ViTRecognition:
         for key, value in highest_confidence_images.items():
             new_key = self.label_map.get(key, str(key))  # Default to string key if no mapping
             transformed_dict[new_key] = value
-
-        # 確保 template_folder 存在
-        os.makedirs(template_folder, exist_ok=True)
 
         # Define the output file path
         output_file = os.path.join(template_folder, "_controlcompoment.json")
@@ -102,14 +100,14 @@ class ViTRecognition:
     def classify_components(self, freegame_compoment=[3, 8, 12, 13 ]):
         """使用 ViT 模型對分割元件進行辨識"""
         # Create the "template" folder if it doesn't exist
-        template_folder = os.path.join(self.test_folder, "template")
+        template_folder = os.path.join(self.images_dir, "template")
         os.makedirs(template_folder, exist_ok=True)
 
         # Dictionary to store the highest-confidence image path for each class
         highest_confidence_images = {}
 
         # Process each image in the test dataset
-        for root, dirs, files in os.walk(self.test_folder):
+        for root, dirs, files in os.walk(self.segmented_image_folder):
             for img_name in files:
                 if img_name.lower().endswith(('.png', '.jpg', '.jpeg')):
                     img_path = os.path.join(root, img_name)

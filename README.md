@@ -9,7 +9,7 @@
 資料夾'material'依需求放入分割完元件或是遊戲畫面截圖
 
 **SlotBot使用方式**
-SlotBot folder: 模組化操作元件辨識，須將模組(sam2/checkpoints/VITModel資料夾放入SlotGame_AutoBot-combined_grid_module專案資料夾內，sam2/checkpoints/VITModel資料夾雲端連結位置:https://drive.google.com/drive/folders/1cPY8fSodutPBDmM-59n8rNku8dqUU7pP?usp=sharing)
+SlotBot folder: 模組化操作元件辨識，須將模組(sam2/checkpoints/VITModel資料夾放入SlotGame_AutoBot-combined_grid_module專案資料夾內，sam2/checkpoints/VITModel資料夾雲端連結位置:https://drive.google.com/drive/folders/1cPY8fSodutPBDmM-59n8rNku8dqUU7pP?usp=sharing)，模組requirement:https://drive.google.com/file/d/1FqC1r0tOwh8t3mxu6ugXdomLrmyZYLka/view
 ![image](GoogleDrive.png)
 
 ### 確認SAM 2.0模組正確安裝(IF 曾有裝載過舊版本SAM)

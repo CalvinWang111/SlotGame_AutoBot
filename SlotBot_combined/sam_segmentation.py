@@ -12,7 +12,7 @@ import shutil
 
 
 class SAMSegmentation:
-    def __init__(self, Snapshot, sam2_checkpoint = "../checkpoints/sam2_hiera_large.pt", model_cfg = "sam2_hiera_l.yaml"):
+    def __init__(self, Snapshot, images_dir, sam2_checkpoint = "../checkpoints/sam2_hiera_large.pt", model_cfg = "sam2_hiera_l.yaml"):
         # select the device for computation
         if torch.cuda.is_available():
             device = torch.device("cuda")
@@ -31,10 +31,11 @@ class SAMSegmentation:
                 torch.backends.cudnn.allow_tf32 = True
         
         self.device = device
-        self.checkpoint = sam2_checkpoint        
-        self.model_cfg = model_cfg
         self.maskDict = {}
-        self.Snapshot = Snapshot
+        self.output_dir = os.path.join(images_dir, "segmented_image")
+
+        sam2 = build_sam2(model_cfg, sam2_checkpoint, device, apply_postprocessing=False)
+        self.mask_generator = SAM2AutomaticMaskGenerator(sam2)
 
     def clear_directory(self, directory):
         """
@@ -54,13 +55,12 @@ class SAMSegmentation:
     def show_anns(self, anns, original_image, borders=True):
         if len(anns) == 0:
             return
-        output_dir = self.Snapshot
 
         # Clear output directory if it exists, or create it if it doesn't
-        if os.path.exists(output_dir):
-            self.clear_directory(output_dir)
+        if os.path.exists(self.output_dir):
+            self.clear_directory(self.output_dir)
         else:
-            os.makedirs(output_dir)
+            os.makedirs(self.output_dir)
 
         # Sort annotations by area (largest to smallest)
         sorted_anns = sorted(anns, key=(lambda x: x['area']), reverse=True)
@@ -112,7 +112,7 @@ class SAMSegmentation:
                     cropped_image_rgba[:, :, 3] = cropped_mask  # Set alpha channel based on mask
 
                     # Save the cropped and masked image to the output directory
-                    image_filename = os.path.join(output_dir, f'cropped_image_{mask_counter}_contour_{i}.png')
+                    image_filename = os.path.join(self.output_dir, f'cropped_image_{mask_counter}_contour_{i}.png')
 
                     # Store pixel positions in maskDict
                     self.maskDict[str(f'cropped_image_{mask_counter}_contour_{i}.png')] = (x, y, w, h)
@@ -135,7 +135,7 @@ class SAMSegmentation:
             final_image_bgr = cv2.cvtColor(final_image_uint8, cv2.COLOR_RGBA2BGRA)
             
             # Save the final image
-            image_filename = os.path.join(output_dir, f'Final.png')
+            image_filename = os.path.join(self.output_dir, "Final.png")
             cv2.imwrite(image_filename, final_image_bgr)  # Save as BGRA
             print(f"Saved final image: {image_filename}")
 
@@ -144,18 +144,7 @@ class SAMSegmentation:
         image = Image.open(route)
         image = np.array(image.convert("RGB"))
 
-        plt.figure(figsize=(20, 20))
-        plt.imshow(image)
-        plt.axis('off')
-        plt.show()
-
-        sam2 = build_sam2(self.model_cfg, self.checkpoint, device=self.device, apply_postprocessing=False)
-        mask_generator = SAM2AutomaticMaskGenerator(sam2)
-        masks = mask_generator.generate(image)
+        masks = self.mask_generator.generate(image)
         self.show_anns(masks, image)
 
         return self.maskDict
-
-
-
-

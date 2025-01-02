@@ -35,6 +35,7 @@ class SAMSegmentation:
         self.model_cfg = model_cfg
         self.maskDict = {}
         self.Snapshot = Snapshot
+        
 
     def clear_directory(self, directory):
         """
@@ -144,10 +145,10 @@ class SAMSegmentation:
         image = Image.open(route)
         image = np.array(image.convert("RGB"))
 
-        plt.figure(figsize=(20, 20))
-        plt.imshow(image)
-        plt.axis('off')
-        plt.show()
+        # plt.figure(figsize=(20, 20))
+        # plt.imshow(image)
+        # plt.axis('off')
+        # plt.show()
 
         sam2 = build_sam2(self.model_cfg, self.checkpoint, device=self.device, apply_postprocessing=False)
         mask_generator = SAM2AutomaticMaskGenerator(sam2)
