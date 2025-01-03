@@ -1,6 +1,8 @@
 import os
 import time
+import torch
 import json
+from paddleocr import PaddleOCR
 import random
 from datetime import datetime
 from pathlib import Path
@@ -22,6 +24,8 @@ import threading
 import cProfile
 import pstats
 import queue
+
+
 
 MODE = 'base'
 GAME = 'golden'
@@ -48,7 +52,12 @@ def main():
     intensity_threshold = 20
     cell_border = 20
     spin_round = 20
+    fg_rounds = 0
     value_recognize_signal = False
+    
+    ocr = PaddleOCR(use_angle_cls=True, lang="ch")
+    keywords = ['開始旋轉','自動旋轉','長按','開始']
+
     root_dir = Path(__file__).parent.parent
 
     vit_model_path = os.path.join(root_dir, 'VITModel', 'vit_model.pth')
@@ -116,6 +125,7 @@ def main():
 
     # 使用隊列
     result_queue = queue.Queue()
+    
 
     for i in range(spin_round):
         GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=10)
@@ -130,51 +140,48 @@ def main():
             time.sleep(1)
             if stop_catcher.free_gamestate:
                 print('超過10秒未能恢復操作，判定已經進入免費遊戲')
-        
         key_frame_pathes = result_queue.get()
         
-        # 切換盤面辨識模式
-        if grid_recognizer.mode == 'base' and stop_catcher.free_gamestate:
-            grid_recognizer = BaseGridRecognizer(game=GAME, mode='free', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
-        elif grid_recognizer.mode == 'free' and not stop_catcher.free_gamestate:
-            grid_recognizer = BaseGridRecognizer(game=GAME, mode='base', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
-
-        '''   
-        # process key frames
-        for path in key_frame_pathes:
-            key_frame_name = Path(path).stem
-            print(f'Processing key frame: {key_frame_name}')
-            img = cv2.imread(path)
-            grid_recognizer.initialize_grid(img)
-            grid_recognizer.recognize_roi(img, 1)
-            grid_recognizer.save_annotated_frame(img, key_frame_name)
-            grid_recognizer.save_grid_results(key_frame_name)
-            
-            #cv2.imshow('key_frame', img)
-            #cv2.waitKey(0)
-            #cv2.destroyAllWindows()
-
-            numerical_round_count = numerical_round_count + 1
-            # if value_recognize_signal:
-            #     valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=[path])
-
-            # save_path = save_dir / f"capture_result{output_counter}.png"
-            # output_counter += 1
-            # symbol_recognizer.draw_bboxes_and_icons_on_image(img, symbol_template_dir, grid, save_path=save_path)
-            # grid.clear()
-
-        
-        #print('key_frame_dir', key_frame_dir)
-        #print('numerical_round_count',numerical_round_count)
-        keyframe_list.append([i, numerical_round_count])
-        '''
-        
         filename = Snapshot + f'_round_{i}'
+        
         # screenshot.capture_screenshot(window_title=window_name, images_dir=image_dir,filename=filename)
         stop_catcher.get_static_frame(images_dir=image_dir,filename=filename)
         path = os.path.join(image_dir, filename + '.png')
         img = cv2.imread(path)
 
+        #檢查開始選轉按紐，顯示內容是否為開始旋轉，如果不是判定進入免費遊戲
+        (x, y, w, h) = highest_confidence_images[10]['contour']
+        ocr_result = ocr.ocr(img[y:y + h, x:x + w], cls=True)
+        ocr_result = ocr_result[0]
+                        
+        # Extract text and confidence
+        results = [(item[1][0], item[1][1]) for item in ocr_result]
+
+        # Find the result with the highest confidence
+        highest_score_result = max(results, key=lambda x: x[1])
+
+        # Check if the highest score answer is "開始旋轉"
+        if any(keyword in highest_score_result[0] for keyword in keywords):
+            print("The spin button showing : '開始旋轉'.")
+            stop_catcher.free_gamestate = False
+        else:
+            print("The spin button showing is not : '開始旋轉'.")
+
+            # 提取數字
+            numbers = [int(part) for text, _ in results for part in text.split('/') if part.isdigit()]
+
+            if len(numbers) >= 2:
+                print(f"Remaining Spins: {numbers[0]}, Free Games Won: {numbers[1]}")
+            else:
+                print("Could not extract sufficient numerical data.")
+            stop_catcher.free_gamestate = True
+
+        # 切換盤面辨識模式
+        if grid_recognizer.mode == 'base' and stop_catcher.free_gamestate:
+            grid_recognizer = BaseGridRecognizer(game=GAME, mode='free', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
+        elif grid_recognizer.mode == 'free' and not stop_catcher.free_gamestate:
+            grid_recognizer = BaseGridRecognizer(game=GAME, mode='base', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
+        
         #數值組10輪後，辨識每一輪數值
         if value_recognize_signal:
             valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=[path])
@@ -184,6 +191,7 @@ def main():
         grid_recognizer.recognize_roi(img, 1)
         grid_recognizer.save_annotated_frame(img, filename)
         grid_recognizer.save_grid_results(filename)
+
 
         #數值組 
         if i == 10:
