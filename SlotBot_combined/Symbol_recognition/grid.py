@@ -1,9 +1,11 @@
 import pickle
 from pathlib import Path
 import json
+from typing import Tuple
 
 class BaseGrid:
-    def __init__(self, bbox, shape):
+    def __init__(self, bbox, shape, window_size=(1920, 1080)):
+        self.window_size = window_size
         self.bbox = bbox
         self.row, self.col = shape
         x, y, w, h = bbox
@@ -20,9 +22,17 @@ class BaseGrid:
             for j in range(self.col):
                 self._grid[i][j] = None
     
-    def load(path: str):
+    def load(path: str, window_size: Tuple[int, int]):
         with open(path, 'rb') as f:
-            return pickle.load(f)
+            grid:BaseGrid = pickle.load(f)
+            if grid.window_size != window_size:
+                print(f"Resizing grid from {grid.window_size} to {window_size}")
+                scale = window_size[0] / grid.window_size[0]
+                grid.window_size = window_size
+                grid.bbox = (int(grid.bbox[0] * scale), int(grid.bbox[1] * scale), int(grid.bbox[2] * scale), int(grid.bbox[3] * scale))
+                grid.symbol_width = grid.bbox[2] // grid.col
+                grid.symbol_height = grid.bbox[3] // grid.row
+            return grid
         
     def save(self, path: str):
         with open(path, 'wb') as f:
@@ -33,20 +43,18 @@ class BaseGrid:
         for i in range(self.row):
             for j in range(self.col):
                 cell = self._grid[i][j]
-                if cell["symbol"] is None:
+                if cell is None or cell["symbol"] is None:
                     continue
-                if cell is not None:
-                    output_dict = {
-                        "key": cell["symbol"],
-                        "path": str(template_dir / f'{cell["symbol"]}.png'),
-                        "confidence": float(cell["score"]),
-                        "contour": self.get_roi(i, j),
-                        "value": [i, j]
-                    }
-                    output_list.append(output_dict)
+                output_dict = {
+                    "key": cell["symbol"],
+                    "path": str(template_dir / f'{cell["symbol"]}.png'),
+                    "confidence": float(cell["score"]),
+                    "contour": self.get_roi(i, j),
+                    "value": [i, j]
+                }
+                output_list.append(output_dict)
         with open(str(save_dir / f"{file_name}.json"), "w") as f:
             json.dump(output_list, f, indent=4)
-        print(f'output_list: {output_list}')
     
     def __getitem__(self, idx):
         i, j = idx

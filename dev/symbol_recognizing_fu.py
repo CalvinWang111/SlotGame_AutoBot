@@ -6,7 +6,7 @@ from Symbol_recognition.grid_recognizer import BaseGridRecognizer
 
 MODE = 'base'
 GAME = 'fu'
-DEBUG = False
+DEBUG = True
 
 image_dir = Path(f"./images/{GAME}/screenshots/{MODE}_game")
 config_file = Path(f'./Symbol_recognition/configs/{GAME}.json')
@@ -16,8 +16,8 @@ grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=config_fi
 frame_count = 0 # replace it when integrating with the game
 for image_path in image_dir.glob('*.png'): 
     image_name = image_path.stem
-    if DEBUG and image_name != "6":
-        continue
+    # if DEBUG and image_name != "6":
+    #     continue
     print(f"Processing image: {image_name}")
     img = cv2.imread(str(image_path))
     

@@ -146,7 +146,7 @@ def main():
             print(f'Processing key frame: {key_frame_name}')
             img = cv2.imread(path)
             grid_recognizer.initialize_grid(img)
-            grid_recognizer.recognize_roi(img, 2)
+            grid_recognizer.recognize_roi(img, 1)
             grid_recognizer.save_annotated_frame(img, key_frame_name)
             grid_recognizer.save_grid_results(key_frame_name)
             
@@ -155,8 +155,8 @@ def main():
             #cv2.destroyAllWindows()
 
             numerical_round_count = numerical_round_count + 1
-            if value_recognize_signal:
-                valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=[path])
+            # if value_recognize_signal:
+            #     valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=[path])
 
             # save_path = save_dir / f"capture_result{output_counter}.png"
             # output_counter += 1
@@ -181,7 +181,7 @@ def main():
 
         #盤面組，每一輪建立盤面以及辨識盤面symbol
         grid_recognizer.initialize_grid(img)
-        grid_recognizer.recognize_roi(img, 2)
+        grid_recognizer.recognize_roi(img, 1)
         grid_recognizer.save_annotated_frame(img, filename)
         grid_recognizer.save_grid_results(filename)
 

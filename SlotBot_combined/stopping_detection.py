@@ -9,7 +9,7 @@ import mss
 import time
 from queue import Queue
 import threading
-from grid import BullGrid
+from Symbol_recognition.grid import BullGrid
 from screenshot import GameScreenshot
 from game_controller import GameController
 
@@ -83,8 +83,8 @@ class StoppingFrameCapture:
                     print(f"Frame read time: {frame_elapsed}, Buffer size: {frame_buffer.qsize()}")
                 if frame_elapsed < frame_time:
                     time.sleep(frame_time - frame_elapsed)
-                else:
-                    print("Warning: Capture speed lower than target frame rate")
+                # else:
+                #     print("Warning: Capture speed lower than target frame rate")
                 count += 1
             sct.close()
 
