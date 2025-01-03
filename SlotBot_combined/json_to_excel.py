@@ -13,13 +13,11 @@ class Excel_parser:
         self.root_dir = Path(__file__).parent.parent
 
     def json_to_excel(self, game_type, game_state):
-        #save_path = f"../excel/{game_type}_{game_state}.xlsx"
-        #self.symbol_path = f"../output/{game_type}/symbols"
-        #self.value_path = f"../output/{game_type}/numerical"
-        
-        save_path = os.path.join(self.root_dir, f'excel/{game_type}_{game_state}.xlsx')
-        self.symbol_path = os.path.join(self.root_dir, f'output/{game_type}/symbols')
-        self.value_path = os.path.join(self.root_dir, f'output/{game_type}/numerical')
+
+        Path(os.path.join(self.root_dir, "excel")).mkdir(exist_ok=True)
+        save_path = os.path.join(self.root_dir, 'excel', f'{game_type}_{game_state}.xlsx')
+        self.symbol_path = os.path.join(self.root_dir, 'output', game_type,'symbols')
+        self.value_path = os.path.join(self.root_dir, 'output', game_type, 'numerical')
         # 建立資料
         excel = {
             "遊戲名稱": [],
@@ -32,7 +30,9 @@ class Excel_parser:
 
         #讀取數值檔案
         #建立鍵值
-        for file_name in os.listdir(self.value_path):
+        value_file_list = os.listdir(self.value_path)
+        value_file_list.sort(key=lambda x: int(x.split('_')[-1].split('.')[0]))
+        for file_name in value_file_list:
             excel['遊戲名稱'].append(game_type)
             excel['測試時間'].append("")
             excel['遊戲狀態'].append(game_state)
@@ -49,7 +49,7 @@ class Excel_parser:
                             excel_value[key] = []
 
         #輸入數值
-        for file_name in os.listdir(self.value_path):
+        for file_name in value_file_list:
             # 檢查是否為 JSON 檔案
             if file_name.endswith(".json"):
                 file_path = os.path.join(self.value_path, file_name)
@@ -65,7 +65,9 @@ class Excel_parser:
 
         # 讀取盤面檔案
         # 建立鍵值
-        for file_name in os.listdir(self.symbol_path):
+        symbol_file_list = os.listdir(self.symbol_path)
+        symbol_file_list.sort(key=lambda x: int(x.split('_')[-1].split('.')[0]))
+        for file_name in symbol_file_list:
             # 檢查是否為 JSON 檔案
             if file_name.endswith(".json"):
                 file_path = os.path.join(self.symbol_path, file_name)
@@ -80,7 +82,7 @@ class Excel_parser:
                             excel_symbol[symbol_pos] = []
 
         # 輸入數值
-        for file_name in os.listdir(self.symbol_path):
+        for file_name in symbol_file_list:
             # 檢查是否為 JSON 檔案
             if file_name.endswith(".json"):
                 file_path = os.path.join(self.symbol_path, file_name)
