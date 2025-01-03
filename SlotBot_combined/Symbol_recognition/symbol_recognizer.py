@@ -212,7 +212,7 @@ def process_template_matches(template_list: List[Template], roi: np.ndarray, iou
                 match_one_scale = match_scale
         if debug:
             print(f'{template_name:<20} | score: {match_score:.3f} | scale: {match_scale:.3f}')
-    if debug and match_one:
+    if debug and match_one and match_one_template_obj:
         matched_copy = match_one_template_obj.img
         matched_copy = cv2.resize(matched_copy, (0, 0), fx=match_one_scale, fy=match_one_scale)
         cv2.imshow(match_one_template_obj.name, matched_copy)
@@ -313,7 +313,7 @@ def process_template_matches_sift(template_list: List[Template], roi: np.ndarray
                     matches_mask = mask_ransac.ravel().tolist()
                     filtered_matches = [m for m, keep in zip(position_consistent_matches, matches_mask) if keep]
 
-                    if len(filtered_matches) >= 4:
+                    if len(filtered_matches) >= min_matches:
                         # Calculate the total distance (score) for the filtered matches
                         score = sum([m.distance for m in filtered_matches])
 

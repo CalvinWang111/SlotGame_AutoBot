@@ -17,13 +17,13 @@ from symbol_recognizing import get_symbol_positions,recoglize_symbol
 from Symbol_recognition.grid_recognizer import *
 from json_to_excel import Excel_parser
 import cv2
-from value_recognition import ValueRecognition
+# from value_recognition import ValueRecognition
 import threading
 import cProfile
 import pstats
 import queue
 
-MODE = 'base'
+MODE = 'free'
 GAME = 'golden'
 keyframe_list = []
 
@@ -47,7 +47,7 @@ def main():
     Snapshot = GAME
     intensity_threshold = 20
     cell_border = 20
-    spin_round = 15
+    spin_round = 30
     value_recognize_signal = False
     root_dir = Path(__file__).parent.parent
 
@@ -58,7 +58,7 @@ def main():
     images_dir = os.path.join(root_dir, 'images', Snapshot)
 
     sam = SAMSegmentation(Snapshot=Snapshot, images_dir=images_dir, sam2_checkpoint=sam_model_path, model_cfg=sam_model_cfg)
-    valuerec = ValueRecognition()
+    # valuerec = ValueRecognition()
 
     # 1. 截圖
     screenshot.capture_screenshot(window_title=window_name, images_dir=images_dir, filename=Snapshot)
@@ -82,7 +82,7 @@ def main():
     intial_avg_intensities = screenshot.clickable(snapshot_path=intialshot_path,highest_confidence_images=highest_confidence_images)
     first_frame = cv2.imread(intialshot_path)
 
-    valuerec.get_board_value(intialshot_path)
+    # valuerec.get_board_value(intialshot_path)
 
     #config_file = Path(root_dir / f'./SlotBot_combined/Symbol_recognition/configs/{GAME}.json')
     #grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=config_file, window_size=(1920, 1080), debug=False)
@@ -91,7 +91,7 @@ def main():
     first_frame_width = first_frame.shape[1]
     first_frame_height = first_frame.shape[0]
     grid_recognizer_config_file = Path(root_dir / f'./SlotBot_combined/Symbol_recognition/configs/{GAME}.json')
-    grid_recognizer = BaseGridRecognizer(game=GAME, mode='base', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
+    grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
     grid_recognizer.initialize_grid(first_frame)
     # temp_img = draw_grid_on_image(first_frame, grid_recognizer.grid)
     # cv2.imshow('grid', temp_img)
@@ -175,8 +175,8 @@ def main():
         img = cv2.imread(path)
 
         #數值組10輪後，辨識每一輪數值
-        if value_recognize_signal:
-            valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=[path])
+        # if value_recognize_signal:
+        #     valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=[path])
 
         #盤面組，每一輪建立盤面以及辨識盤面symbol
         grid_recognizer.initialize_grid(img)
@@ -185,26 +185,26 @@ def main():
         grid_recognizer.save_grid_results(filename)
 
         #數值組 
-        if i == 10:
-            '''
-            all_keyframes = [os.path.join(key_frame_dir, file) for file in os.listdir(key_frame_dir)]
+        # if i == 10:
+        #     '''
+        #     all_keyframes = [os.path.join(key_frame_dir, file) for file in os.listdir(key_frame_dir)]
 
-            # Sort the files if needed (e.g., alphabetically or by modification time)
-            all_keyframes.sort()
+        #     # Sort the files if needed (e.g., alphabetically or by modification time)
+        #     all_keyframes.sort()
 
-             # Collect the first `file_count` files
-            all_keyframes = all_keyframes[:numerical_round_count]
-            # numerical_round_cound減少1，key_frame編號記錄從0開始，round從1開始
-            print('all_keyframes', all_keyframes)
-            print('numerical_round_count', numerical_round_count)
-            valuerec.get_meaning(all_keyframes, numerical_round_count - 1)
-            value_recognize_signal = True
-            '''
-            all_rounds = [os.path.join(image_dir, file)for file in os.listdir(image_dir)]
-            print('all rounds round images pathes:', all_rounds)
-            valuerec.get_meaning(root_dir, GAME, MODE, all_rounds, i)
-            valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=all_rounds)
-            value_recognize_signal = True
+        #      # Collect the first `file_count` files
+        #     all_keyframes = all_keyframes[:numerical_round_count]
+        #     # numerical_round_cound減少1，key_frame編號記錄從0開始，round從1開始
+        #     print('all_keyframes', all_keyframes)
+        #     print('numerical_round_count', numerical_round_count)
+        #     valuerec.get_meaning(all_keyframes, numerical_round_count - 1)
+        #     value_recognize_signal = True
+        #     '''
+        #     all_rounds = [os.path.join(image_dir, file)for file in os.listdir(image_dir)]
+        #     print('all rounds round images pathes:', all_rounds)
+        #     valuerec.get_meaning(root_dir, GAME, MODE, all_rounds, i)
+        #     valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=all_rounds)
+        #     value_recognize_signal = True
 
 if __name__ == "__main__":
     main()

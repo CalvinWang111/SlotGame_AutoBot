@@ -38,15 +38,9 @@ class BaseGridRecognizer:
         # Multiply the adjustment ratio to the grid matching parameters
         self.cell_border = int(self.config["cell_border"] * self.adjustment_ratio)
         self.grid_matching_params = self.config["grid_matching_params"]
-        # self.grid_matching_params['scale_range'][0] *= self.adjustment_ratio
-        # self.grid_matching_params['scale_range'][1] *= self.adjustment_ratio
-        # self.grid_matching_params['scale_step'] *= self.adjustment_ratio
         self.grid_matching_params['min_area'] = int(self.grid_matching_params['min_area'] * (self.adjustment_ratio ** 2))
         self.grid_matching_params['border'] = int(self.grid_matching_params['border'] * self.adjustment_ratio)
         self.cell_matching_params = self.config["cell_matching_params"]
-        # self.cell_matching_params['scale_range'][0] *= self.adjustment_ratio
-        # self.cell_matching_params['scale_range'][1] *= self.adjustment_ratio
-        # self.cell_matching_params['scale_step'] *= self.adjustment_ratio
         self.cell_matching_params['min_area'] = int(self.cell_matching_params['min_area'] * (self.adjustment_ratio ** 2))
         self.cell_matching_params['border'] = int(self.cell_matching_params['border'] * self.adjustment_ratio)
         self.sift_matching_params = self.config["sift_matching_params"]
@@ -63,14 +57,18 @@ class BaseGridRecognizer:
         self.non_square_templates: List[Template] = []
         self.all_templates: List[Template] = []
         
+        self.resize_template = self.config.get('resize_template', True)
         self.load_templates()
-        self.resize_templates_by_cell_size()
+        if self.resize_template:
+            self.resize_templates_by_cell_size()
         
+        self.use_saved_grid = self.config.get('use_saved_grid', True)
         self.grid = None
-        # self.load_grid()
+        if self.use_saved_grid:
+            self.load_grid()
+            
         self.template_match_data = {}
         self.debug = debug
-        self.load_grid()
         
     
     def load_templates(self):
@@ -136,7 +134,7 @@ class BaseGridRecognizer:
         
     def initialize_grid(self, img):
         start_time = time.time()
-        if self.grid is not None:
+        if self.grid is not None and self.use_saved_grid == True:
             return
         print("Initializing grid")
         
@@ -152,7 +150,8 @@ class BaseGridRecognizer:
             template_list=self.all_templates,
             roi=roi,
             **self.grid_matching_params,
-            grayscale=self.use_gray,
+            # grayscale=self.use_gray,
+            grayscale=True,
             debug=self.debug
         )
 
@@ -163,7 +162,8 @@ class BaseGridRecognizer:
         self.grid = BaseGrid(grid_bbox, grid_shape, self.window_size)
         if not self.grid_path.parent.exists():
             self.grid_path.parent.mkdir(parents=True, exist_ok=True)
-        self.grid.save(str(self.grid_path))
+        if self.use_saved_grid:
+            self.grid.save(str(self.grid_path))
         
         if self.debug:
             print(f'found {len(matched_positions)} matches')
