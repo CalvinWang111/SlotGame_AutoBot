@@ -1,0 +1,90 @@
+{
+    "stickers": {
+        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\witch_forest\\segmented_image\\cropped_image_46_contour_1.png",
+        "confidence": 0.9651671051979065,
+        "contour": [
+            13,
+            9,
+            29,
+            23
+        ],
+        "value": null
+    },
+    "button_info": {
+        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\witch_forest\\segmented_image\\cropped_image_12_contour_0.png",
+        "confidence": 0.5738906860351562,
+        "contour": [
+            175,
+            876,
+            116,
+            138
+        ],
+        "value": null
+    },
+    "button_start_spin": {
+        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\witch_forest\\segmented_image\\cropped_image_4_contour_0.png",
+        "confidence": 0.7407245635986328,
+        "contour": [
+            1305,
+            875,
+            271,
+            139
+        ],
+        "value": null
+    },
+    "button_increase_bet": {
+        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\witch_forest\\segmented_image\\cropped_image_26_contour_0.png",
+        "confidence": 0.58659827709198,
+        "contour": [
+            592,
+            878,
+            66,
+            126
+        ],
+        "value": null
+    },
+    "button_decrease_bet": {
+        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\witch_forest\\segmented_image\\cropped_image_30_contour_0.png",
+        "confidence": 0.5771519541740417,
+        "contour": [
+            299,
+            879,
+            58,
+            123
+        ],
+        "value": null
+    },
+    "button_home": {
+        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\witch_forest\\segmented_image\\cropped_image_33_contour_0.png",
+        "confidence": 0.6375995874404907,
+        "contour": [
+            99,
+            46,
+            80,
+            81
+        ],
+        "value": null
+    },
+    "button_three_dot": {
+        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\witch_forest\\segmented_image\\cropped_image_37_contour_0.png",
+        "confidence": 0.4880300462245941,
+        "contour": [
+            1651,
+            48,
+            79,
+            79
+        ],
+        "value": null
+    },
+    "button_max_bet": {
+        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\witch_forest\\segmented_image\\cropped_image_8_contour_0.png",
+        "confidence": 0.5020537972450256,
+        "contour": [
+            1094,
+            875,
+            194,
+            130
+        ],
+        "value": null
+    }
+}

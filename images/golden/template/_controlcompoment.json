@@ -1,0 +1,57 @@
+{
+    "stickers": {
+        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_23_contour_1.png",
+        "confidence": 0.9652549624443054,
+        "contour": [
+            361,
+            319,
+            10,
+            3
+        ],
+        "value": null
+    },
+    "button_start_spin": {
+        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_8_contour_0.png",
+        "confidence": 0.5852037668228149,
+        "contour": [
+            580,
+            1282,
+            123,
+            88
+        ],
+        "value": null
+    },
+    "button_three_dot": {
+        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_80_contour_0.png",
+        "confidence": 0.3887441158294678,
+        "contour": [
+            681,
+            117,
+            63,
+            62
+        ],
+        "value": null
+    },
+    "button_max_bet": {
+        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_81_contour_0.png",
+        "confidence": 0.47853022813796997,
+        "contour": [
+            499,
+            1283,
+            72,
+            43
+        ],
+        "value": null
+    },
+    "button_increase_bet": {
+        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_83_contour_0.png",
+        "confidence": 0.5868575572967529,
+        "contour": [
+            222,
+            1283,
+            34,
+            86
+        ],
+        "value": null
+    }
+}
