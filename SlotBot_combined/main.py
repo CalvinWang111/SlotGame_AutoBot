@@ -28,7 +28,7 @@ import queue
 
 
 MODE = 'base'
-GAME = 'golden'
+GAME = 'dragon'
 keyframe_list = []
 
 if MODE == 'base':
@@ -51,7 +51,7 @@ def main():
     Snapshot = GAME
     intensity_threshold = 20
     cell_border = 20
-    spin_round = 20
+    spin_round = 50
     fg_rounds = 0
     value_recognize_signal = False
     
@@ -219,4 +219,8 @@ if __name__ == "__main__":
     main()
     ex = Excel_parser()
     ex.json_to_excel(GAME, MODE)
+    excel_path = os.path.join(root_dir, 'excel', f'{GAME}_{MODE}.xlsx')
+    jsons_path = os.path.join(root_dir, f"output/{GAME}/numerical")
+    ex.fill_creation_times_by_index(folder_path=jsons_path, excel_path=excel_path, output_excel=excel_path)
+    
     

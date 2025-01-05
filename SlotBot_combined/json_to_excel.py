@@ -2,6 +2,8 @@ import json
 import os
 from openpyxl import Workbook
 import pandas as pd
+from datetime import datetime
+import openpyxl
 from pathlib import Path
 
 
@@ -112,6 +114,58 @@ class Excel_parser:
         # 儲存檔案
         df.to_excel(save_path)
         print("檔案已成功儲存！")
+
+    def get_file_creation_time(self, file_path):
+        try:
+            creation_timestamp = os.path.getctime(file_path)
+            creation_time = datetime.fromtimestamp(creation_timestamp).strftime("%Y-%m-%d %H:%M:%S")
+            return creation_time
+        except Exception as e:
+            print(f"Error getting creation time for {file_path}: {e}")
+            return None
+
+    def fill_creation_times_by_index(self, folder_path, excel_path, output_excel):
+        if not os.path.exists(folder_path):
+            print(f"Folder not found: {folder_path}")
+            return
+
+        if not os.path.exists(excel_path):
+            print(f"Excel file not found: {excel_path}")
+            return
+
+        # Get all JSON files in the folder
+        json_files = sorted([f for f in os.listdir(folder_path) if f.endswith(".json")])
+        if not json_files:
+            print("No JSON files found in the specified folder.")
+            return
+
+        # Load the Excel workbook
+        workbook = openpyxl.load_workbook(excel_path)
+        sheet = workbook.active
+
+        # Find the column for "測試時間"
+        headers = [cell.value for cell in sheet[1]]
+        if "測試時間" not in headers:
+            print("Column '測試時間' not found in Excel file.")
+            return
+
+        time_column_index = headers.index("測試時間") + 1
+
+        # Fill creation times based on the index
+        for row in range(2, sheet.max_row + 1):
+            index = row - 2  # Index starts from 0 for JSON files
+            if index < len(json_files):
+                json_file = json_files[index]
+                json_path = os.path.join(folder_path, json_file)
+                creation_time = self.get_file_creation_time(json_path)
+                if creation_time:
+                    sheet.cell(row=row, column=time_column_index, value=creation_time)
+
+        # Save the updated Excel file
+        workbook.save(output_excel)
+        print(f"Updated Excel file saved to {output_excel}")
+
+
 '''
 if __name__ == "__main__":
     ex = Excel_parser()
