@@ -46,7 +46,7 @@ class BaseGridRecognizer:
         self.sift_matching_params = self.config["sift_matching_params"]
         
         self.initialize_grid_mode = self.config["initialize_grid_mode"]
-        self.use_gray = self.initialize_grid_mode == "gray" and self.mode == 'free'
+        self.use_gray = self.initialize_grid_mode == "gray"
         self.cell_size = self.config["cell_size"]
         self.cell_size[0] = int(self.cell_size[0] * self.adjustment_ratio)
         self.cell_size[1] = int(self.cell_size[1] * self.adjustment_ratio)
@@ -63,6 +63,7 @@ class BaseGridRecognizer:
             self.resize_templates_by_cell_size()
         
         self.use_saved_grid = self.config.get('use_saved_grid', True)
+        print("use_saved_grid:",self.use_saved_grid)
         self.grid = None
         if self.use_saved_grid:
             self.load_grid()
@@ -141,17 +142,16 @@ class BaseGridRecognizer:
         grid_border = self.grid_matching_params["border"]
         roi = img[grid_border: -grid_border, grid_border: -grid_border]
         
-        if self.debug:
-            cv2.imshow("roi", roi)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+        # if self.debug:
+        #     cv2.imshow("roi", roi)
+        #     cv2.waitKey(0)
+        #     cv2.destroyAllWindows()
         
         matched_positions = process_template_matches(
             template_list=self.all_templates,
             roi=roi,
             **self.grid_matching_params,
-            # grayscale=self.use_gray,
-            grayscale=True,
+            grayscale=self.use_gray,
             debug=self.debug
         )
 

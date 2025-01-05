@@ -101,7 +101,7 @@ class StoppingFrameCapture:
             # adjust detecting area into 3 * 5, whitch can make things easy
             if self.bull_mode:
                 roi_h = 3*sh
-                if self.grid.growth_direction=="up":
+                if self.free_gamestate==False:
                     roi_y += (self.grid.row - 3)*sh
 
             # setting Shi-Tomasi
