@@ -28,7 +28,7 @@ import queue
 
 
 MODE = 'base'
-GAME = 'dragon'
+GAME = 'golden'
 keyframe_list = []
 
 if MODE == 'base':
@@ -51,7 +51,7 @@ def main():
     Snapshot = GAME
     intensity_threshold = 20
     cell_border = 20
-    spin_round = 50
+    spin_round = 10
     fg_rounds = 0
     value_recognize_signal = False
     
