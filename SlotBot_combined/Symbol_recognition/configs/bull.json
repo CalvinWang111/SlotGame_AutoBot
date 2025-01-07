@@ -16,7 +16,7 @@
       "iou_threshold": 0.1,
       "scale_range": [0.6, 1.6],
       "scale_step": 0.05,
-      "threshold": 0.88,
+      "threshold": 0.9,
       "min_area": 3000,
       "match_one": true,
       "border": 10
