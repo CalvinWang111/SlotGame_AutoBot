@@ -27,7 +27,7 @@ class Excel_parser:
             "遊戲狀態": [],
         }
 
-        # excel_value = {}
+        excel_value = {}
         excel_symbol = {}
 
         #讀取數值檔案
@@ -39,16 +39,16 @@ class Excel_parser:
             excel['測試時間'].append("")
             excel['遊戲狀態'].append(game_state)
 
-        #     # 檢查是否為 JSON 檔案
-        #     if file_name.endswith(".json"):
-        #         file_path = os.path.join(self.value_path, file_name)
-        #         with open(file_path, "r", encoding="utf-8") as file:
-        #             # 解析 JSON 檔案
-        #             json_data = json.load(file)
-        #             # 建立鍵值
-        #             for key in json_data:
-        #                 if not key in excel_value:
-        #                     excel_value[key] = []
+            # 檢查是否為 JSON 檔案
+            if file_name.endswith(".json"):
+                file_path = os.path.join(self.value_path, file_name)
+                with open(file_path, "r", encoding="utf-8") as file:
+                    # 解析 JSON 檔案
+                    json_data = json.load(file)
+                    # 建立鍵值
+                    for key in json_data:
+                        if not key in excel_value:
+                            excel_value[key] = []
 
         #輸入數值
         for file_name in value_file_list:
@@ -106,7 +106,7 @@ class Excel_parser:
 
 
         excel.update(excel_symbol)
-        # excel.update(excel_value)
+        excel.update(excel_value)
 
         # 建立 DataFrame
         df = pd.DataFrame(excel)

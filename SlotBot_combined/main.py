@@ -51,7 +51,7 @@ def main():
     Snapshot = GAME
     intensity_threshold = 20
     cell_border = 20
-    spin_round = 10
+    spin_round = 15
     fg_rounds = 0
     value_recognize_signal = False
     
