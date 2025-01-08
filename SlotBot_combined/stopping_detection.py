@@ -33,6 +33,7 @@ class StoppingFrameCapture:
         self.__spin_start_time = 0      
         self.Snapshot = Snapshot
         self.time_threshold = elapsed_time_threshold
+        self.frame_buffer = Queue()
 
         self.pause_event = threading.Event()  # 控制線程的事件
         self.pause_event.set()  # 初始化為未暫停狀態
@@ -43,16 +44,12 @@ class StoppingFrameCapture:
         if DEBUG:
             print("bbox:",grid.bbox)
 
-    def get_key_frames(self, intial_intensity,intensity_threshold,highest_confidence_images):
-        key_image_pathes = []
-
-        def __get_window_frame(self:StoppingFrameCapture,frame_buffer):
+    def __get_window_frame(self,frame_buffer):
             window = gw.getWindowsWithTitle(self.window_name)[0]
             left, top, width, height = window.left, window.top, window.width, window.height
             monitor = {"left": left, "top": top, "width": width, "height": height}
             sct = mss.mss()
             frame_time = 1/target_fps
-            screenshot = GameScreenshot()
             count = 1
             
             while not self.__terminated:
@@ -90,7 +87,13 @@ class StoppingFrameCapture:
                 #     print("Warning: Capture speed lower than target frame rate")
                 count += 1
             sct.close()
-            
+
+    def get_key_frames(self, intial_intensity,intensity_threshold,highest_confidence_images,save_images):
+        """
+        Get the frame at the moment the wheel stops
+        """
+        key_image_pathes = []
+
         def __detect_stopping_frame(self:StoppingFrameCapture,frame_buffer):
             roi_x, roi_y, roi_w, roi_h = self.grid.bbox
             sh = self.grid.symbol_height
@@ -98,7 +101,7 @@ class StoppingFrameCapture:
             # adjust detecting area into 3 * 5, whitch can make things easy
             if self.bull_mode:
                 roi_h = 3*sh
-                if self.grid.growth_direction=="up":
+                if self.free_gamestate==False:
                     roi_y += (self.grid.row - 3)*sh
 
             # setting Shi-Tomasi
@@ -112,7 +115,6 @@ class StoppingFrameCapture:
             rolling_record_size = 9
             min_moving_down_distance = sh/5
             min_point_number = min(int(roi_w*roi_h/100000+1),10)
-            print("min_point_number:",min_point_number)
             max_error = 25
             min_rolling_frames = 15
             max_degree = 5
@@ -133,7 +135,7 @@ class StoppingFrameCapture:
             frame_number = 0
             arrow_combo = 0
             elapsed_start_time = time.time()
-
+            screenshot = GameScreenshot()
             while not (self.__terminated==True and frame_buffer.qsize()==0):
                 if not frame_buffer.empty():
                     self.pause_event.wait()  # 等待事件被設置
@@ -197,20 +199,24 @@ class StoppingFrameCapture:
 
                     rolling_record.append(rolling_now)
                     old_frame = new_frame.copy()
-                    screenshot = GameScreenshot()
+                    
                     if(len(rolling_record)==rolling_record_size):
                         if True in rolling_record:
                             if ((rolling_record.index(True) == 0 and rolling_record.count(True) == 1) or frame_number-last_capture_frame==25) and (rolling_frames >= min_rolling_frames or (arrow_flag==True and noice_count <= max_noice and arrow_combo<5)):
                                 # the wheel is stop right now, save the image
-                                cv2.imwrite(f"{self.save_dir}\\key_frame{self.__output_counter}.png", frame)
-                                key_image_pathes.append(f"{self.save_dir}\\key_frame{self.__output_counter}.png")
+                                if save_images:
+                                    cv2.imwrite(f"{self.save_dir}\\key_frame{self.__output_counter}.png", frame)
+                                    key_image_pathes.append(f"{self.save_dir}\\key_frame{self.__output_counter}.png")
                                 if arrow_flag:
                                     print("Get arrow stopping frame, Saved to path:", f"{self.save_dir}\\key_frame{self.__output_counter}.png")
                                     if(DEBUG):
                                         print(arrow_flag,noice_count,arrow_combo)
                                     arrow_combo += 1
                                 else:
-                                    print("Get stopping frame, Saved to path:", f"{self.save_dir}\\key_frame{self.__output_counter}.png")
+                                    if save_images:
+                                        print("Get stopping frame, Saved to path:", f"{self.save_dir}\\key_frame{self.__output_counter}.png")
+                                    else:
+                                        print("Get stopping frame")
                                     arrow_combo = 0
                                 self.__output_counter+=1
                                 last_capture_time = time.time()
@@ -268,13 +274,13 @@ class StoppingFrameCapture:
                     if time.time()-last_capture_time>5 :
                         self.__terminated = True
                 
-        frame_buffer = Queue()
         self.__button_available = False
         self.__terminated = False
         self.__spin_start_time = time.time()
+        self.frame_buffer.queue.clear()
 
-        capture_thread = threading.Thread(target=__get_window_frame, args=(self,frame_buffer))
-        process_thread = threading.Thread(target=__detect_stopping_frame, args=(self,frame_buffer))
+        capture_thread = threading.Thread(target=self.__get_window_frame, args=(self.frame_buffer,))
+        process_thread = threading.Thread(target=__detect_stopping_frame, args=(self,self.frame_buffer))
 
         capture_thread.start()
         process_thread.start()
@@ -284,3 +290,84 @@ class StoppingFrameCapture:
 
         print("round over")
         return(key_image_pathes)
+    
+    def get_static_frame(self,images_dir, filename, duration=3):
+        """
+        When the wheel is stopped, call it to get the least disturbed frame by special effects.
+        duration: in seconds, assume fps=30
+        """
+
+        def __detect_static_frame(self:StoppingFrameCapture,frame_buffer):
+            roi_x, roi_y, roi_w, roi_h = self.grid.bbox
+            sampling_interval = int(roi_w* roi_h/10000)
+            sampling_interval = 5
+
+            best_frame = None
+            min_difference = 999999999
+            is_first = True
+            frame_number = 0
+
+            while frame_number <= duration*30:
+                fps_time = time.time()
+                frame = frame = frame_buffer.get()               
+                new_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)[roi_y:roi_y+roi_h,roi_x:roi_x+roi_w]
+                pixel_difference = 0
+
+                if not is_first:
+                    # Use NumPy's stride feature to sample rows and columns
+                    rows = np.arange(0, new_frame.shape[0], sampling_interval)
+                    cols = np.arange(0, new_frame.shape[1], sampling_interval)
+
+                    # Create a grid to get all indices
+                    row_indices, col_indices = np.meshgrid(rows, cols, indexing='ij')
+
+                    # Adjust column indices (col_indices) with the offset
+                    col_indices = (col_indices + (row_indices % sampling_interval)) % new_frame.shape[1]
+
+                    # Extract pixel values corresponding to the indices
+                    new_pixels = new_frame[row_indices, col_indices]
+                    old_pixels = old_frame[row_indices, col_indices]
+
+                    # Compute pixel differences and sum them up
+                    pixel_difference = np.sum(np.abs(new_pixels - old_pixels))
+
+                    if min_difference > pixel_difference:
+                        min_difference = pixel_difference
+                        best_frame = frame.copy()
+                        if pixel_difference==0:
+                            break
+
+                old_frame = new_frame.copy()
+                is_first = False
+
+                # print("fps:",1/(time.time()-fps_time),"\t min difference:",pixel_difference)
+                frame_number += 1
+            
+            self.__terminated = True
+            if(best_frame is None):
+                best_frame = frame
+
+            # Create the directory if it does not exist 
+            os.makedirs(images_dir, exist_ok=True)
+
+            # Save the screenshot to the specified file 
+            full_path = os.path.join(images_dir, filename + '.png')
+            cv2.imwrite(full_path, frame)
+            print("Get static frame, Saved to path:", full_path)
+                
+        self.__button_available = False
+        self.__terminated = False
+        self.__spin_start_time = time.time()
+        self.frame_buffer.queue.clear()
+
+        capture_thread = threading.Thread(target=self.__get_window_frame, args=(self.frame_buffer,))
+        process_thread = threading.Thread(target=__detect_static_frame, args=(self,self.frame_buffer))
+
+        capture_thread.start()
+        process_thread.start()
+
+        capture_thread.join()
+        process_thread.join()
+
+        print("round over")
+        return()

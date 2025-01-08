@@ -1,6 +1,8 @@
 import os
 import time
+import torch
 import json
+from paddleocr import PaddleOCR
 import random
 from datetime import datetime
 from pathlib import Path
@@ -17,13 +19,15 @@ from symbol_recognizing import get_symbol_positions,recoglize_symbol
 from Symbol_recognition.grid_recognizer import *
 from json_to_excel import Excel_parser
 import cv2
-# from value_recognition import ValueRecognition
+from value_recognition import ValueRecognition
 import threading
 import cProfile
 import pstats
 import queue
 
-MODE = 'free'
+
+
+MODE = 'base'
 GAME = 'golden'
 keyframe_list = []
 
@@ -47,8 +51,13 @@ def main():
     Snapshot = GAME
     intensity_threshold = 20
     cell_border = 20
-    spin_round = 30
+    spin_round = 10
+    fg_rounds = 0
     value_recognize_signal = False
+    
+    ocr = PaddleOCR(use_angle_cls=True, lang="ch")
+    keywords = ['開始旋轉','自動旋轉','長按','開始']
+
     root_dir = Path(__file__).parent.parent
 
     vit_model_path = os.path.join(root_dir, 'VITModel', 'vit_model.pth')
@@ -58,7 +67,7 @@ def main():
     images_dir = os.path.join(root_dir, 'images', Snapshot)
 
     sam = SAMSegmentation(Snapshot=Snapshot, images_dir=images_dir, sam2_checkpoint=sam_model_path, model_cfg=sam_model_cfg)
-    # valuerec = ValueRecognition()
+    valuerec = ValueRecognition()
 
     # 1. 截圖
     screenshot.capture_screenshot(window_title=window_name, images_dir=images_dir, filename=Snapshot)
@@ -82,7 +91,7 @@ def main():
     intial_avg_intensities = screenshot.clickable(snapshot_path=intialshot_path,highest_confidence_images=highest_confidence_images)
     first_frame = cv2.imread(intialshot_path)
 
-    # valuerec.get_board_value(intialshot_path)
+    valuerec.get_board_value(intialshot_path)
 
     #config_file = Path(root_dir / f'./SlotBot_combined/Symbol_recognition/configs/{GAME}.json')
     #grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=config_file, window_size=(1920, 1080), debug=False)
@@ -91,7 +100,7 @@ def main():
     first_frame_width = first_frame.shape[1]
     first_frame_height = first_frame.shape[0]
     grid_recognizer_config_file = Path(root_dir / f'./SlotBot_combined/Symbol_recognition/configs/{GAME}.json')
-    grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
+    grid_recognizer = BaseGridRecognizer(game=GAME, mode='base', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
     grid_recognizer.initialize_grid(first_frame)
     # temp_img = draw_grid_on_image(first_frame, grid_recognizer.grid)
     # cv2.imshow('grid', temp_img)
@@ -101,14 +110,14 @@ def main():
     stop_catcher = StoppingFrameCapture(window_name=window_name,grid=grid_recognizer.grid,save_dir=key_frame_dir, Snapshot=Snapshot, elapsed_time_threshold=3, game_name=GAME)
     numerical_round_count = 0
 
-    def keyframes_wrapper(module_instance, key_frame_pathes):
-        key_frame_pathes = stop_catcher.get_key_frames(intial_intensity=intial_avg_intensities,intensity_threshold=intensity_threshold,highest_confidence_images=highest_confidence_images)
+    def keyframes_wrapper(module_instance, key_frame_pathes, save_images):
+        key_frame_pathes = stop_catcher.get_key_frames(intial_intensity=intial_avg_intensities,intensity_threshold=intensity_threshold,highest_confidence_images=highest_confidence_images,save_images = save_images)
         result_queue.put(key_frame_pathes)
 
-    def profiled_keyframes_wrapper(module_instance, key_frame_pathes):
+    def profiled_keyframes_wrapper(module_instance, key_frame_pathes, save_images = True):
         # profiler = cProfile.Profile()
         # profiler.enable()
-        keyframes_wrapper(module_instance, key_frame_pathes)
+        keyframes_wrapper(module_instance, key_frame_pathes, save_images)
         # profiler.disable()
         # stats = pstats.Stats(profiler)
         # stats.sort_stats('cumtime')  # 按累計時間排序
@@ -116,6 +125,7 @@ def main():
 
     # 使用隊列
     result_queue = queue.Queue()
+    
 
     for i in range(spin_round):
         GameController.Windowcontrol(GameController,highest_confidence_images=highest_confidence_images, classId=10)
@@ -123,60 +133,58 @@ def main():
         start_time = time.time()
 
         key_frame_pathes = []
-        stop_catcher_thread = threading.Thread(target=profiled_keyframes_wrapper, args=(stop_catcher, key_frame_pathes))
+        stop_catcher_thread = threading.Thread(target=profiled_keyframes_wrapper, args=(stop_catcher, key_frame_pathes, False))
         stop_catcher_thread.start()
 
         while stop_catcher_thread.is_alive():
             time.sleep(1)
             if stop_catcher.free_gamestate:
                 print('超過10秒未能恢復操作，判定已經進入免費遊戲')
-        
         key_frame_pathes = result_queue.get()
         
+        filename = Snapshot + f'_round_{i}'
+        
+        # screenshot.capture_screenshot(window_title=window_name, images_dir=image_dir,filename=filename)
+        stop_catcher.get_static_frame(images_dir=image_dir,filename=filename)
+        path = os.path.join(image_dir, filename + '.png')
+        img = cv2.imread(path)
+
+        #檢查開始選轉按紐，顯示內容是否為開始旋轉，如果不是判定進入免費遊戲
+        (x, y, w, h) = highest_confidence_images[10]['contour']
+        ocr_result = ocr.ocr(img[y:y + h, x:x + w], cls=True)
+        ocr_result = ocr_result[0]
+                        
+        # Extract text and confidence
+        results = [(item[1][0], item[1][1]) for item in ocr_result]
+
+        # Find the result with the highest confidence
+        highest_score_result = max(results, key=lambda x: x[1])
+
+        # Check if the highest score answer is "開始旋轉"
+        if any(keyword in highest_score_result[0] for keyword in keywords):
+            print("The spin button showing : '開始旋轉'.")
+            stop_catcher.free_gamestate = False
+        else:
+            print("The spin button showing is not : '開始旋轉'.")
+
+            # 提取數字
+            numbers = [int(part) for text, _ in results for part in text.split('/') if part.isdigit()]
+
+            if len(numbers) >= 2:
+                print(f"Remaining Spins: {numbers[0]}, Free Games Won: {numbers[1]}")
+            else:
+                print("Could not extract sufficient numerical data.")
+            stop_catcher.free_gamestate = True
+
         # 切換盤面辨識模式
         if grid_recognizer.mode == 'base' and stop_catcher.free_gamestate:
             grid_recognizer = BaseGridRecognizer(game=GAME, mode='free', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
         elif grid_recognizer.mode == 'free' and not stop_catcher.free_gamestate:
             grid_recognizer = BaseGridRecognizer(game=GAME, mode='base', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
-
-        '''   
-        # process key frames
-        for path in key_frame_pathes:
-            key_frame_name = Path(path).stem
-            print(f'Processing key frame: {key_frame_name}')
-            img = cv2.imread(path)
-            grid_recognizer.initialize_grid(img)
-            grid_recognizer.recognize_roi(img, 1)
-            grid_recognizer.save_annotated_frame(img, key_frame_name)
-            grid_recognizer.save_grid_results(key_frame_name)
-            
-            #cv2.imshow('key_frame', img)
-            #cv2.waitKey(0)
-            #cv2.destroyAllWindows()
-
-            numerical_round_count = numerical_round_count + 1
-            # if value_recognize_signal:
-            #     valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=[path])
-
-            # save_path = save_dir / f"capture_result{output_counter}.png"
-            # output_counter += 1
-            # symbol_recognizer.draw_bboxes_and_icons_on_image(img, symbol_template_dir, grid, save_path=save_path)
-            # grid.clear()
-
         
-        #print('key_frame_dir', key_frame_dir)
-        #print('numerical_round_count',numerical_round_count)
-        keyframe_list.append([i, numerical_round_count])
-        '''
-
-        filename = Snapshot + f'_round_{i}'
-        screenshot.capture_screenshot(window_title=window_name, images_dir=image_dir,filename=filename)
-        path = os.path.join(image_dir, filename + '.png')
-        img = cv2.imread(path)
-
         #數值組10輪後，辨識每一輪數值
-        # if value_recognize_signal:
-        #     valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=[path])
+        if value_recognize_signal:
+            valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=[path])
 
         #盤面組，每一輪建立盤面以及辨識盤面symbol
         grid_recognizer.initialize_grid(img)
@@ -184,30 +192,36 @@ def main():
         grid_recognizer.save_annotated_frame(img, filename)
         grid_recognizer.save_grid_results(filename)
 
+
         #數值組 
-        # if i == 10:
-        #     '''
-        #     all_keyframes = [os.path.join(key_frame_dir, file) for file in os.listdir(key_frame_dir)]
+        if i == 10:
+            '''
+            all_keyframes = [os.path.join(key_frame_dir, file) for file in os.listdir(key_frame_dir)]
 
-        #     # Sort the files if needed (e.g., alphabetically or by modification time)
-        #     all_keyframes.sort()
+            # Sort the files if needed (e.g., alphabetically or by modification time)
+            all_keyframes.sort()
 
-        #      # Collect the first `file_count` files
-        #     all_keyframes = all_keyframes[:numerical_round_count]
-        #     # numerical_round_cound減少1，key_frame編號記錄從0開始，round從1開始
-        #     print('all_keyframes', all_keyframes)
-        #     print('numerical_round_count', numerical_round_count)
-        #     valuerec.get_meaning(all_keyframes, numerical_round_count - 1)
-        #     value_recognize_signal = True
-        #     '''
-        #     all_rounds = [os.path.join(image_dir, file)for file in os.listdir(image_dir)]
-        #     print('all rounds round images pathes:', all_rounds)
-        #     valuerec.get_meaning(root_dir, GAME, MODE, all_rounds, i)
-        #     valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=all_rounds)
-        #     value_recognize_signal = True
+             # Collect the first `file_count` files
+            all_keyframes = all_keyframes[:numerical_round_count]
+            # numerical_round_cound減少1，key_frame編號記錄從0開始，round從1開始
+            print('all_keyframes', all_keyframes)
+            print('numerical_round_count', numerical_round_count)
+            valuerec.get_meaning(all_keyframes, numerical_round_count - 1)
+            value_recognize_signal = True
+            '''
+            all_rounds = [os.path.join(image_dir, file)for file in os.listdir(image_dir)]
+            print('all rounds round images pathes:', all_rounds)
+
+            valuerec.get_meaning(root_dir, GAME, MODE, all_rounds, i)
+            valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=all_rounds)
+            value_recognize_signal = True
 
 if __name__ == "__main__":
     main()
     ex = Excel_parser()
     ex.json_to_excel(GAME, MODE)
+    excel_path = os.path.join(root_dir, 'excel', f'{GAME}_{MODE}.xlsx')
+    jsons_path = os.path.join(root_dir, f"output/{GAME}/numerical")
+    ex.fill_creation_times_by_index(folder_path=jsons_path, excel_path=excel_path, output_excel=excel_path)
+    
     
