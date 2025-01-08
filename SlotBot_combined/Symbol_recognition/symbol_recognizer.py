@@ -458,7 +458,7 @@ def draw_grid_on_image(img, grid:BaseGrid, color=(255, 255, 255), thickness=5):
             cv2.rectangle(img, (x, y), (x+w, y+h), color, thickness)
     return img
 
-def draw_bboxes_and_icons_on_image(img, template_dir, grid, save_path, icon_size=30):
+def draw_bboxes_and_icons_on_image(img, template_dir, grid, save_path, icon_size=50):
     color = (255, 255, 255)
     for i in range(grid.row):
         for j in range(grid.col):
