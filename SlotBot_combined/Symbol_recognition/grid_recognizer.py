@@ -47,6 +47,11 @@ class BaseGridRecognizer:
         
         self.initialize_grid_mode = self.config["initialize_grid_mode"]
         self.use_gray = self.initialize_grid_mode == "gray"
+        cell_matching_mode = self.config.get('cell_matching_mode', 'default')
+        if cell_matching_mode=='template only':
+            self.method = 0
+        else:
+            self.method = 1
         self.cell_size = self.config["cell_size"]
         self.cell_size[0] = int(self.cell_size[0] * self.adjustment_ratio)
         self.cell_size[1] = int(self.cell_size[1] * self.adjustment_ratio)
@@ -194,12 +199,8 @@ class BaseGridRecognizer:
         for template_obj in self.all_templates:
             template_obj.best_scale = None
         
-    def recognize_roi(self, img, method):
-        """
-        method: int
-            0: use template matching
-            1: use SIFT
-        """
+    def recognize_roi(self, img):
+        print("self.method:",self.method)
         if self.grid is None:
             raise ValueError("Grid has not been initialized")
         self.grid.clear()
@@ -216,7 +217,7 @@ class BaseGridRecognizer:
                 cell_with_border = img[y1:y2, x1:x2]
                 cell = img[y:y+h, x:x+w]
 
-                if method == 0:
+                if self.method == 0:
                     matched_obj, score = process_template_matches(
                         template_list=self.all_templates,
                         roi=cell_with_border,
@@ -224,7 +225,8 @@ class BaseGridRecognizer:
                         grayscale=self.use_gray,
                         debug=self.debug
                     )
-                elif method == 1:
+
+                elif self.method == 1:
                     matched_obj, score = process_template_matches_sift(
                         template_list=self.all_templates,
                         roi=cell, 
