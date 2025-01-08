@@ -14,7 +14,7 @@ from game_controller import GameController
 from TemplateMatching.template_matching import test_template_matching
 from PIL import Image
 from stopping_detection import StoppingFrameCapture
-from TemplateMatching import symbol_recognizer,grid
+# from TemplateMatching import symbol_recognizer,grid
 from symbol_recognizing import get_symbol_positions,recoglize_symbol
 from Symbol_recognition.grid_recognizer import *
 from json_to_excel import Excel_parser
@@ -51,7 +51,7 @@ def main():
     Snapshot = GAME
     intensity_threshold = 20
     cell_border = 20
-    spin_round = 10
+    spin_round = 50
     fg_rounds = 0
     value_recognize_signal = False
     
@@ -100,7 +100,8 @@ def main():
     first_frame_width = first_frame.shape[1]
     first_frame_height = first_frame.shape[0]
     grid_recognizer_config_file = Path(root_dir / f'./SlotBot_combined/Symbol_recognition/configs/{GAME}.json')
-    grid_recognizer = BaseGridRecognizer(game=GAME, mode='base', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
+    print(grid_recognizer_config_file)
+    grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
     grid_recognizer.initialize_grid(first_frame)
     # temp_img = draw_grid_on_image(first_frame, grid_recognizer.grid)
     # cv2.imshow('grid', temp_img)
