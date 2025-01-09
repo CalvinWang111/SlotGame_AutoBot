@@ -1,0 +1,90 @@
+{
+    "stickers": {
+        "path": "D:\\git\\SlotGame_AutoBot\\images\\dragon\\segmented_image\\cropped_image_33_contour_2.png",
+        "confidence": 0.965180516242981,
+        "contour": [
+            406,
+            296,
+            3,
+            8
+        ],
+        "value": null
+    },
+    "button_start_spin": {
+        "path": "D:\\git\\SlotGame_AutoBot\\images\\dragon\\segmented_image\\cropped_image_10_contour_0.png",
+        "confidence": 0.7519719004631042,
+        "contour": [
+            425,
+            948,
+            89,
+            63
+        ],
+        "value": null
+    },
+    "button_max_bet": {
+        "path": "D:\\git\\SlotGame_AutoBot\\images\\dragon\\segmented_image\\cropped_image_47_contour_0.png",
+        "confidence": 0.4994920790195465,
+        "contour": [
+            364,
+            949,
+            54,
+            31
+        ],
+        "value": null
+    },
+    "button_three_dot": {
+        "path": "D:\\git\\SlotGame_AutoBot\\images\\dragon\\segmented_image\\cropped_image_43_contour_0.png",
+        "confidence": 0.4975583553314209,
+        "contour": [
+            498,
+            96,
+            47,
+            48
+        ],
+        "value": null
+    },
+    "button_speedup_spin": {
+        "path": "D:\\git\\SlotGame_AutoBot\\images\\dragon\\segmented_image\\cropped_image_46_contour_0.png",
+        "confidence": 0.31504562497138977,
+        "contour": [
+            364,
+            979,
+            54,
+            32
+        ],
+        "value": null
+    },
+    "button_increase_bet": {
+        "path": "D:\\git\\SlotGame_AutoBot\\images\\dragon\\segmented_image\\cropped_image_48_contour_0.png",
+        "confidence": 0.5917772054672241,
+        "contour": [
+            162,
+            948,
+            26,
+            64
+        ],
+        "value": null
+    },
+    "button_decrease_bet": {
+        "path": "D:\\git\\SlotGame_AutoBot\\images\\dragon\\segmented_image\\cropped_image_51_contour_0.png",
+        "confidence": 0.5950870513916016,
+        "contour": [
+            38,
+            949,
+            25,
+            62
+        ],
+        "value": null
+    },
+    "button_additional_bet": {
+        "path": "D:\\git\\SlotGame_AutoBot\\images\\dragon\\segmented_image\\cropped_image_37_contour_1.png",
+        "confidence": 0.3922345042228699,
+        "contour": [
+            50,
+            924,
+            131,
+            27
+        ],
+        "value": null
+    }
+}

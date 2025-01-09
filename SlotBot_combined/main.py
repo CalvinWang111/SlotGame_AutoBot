@@ -14,7 +14,7 @@ from game_controller import GameController
 from TemplateMatching.template_matching import test_template_matching
 from PIL import Image
 from stopping_detection import StoppingFrameCapture
-from TemplateMatching import symbol_recognizer,grid
+# from TemplateMatching import symbol_recognizer,grid
 from symbol_recognizing import get_symbol_positions,recoglize_symbol
 from Symbol_recognition.grid_recognizer import *
 from json_to_excel import Excel_parser
@@ -94,7 +94,8 @@ def main():
     first_frame_width = first_frame.shape[1]
     first_frame_height = first_frame.shape[0]
     grid_recognizer_config_file = Path(root_dir / f'./SlotBot_combined/Symbol_recognition/configs/{GAME}.json')
-    grid_recognizer = BaseGridRecognizer(game=GAME, mode='base', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
+    print(grid_recognizer_config_file)
+    grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
     grid_recognizer.initialize_grid(first_frame)
     # temp_img = draw_grid_on_image(first_frame, grid_recognizer.grid)
     # cv2.imshow('grid', temp_img)
@@ -212,6 +213,7 @@ def main():
             '''
             all_rounds = [os.path.join(image_dir, file)for file in os.listdir(image_dir)]
             print('all rounds round images pathes:', all_rounds)
+
             valuerec.get_meaning(root_dir, GAME, MODE, all_rounds, i)
             valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=all_rounds)
             value_recognize_signal = True

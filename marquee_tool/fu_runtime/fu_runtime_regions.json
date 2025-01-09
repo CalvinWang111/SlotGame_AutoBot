@@ -1,0 +1,22 @@
+{
+    "fu_fg_btn1": {
+        "path": "marquee_tool\\fu_runtime\\template\\fu_fg_btn1.png",
+        "confidence": 1,
+        "contour": [
+            584.705216161023,
+            531.7662537873225,
+            188.83891031886924,
+            80.72503036531816
+        ]
+    },
+    "fu_fg_btn2": {
+        "path": "marquee_tool\\fu_runtime\\template\\fu_fg_btn2.png",
+        "confidence": 1,
+        "contour": [
+            1097.8857663405456,
+            583.6609161650271,
+            209.02016791019878,
+            77.84199356655677
+        ]
+    }
+}

@@ -78,7 +78,7 @@ class Excel_parser:
                     json_data = json.load(file)
                     # 建立鍵值
                     for grid in json_data:
-                        symbol_pos = f"C{grid['value'][0]}R{grid['value'][1]}"
+                        symbol_pos = f"C{grid['value'][1]}R{grid['value'][0]}"
                         # 建立鍵值
                         if not symbol_pos in excel_symbol:
                             excel_symbol[symbol_pos] = []
@@ -96,7 +96,7 @@ class Excel_parser:
                     for key in excel_symbol:
                         found = False
                         for grid in json_data:
-                            symbol_pos = f"C{grid['value'][0]}R{grid['value'][1]}"
+                            symbol_pos = f"C{grid['value'][1]}R{grid['value'][0]}"
                             if symbol_pos == key:
                                 found = True
                                 excel_symbol[key].append(grid['key'])

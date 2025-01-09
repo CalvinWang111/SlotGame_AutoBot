@@ -1,56 +1,89 @@
 {
     "stickers": {
-        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_23_contour_1.png",
-        "confidence": 0.9652549624443054,
+        "path": "c:\\NTUST\\GameLab\\Project\\Automatic_Slot_Bot\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_7_contour_1.png",
+        "confidence": 0.9653099179267883,
         "contour": [
-            361,
-            319,
-            10,
-            3
+            22,
+            786,
+            12,
+            8
         ],
         "value": null
     },
     "button_start_spin": {
-        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_8_contour_0.png",
-        "confidence": 0.5852037668228149,
+        "path": "c:\\NTUST\\GameLab\\Project\\Automatic_Slot_Bot\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_16_contour_0.png",
+        "confidence": 0.7411519289016724,
         "contour": [
-            580,
-            1282,
-            123,
-            88
+            391,
+            869,
+            82,
+            58
         ],
         "value": null
     },
     "button_three_dot": {
-        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_80_contour_0.png",
-        "confidence": 0.3887441158294678,
+        "path": "c:\\NTUST\\GameLab\\Project\\Automatic_Slot_Bot\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_54_contour_1.png",
+        "confidence": 0.4210183620452881,
         "contour": [
-            681,
-            117,
-            63,
-            62
-        ],
-        "value": null
-    },
-    "button_max_bet": {
-        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_81_contour_0.png",
-        "confidence": 0.47853022813796997,
-        "contour": [
-            499,
-            1283,
-            72,
+            459,
+            84,
+            42,
             43
         ],
         "value": null
     },
-    "button_increase_bet": {
-        "path": "c:\\Users\\pppoo\\Desktop\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_83_contour_0.png",
-        "confidence": 0.5868575572967529,
+    "button_max_bet": {
+        "path": "c:\\NTUST\\GameLab\\Project\\Automatic_Slot_Bot\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_56_contour_0.png",
+        "confidence": 0.5100440382957458,
         "contour": [
-            222,
-            1283,
-            34,
-            86
+            336,
+            869,
+            49,
+            29
+        ],
+        "value": null
+    },
+    "button_increase_bet": {
+        "path": "c:\\NTUST\\GameLab\\Project\\Automatic_Slot_Bot\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_58_contour_0.png",
+        "confidence": 0.5932499170303345,
+        "contour": [
+            149,
+            869,
+            24,
+            58
+        ],
+        "value": null
+    },
+    "button_additional_bet": {
+        "path": "c:\\NTUST\\GameLab\\Project\\Automatic_Slot_Bot\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_47_contour_0.png",
+        "confidence": 0.38924890756607056,
+        "contour": [
+            46,
+            847,
+            121,
+            25
+        ],
+        "value": null
+    },
+    "button_speedup_spin": {
+        "path": "c:\\NTUST\\GameLab\\Project\\Automatic_Slot_Bot\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_55_contour_0.png",
+        "confidence": 0.36284977197647095,
+        "contour": [
+            336,
+            897,
+            49,
+            30
+        ],
+        "value": null
+    },
+    "button_decrease_bet": {
+        "path": "c:\\NTUST\\GameLab\\Project\\Automatic_Slot_Bot\\SlotGame_AutoBot\\images\\golden\\segmented_image\\cropped_image_62_contour_0.png",
+        "confidence": 0.5952763557434082,
+        "contour": [
+            35,
+            869,
+            23,
+            57
         ],
         "value": null
     }
