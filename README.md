@@ -34,8 +34,7 @@ Plusz_LegendOfRa
 VIVA FROEST VEGAS
 witch_forest
 ```
-window_name = ' '內部填入模擬器視窗名稱
-spin_round = 請填入運行的輪數，10輪以上才能輸出正確的excel數值
+window_name = ' '內部填入模擬器視窗名稱，spin_round = 請填入運行的輪數，10輪以上才能輸出正確的excel數值
 ![image](main_setting.png)
 
 #### 5. 初次執行清空設定檔:
@@ -45,7 +44,9 @@ spin_round = 請填入運行的輪數，10輪以上才能輸出正確的excel數
 #### 6. 輸出路徑
    SlotGame_AutoBot\excel內會放入執行完成的結果報表
    SlotGame_AutoBot\temp內會依照遊戲名稱建立子資料夾，例如bull_base_output(牛轉乾坤base遊戲)，裡面會依照該輪辨識楨保存結果，如下圖
+   
 ![image](bull_round_0.png)
+
 ### 確認SAM 2.0模組正確安裝(IF 曾有裝載過舊版本SAM)
 SAM 請安裝模組完成後，確認路徑指向正確，這邊使用pip show sam-2可以去看到模組正確路徑。
 如果遇到同時安裝SAM2、SAM2.1兩版本工具，會依照模組路徑為主
