@@ -2,7 +2,7 @@ import os
 import time
 import torch
 import json
-from paddleocr import PaddleOCR
+
 import random
 from datetime import datetime
 from pathlib import Path
@@ -26,7 +26,7 @@ import pstats
 import queue
 
 MODE = 'base'
-GAME = 'golden'
+GAME = 'dragon'
 keyframe_list = []
 if MODE == 'base':
     symbol_template_dir = Path(f'./images/{GAME}/symbols/base_game')
@@ -50,8 +50,6 @@ def main():
     spin_round = 50
     fg_rounds = 0
     value_recognize_signal = False
-    ocr = PaddleOCR(use_angle_cls=True, lang="ch")
-    keywords = ['開始旋轉','自動旋轉','長按','開始','略過']
 
     root_dir = Path(__file__).parent.parent
 
@@ -135,7 +133,7 @@ def main():
             time.sleep(1)
             if stop_catcher.free_gamestate:
                 print('超過10秒未能恢復操作，判定已經進入免費遊戲')
-        key_frame_pathes = result_queue.get()
+        #key_frame_pathes = result_queue.get()
         
         filename = Snapshot + f'_round_{i}'
         
@@ -144,32 +142,7 @@ def main():
         path = [os.path.join(image_dir, filename + '.png')]
         static_frame = cv2.imread(path[0])
         
-        #檢查開始選轉按紐，顯示內容是否為開始旋轉，如果不是判定進入免費遊戲
-        (x, y, w, h) = highest_confidence_images[10]['contour']
-        ocr_result = ocr.ocr(static_frame[y:y + h, x:x + w], cls=True)
-        ocr_result = ocr_result[0]
-                        
-        # Extract text and confidence
-        results = [(item[1][0], item[1][1]) for item in ocr_result]
 
-        # Find the result with the highest confidence
-        highest_score_result = max(results, key=lambda x: x[1])
-
-        # Check if the highest score answer is "開始旋轉"
-        if any(keyword in highest_score_result[0] for keyword in keywords):
-            print("The spin button showing : '開始旋轉'.")
-            stop_catcher.free_gamestate = False
-        else:
-            print("The spin button showing is not : '開始旋轉'.")
-
-            # 提取數字
-            numbers = [int(part) for text, _ in results for part in text.split('/') if part.isdigit()]
-
-            if len(numbers) >= 2:
-                print(f"Remaining Spins: {numbers[0]}, Free Games Won: {numbers[1]}")
-            else:
-                print("Could not extract sufficient numerical data.")
-            stop_catcher.free_gamestate = True
 
         # 切換盤面辨識模式
         if grid_recognizer.mode == 'base' and stop_catcher.free_gamestate:

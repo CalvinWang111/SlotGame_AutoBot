@@ -13,6 +13,7 @@ import json
 from Symbol_recognition.grid import BullGrid
 from screenshot import GameScreenshot
 from game_controller import GameController
+from paddleocr import PaddleOCR
 
 target_fps = 30
 MAX_BUFFER_SIZE = 32
@@ -31,6 +32,8 @@ class StoppingFrameCapture:
         self.Snapshot = Snapshot
         self.time_threshold = elapsed_time_threshold
         self.frame_buffer = Queue()
+        self.keywords = ['開始旋轉','自動旋轉','長按','開始']
+        self.ocr = PaddleOCR(use_angle_cls=True, lang="ch")
 
         self.pause_event = threading.Event()  # 控制線程的事件
         self.pause_event.set()  # 初始化為未暫停狀態
@@ -262,11 +265,38 @@ class StoppingFrameCapture:
                     if self.__button_available == False:
                         print('into freegame_control')
                         print('button state', self.__button_available)
+                        self.free_gamestate = True
                         self.pause_event.clear()  # 暫停線程
+
+                         #檢查開始選轉按紐，顯示內容是否為開始旋轉，如果不是判定進入免費遊戲
+                        (x, y, w, h) = highest_confidence_images[10]['contour']
+                        ocr_result = self.ocr.ocr(frame[y:y + h, x:x + w], cls=True)
+                        ocr_result = ocr_result[0]
+                                        
+                        # Extract text and confidence
+                        results = [(item[1][0], item[1][1]) for item in ocr_result]
+
+                        # Find the result with the highest confidence
+                        highest_score_result = max(results, key=lambda x: x[1])
+
+                        # Check if the highest score answer is "開始旋轉"
+                        if any(keyword in highest_score_result[0] for keyword in self.keywords):
+                            print("The spin button showing : '開始旋轉'.")
+                            self.free_gamestate = False
+                        else:
+                            print("The spin button showing is not : '開始旋轉'.")
+
+                            # 提取數字
+                            numbers = [int(part) for text, _ in results for part in text.split('/') if part.isdigit()]
+
+                            if len(numbers) >= 2:
+                                print(f"Remaining Spins: {numbers[0]}, Free Games Won: {numbers[1]}")
+                            else:
+                                print("Could not extract sufficient numerical data.")
+                            self.free_gamestate = True
                         success_continue = GameController.freegame_control(Snapshot=self.Snapshot)
                         self.pause_event.set()  # 恢復線程
                         print('freegame control success to contunue: ', success_continue)
-                        self.free_gamestate = True
                 elif elapsed__time > 30:
                     print('Slotgame AutoBot fail to process')
                     self.__terminated = True
