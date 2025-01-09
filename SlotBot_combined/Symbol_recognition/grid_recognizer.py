@@ -46,11 +46,11 @@ class BaseGridRecognizer:
         self.sift_matching_params = self.config["sift_matching_params"]
         
         self.initialize_grid_mode = self.config["initialize_grid_mode"]
-        self.use_gray = self.initialize_grid_mode == "gray"
+        self.cell_matching_mode = self.config["cell_matching_mode"]
 
-        method_list = ['template only','template first','SIFT first']
-        cell_matching_mode = self.config.get('cell_matching_mode', 'SIFT first')
-        self.cell_matching_method = method_list.index(cell_matching_mode)
+        method_list = ['template only','template first','sift first']
+        cell_matching_method = self.config.get('cell_matching_method', 'sift first')
+        self.cell_matching_method = method_list.index(cell_matching_method)
         
         self.cell_size = self.config["cell_size"]
         self.cell_size[0] = int(self.cell_size[0] * self.adjustment_ratio)
@@ -71,6 +71,10 @@ class BaseGridRecognizer:
         self.grid = None
         if self.use_saved_grid:
             self.load_grid()
+        if self.grid is None:
+            self.grid_is_stabilized = False
+        else:
+            self.grid_is_stabilized = True
             
         self.template_match_data = {}
         self.debug = debug
@@ -115,7 +119,7 @@ class BaseGridRecognizer:
                 threshold=self.grid_matching_params["threshold"],
                 min_area=self.grid_matching_params["min_area"],
                 border=0,
-                grayscale=self.use_gray
+                grayscale=self.initialize_grid_mode=="gray"
             )
             if match_scale is not None:
                 self.estimated_cell_size = (template_shape[0] * match_scale, template_shape[1] * match_scale)
@@ -139,10 +143,13 @@ class BaseGridRecognizer:
         
     def initialize_grid(self, img):
         start_time = time.time()
-        if self.grid is not None and self.use_saved_grid == True:
+        if self.grid is not None and self.grid_is_stabilized and self.use_saved_grid == True:
             return
         print("Initializing grid")
-        
+        old_grid = None
+        if self.grid is not None:
+            old_grid = self.grid
+
         grid_border = self.grid_matching_params["border"]
         roi = img[grid_border: -grid_border, grid_border: -grid_border]
         
@@ -155,8 +162,7 @@ class BaseGridRecognizer:
             template_list=self.all_templates,
             roi=roi,
             **self.grid_matching_params,
-            # grayscale=self.use_gray,
-            grayscale=True,
+            grayscale=self.initialize_grid_mode=="gray",
             debug=self.debug
         )
 
@@ -178,7 +184,14 @@ class BaseGridRecognizer:
 
         elapsed_time = time.time() - start_time
         print(f"Time taken to initialize grid: {elapsed_time:.2f} seconds")
-        
+
+        if old_grid is not None:
+            if old_grid.col == self.grid.col and old_grid.row == self.grid.row:
+                self.grid_is_stabilized = True
+                print("The grid is stabilized")
+            else:
+                print("The grid is not stabilized! Try to modify the config")
+
         if self.debug:
             for pos in matched_positions:
                 img = cv2.circle(img, (int(pos[0]), int(pos[1])), 5, (0, 0, 255), -1)
@@ -222,7 +235,7 @@ class BaseGridRecognizer:
                         template_list=self.all_templates,
                         roi=cell_with_border,
                         **self.cell_matching_params,
-                        grayscale=self.use_gray,
+                        grayscale=self.cell_matching_mode=="gray",
                         debug=self.debug
                     )
                 
@@ -232,7 +245,7 @@ class BaseGridRecognizer:
                         template_list=self.all_templates,
                         roi=cell_with_border,
                         **self.cell_matching_params,
-                        grayscale=self.use_gray,
+                        grayscale=self.cell_matching_mode=="gray",
                         debug=self.debug
                     )
                     # when template matching fails, use SIFT
@@ -268,7 +281,7 @@ class BaseGridRecognizer:
                             template_list=self.all_templates,
                             roi=cell_with_border,
                             **self.cell_matching_params,
-                            grayscale=self.use_gray,
+                            grayscale=self.cell_matching_mode=="gray",
                             debug=self.debug
                         )
                         if self.debug and matched_obj is not None:
@@ -287,7 +300,8 @@ class BaseGridRecognizer:
         
     
     def save_grid_results(self, file_name):
-        self.grid.save_results_as_json(save_dir=self.output_json_dir, template_dir=self.template_dir, file_name=file_name)
+        if self.grid_is_stabilized:
+            self.grid.save_results_as_json(save_dir=self.output_json_dir, template_dir=self.template_dir, file_name=file_name)
         
     def save_annotated_frame(self, img, file_name):
         save_path = self.save_dir / f"{file_name}.png"

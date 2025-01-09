@@ -31,6 +31,7 @@
     },
     "layout_orientation": "vertical",
     "initialize_grid_mode": "gray",
+    "cell_matching_mode": "gray",
     "cell_size": [135, 110],
     "non_square_scale": 0.8
 }

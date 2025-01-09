@@ -102,7 +102,7 @@ def main():
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
 
-    stop_catcher = StoppingFrameCapture(window_name=window_name,save_dir=key_frame_dir, Snapshot=Snapshot, elapsed_time_threshold=3, game_name=GAME)
+    stop_catcher = StoppingFrameCapture(window_name=window_name,save_dir=key_frame_dir, Snapshot=Snapshot, elapsed_time_threshold=3, game_name=GAME, config_file=grid_recognizer_config_file)
     numerical_round_count = 0
 
     def keyframes_wrapper(module_instance, key_frame_pathes, save_images):
@@ -177,9 +177,12 @@ def main():
         elif grid_recognizer.mode == 'free' and not stop_catcher.free_gamestate:
             grid_recognizer = BaseGridRecognizer(game=GAME, mode='base', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
         
+        # 在free game或有特殊設定時使用key frame
         if(stop_catcher.free_gamestate):
             path = key_frame_pathes + path
-            print("image pathes:",path)
+        elif (stop_catcher.use_key_frame):
+            path = key_frame_pathes
+        
         #數值組10輪後，辨識每一輪數值
         if value_recognize_signal:
             valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=path)

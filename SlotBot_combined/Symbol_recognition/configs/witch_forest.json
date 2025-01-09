@@ -31,6 +31,7 @@
     },
     "layout_orientation": "horizontal",
     "initialize_grid_mode": "color",
+    "cell_matching_mode": "gray",
     "cell_size": [176, 126],
     "non_square_scale": 1.0,
     "resize_template": false,

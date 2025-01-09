@@ -5,6 +5,7 @@
     "output_json_dir": "./output/{game}/symbols/",
     "cell_border": 10,
     "grid_matching_params": {
+      "mode": "color",
       "iou_threshold": 0.01,
       "scale_range": [0.7, 1.1],
       "scale_step": 0.05,
@@ -31,6 +32,7 @@
     },
     "layout_orientation": "horizontal",
     "initialize_grid_mode": "color",
+    "cell_matching_mode": "color",
     "cell_size": [150, 222],
     "non_square_scale": 0.6
 }

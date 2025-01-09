@@ -9,6 +9,7 @@ import mss
 import time
 from queue import Queue
 import threading
+import json
 from Symbol_recognition.grid import BullGrid
 from screenshot import GameScreenshot
 from game_controller import GameController
@@ -18,7 +19,7 @@ MAX_BUFFER_SIZE = 32
 DEBUG = False
 
 class StoppingFrameCapture:
-    def __init__(self,window_name,save_dir, Snapshot, elapsed_time_threshold,game_name):
+    def __init__(self,window_name,save_dir, Snapshot, elapsed_time_threshold,game_name,config_file):
         self.window_name = window_name
         self.save_dir = save_dir
         self.__output_counter = 0
@@ -37,6 +38,14 @@ class StoppingFrameCapture:
             self.bull_mode = True
         else:
             self.bull_mode = False
+
+        self.config:json = self.load_config(config_file)
+        self.use_key_frame = self.config.get('use_key_frame', False)
+
+    @staticmethod
+    def load_config(config_file: Path):
+        with config_file.open("r") as file:
+            return json.load(file)
 
     def __get_window_frame(self,frame_buffer):
             window = gw.getWindowsWithTitle(self.window_name)[0]
