@@ -250,7 +250,7 @@ def get_grid_info(points, tolerance=30):
     
     return (display_x, display_y, display_width, display_height), (m,n)
 
-def draw_bboxes_and_icons_on_image(img, template_dir, grid, save_path, icon_size=50):
+def draw_bboxes_and_icons_on_image(img, template_dir, grid, save_path, icon_size=30):
     color = (255, 255, 255)
     
     for i in range(grid.row):

@@ -14,7 +14,7 @@ from game_controller import GameController
 from TemplateMatching.template_matching import test_template_matching
 from PIL import Image
 from stopping_detection import StoppingFrameCapture
-from TemplateMatching import symbol_recognizer,grid
+# from TemplateMatching import symbol_recognizer,grid
 from symbol_recognizing import get_symbol_positions,recoglize_symbol
 from Symbol_recognition.grid_recognizer import *
 from json_to_excel import Excel_parser
@@ -25,12 +25,9 @@ import cProfile
 import pstats
 import queue
 
-
-
 MODE = 'base'
 GAME = 'dragon'
 keyframe_list = []
-
 if MODE == 'base':
     symbol_template_dir = Path(f'./images/{GAME}/symbols/base_game')
     image_dir = Path(f'./images/{GAME}/screenshots/base_game')
@@ -43,7 +40,6 @@ key_frame_dir = Path(f'./temp/key_frame')
 save_dir.mkdir(parents=True, exist_ok=True)
 key_frame_dir.mkdir(parents=True, exist_ok=True)
 
-
 def main():
     # 初始化模組
     screenshot = GameScreenshot()
@@ -51,7 +47,7 @@ def main():
     Snapshot = GAME
     intensity_threshold = 20
     cell_border = 20
-    spin_round = 10
+    spin_round = 50
     fg_rounds = 0
     value_recognize_signal = False
 
@@ -87,7 +83,6 @@ def main():
 
     intial_avg_intensities = screenshot.clickable(snapshot_path=intialshot_path,highest_confidence_images=highest_confidence_images)
     first_frame = cv2.imread(intialshot_path)
-
     valuerec.get_board_value(intialshot_path)
 
     #config_file = Path(root_dir / f'./SlotBot_combined/Symbol_recognition/configs/{GAME}.json')
@@ -97,18 +92,19 @@ def main():
     first_frame_width = first_frame.shape[1]
     first_frame_height = first_frame.shape[0]
     grid_recognizer_config_file = Path(root_dir / f'./SlotBot_combined/Symbol_recognition/configs/{GAME}.json')
-    grid_recognizer = BaseGridRecognizer(game=GAME, mode='base', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
+    print(grid_recognizer_config_file)
+    grid_recognizer = BaseGridRecognizer(game=GAME, mode=MODE, config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
     grid_recognizer.initialize_grid(first_frame)
     # temp_img = draw_grid_on_image(first_frame, grid_recognizer.grid)
     # cv2.imshow('grid', temp_img)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
 
-    stop_catcher = StoppingFrameCapture(window_name=window_name,grid=grid_recognizer.grid,save_dir=key_frame_dir, Snapshot=Snapshot, elapsed_time_threshold=3, game_name=GAME)
+    stop_catcher = StoppingFrameCapture(window_name=window_name,save_dir=key_frame_dir, Snapshot=Snapshot, elapsed_time_threshold=3, game_name=GAME)
     numerical_round_count = 0
 
     def keyframes_wrapper(module_instance, key_frame_pathes, save_images):
-        key_frame_pathes = stop_catcher.get_key_frames(intial_intensity=intial_avg_intensities,intensity_threshold=intensity_threshold,highest_confidence_images=highest_confidence_images,save_images = save_images)
+        key_frame_pathes = stop_catcher.get_key_frames(grid=grid_recognizer.grid,intial_intensity=intial_avg_intensities,intensity_threshold=intensity_threshold,highest_confidence_images=highest_confidence_images,save_images = save_images)
         result_queue.put(key_frame_pathes)
 
     def profiled_keyframes_wrapper(module_instance, key_frame_pathes, save_images = True):
@@ -130,7 +126,7 @@ def main():
         start_time = time.time()
 
         key_frame_pathes = []
-        stop_catcher_thread = threading.Thread(target=profiled_keyframes_wrapper, args=(stop_catcher, key_frame_pathes, False))
+        stop_catcher_thread = threading.Thread(target=profiled_keyframes_wrapper, args=(stop_catcher, key_frame_pathes, True))
         stop_catcher_thread.start()
 
         while stop_catcher_thread.is_alive():
@@ -142,9 +138,11 @@ def main():
         filename = Snapshot + f'_round_{i}'
         
         # screenshot.capture_screenshot(window_title=window_name, images_dir=image_dir,filename=filename)
-        stop_catcher.get_static_frame(images_dir=image_dir,filename=filename)
-        path = os.path.join(image_dir, filename + '.png')
-        img = cv2.imread(path)
+        stop_catcher.get_static_frame(grid=grid_recognizer.grid,images_dir=image_dir,filename=filename)
+        path = [os.path.join(image_dir, filename + '.png')]
+        static_frame = cv2.imread(path[0])
+        
+
 
         # 切換盤面辨識模式
         if grid_recognizer.mode == 'base' and stop_catcher.free_gamestate:
@@ -152,19 +150,26 @@ def main():
         elif grid_recognizer.mode == 'free' and not stop_catcher.free_gamestate:
             grid_recognizer = BaseGridRecognizer(game=GAME, mode='base', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
         
+        if(stop_catcher.free_gamestate):
+            path = key_frame_pathes + path
+            print("image pathes:",path)
         #數值組10輪後，辨識每一輪數值
         if value_recognize_signal:
-            valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=[path])
+            valuerec.recognize_value(root_dir=root_dir, mode=GAME, image_paths=path)
 
-        #盤面組，每一輪建立盤面以及辨識盤面symbol
-        grid_recognizer.initialize_grid(img)
-        grid_recognizer.recognize_roi(img, 1)
-        grid_recognizer.save_annotated_frame(img, filename)
-        grid_recognizer.save_grid_results(filename)
+        for j, image_file in enumerate(path):
+            #盤面組，每一輪建立盤面以及辨識盤面symbol
+            img = cv2.imread(image_file)
+            grid_recognizer.initialize_grid(img)
+            grid_recognizer.recognize_roi(img)
+            grid_recognizer.save_annotated_frame(img, filename+f"-{j}")
+            grid_recognizer.save_grid_results(filename+f"-{j}")
+
+            numerical_round_count+=1
 
 
         #數值組 
-        if i == 10:
+        if numerical_round_count >= 10 and not value_recognize_signal:
             '''
             all_keyframes = [os.path.join(key_frame_dir, file) for file in os.listdir(key_frame_dir)]
 

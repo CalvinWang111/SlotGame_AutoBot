@@ -17,13 +17,9 @@ from paddleocr import PaddleOCR
 target_fps = 30
 MAX_BUFFER_SIZE = 32
 DEBUG = False
-SET_ROI = False         # For testing, will not use data of grid but manually select
-if SET_ROI:
-    symbol_number = (4,5)
 
 class StoppingFrameCapture:
-    def __init__(self,window_name,grid:BullGrid,save_dir, Snapshot, elapsed_time_threshold,game_name):
-        self.grid = grid
+    def __init__(self,window_name,save_dir, Snapshot, elapsed_time_threshold,game_name):
         self.window_name = window_name
         self.save_dir = save_dir
         self.__output_counter = 0
@@ -44,8 +40,6 @@ class StoppingFrameCapture:
             self.bull_mode = True
         else:
             self.bull_mode = False
-        if DEBUG:
-            print("bbox:",grid.bbox)
 
     def __get_window_frame(self,frame_buffer):
             window = gw.getWindowsWithTitle(self.window_name)[0]
@@ -91,21 +85,21 @@ class StoppingFrameCapture:
                 count += 1
             sct.close()
 
-    def get_key_frames(self, intial_intensity,intensity_threshold,highest_confidence_images,save_images):
+    def get_key_frames(self, grid, intial_intensity,intensity_threshold,highest_confidence_images,save_images):
         """
         Get the frame at the moment the wheel stops
         """
         key_image_pathes = []
 
         def __detect_stopping_frame(self:StoppingFrameCapture,frame_buffer):
-            roi_x, roi_y, roi_w, roi_h = self.grid.bbox
-            sh = self.grid.symbol_height
-            sw = self.grid.symbol_width
+            roi_x, roi_y, roi_w, roi_h = grid.bbox
+            sh = grid.symbol_height
+            sw = grid.symbol_width
             # adjust detecting area into 3 * 5, whitch can make things easy
             if self.bull_mode:
                 roi_h = 3*sh
                 if self.free_gamestate==False:
-                    roi_y += (self.grid.row - 3)*sh
+                    roi_y += (grid.row - 3)*sh
 
             # setting Shi-Tomasi
             feature_params = dict(maxCorners=50000, qualityLevel=0.01, minDistance=20, blockSize=20)
@@ -321,14 +315,14 @@ class StoppingFrameCapture:
         print("round over")
         return(key_image_pathes)
     
-    def get_static_frame(self,images_dir, filename, duration=3):
+    def get_static_frame(self,grid,images_dir, filename, duration=3):
         """
         When the wheel is stopped, call it to get the least disturbed frame by special effects.
         duration: in seconds, assume fps=30
         """
 
         def __detect_static_frame(self:StoppingFrameCapture,frame_buffer):
-            roi_x, roi_y, roi_w, roi_h = self.grid.bbox
+            roi_x, roi_y, roi_w, roi_h = grid.bbox
             sampling_interval = int(roi_w* roi_h/10000)
             sampling_interval = 5
 

@@ -47,6 +47,11 @@ class BaseGridRecognizer:
         
         self.initialize_grid_mode = self.config["initialize_grid_mode"]
         self.use_gray = self.initialize_grid_mode == "gray"
+
+        method_list = ['template only','template first','SIFT first']
+        cell_matching_mode = self.config.get('cell_matching_mode', 'SIFT first')
+        self.cell_matching_method = method_list.index(cell_matching_mode)
+        
         self.cell_size = self.config["cell_size"]
         self.cell_size[0] = int(self.cell_size[0] * self.adjustment_ratio)
         self.cell_size[1] = int(self.cell_size[1] * self.adjustment_ratio)
@@ -63,7 +68,6 @@ class BaseGridRecognizer:
             self.resize_templates_by_cell_size()
         
         self.use_saved_grid = self.config.get('use_saved_grid', True)
-        print("use_saved_grid:",self.use_saved_grid)
         self.grid = None
         if self.use_saved_grid:
             self.load_grid()
@@ -142,16 +146,17 @@ class BaseGridRecognizer:
         grid_border = self.grid_matching_params["border"]
         roi = img[grid_border: -grid_border, grid_border: -grid_border]
         
-        # if self.debug:
-        #     cv2.imshow("roi", roi)
-        #     cv2.waitKey(0)
-        #     cv2.destroyAllWindows()
+        if self.debug:
+            cv2.imshow("roi", roi)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
         
         matched_positions = process_template_matches(
             template_list=self.all_templates,
             roi=roi,
             **self.grid_matching_params,
-            grayscale=self.use_gray,
+            # grayscale=self.use_gray,
+            grayscale=True,
             debug=self.debug
         )
 
@@ -194,12 +199,7 @@ class BaseGridRecognizer:
         for template_obj in self.all_templates:
             template_obj.best_scale = None
         
-    def recognize_roi(self, img, method):
-        """
-        method: int
-            0: use template matching
-            1: use SIFT
-        """
+    def recognize_roi(self, img):
         if self.grid is None:
             raise ValueError("Grid has not been initialized")
         self.grid.clear()
@@ -215,8 +215,9 @@ class BaseGridRecognizer:
                 y1, y2 = y - self.cell_border, y + h + self.cell_border
                 cell_with_border = img[y1:y2, x1:x2]
                 cell = img[y:y+h, x:x+w]
-
-                if method == 0:
+                
+                if self.cell_matching_method == 0:
+                    """ template only """
                     matched_obj, score = process_template_matches(
                         template_list=self.all_templates,
                         roi=cell_with_border,
@@ -224,7 +225,34 @@ class BaseGridRecognizer:
                         grayscale=self.use_gray,
                         debug=self.debug
                     )
-                elif method == 1:
+                
+                elif self.cell_matching_method == 1:
+                    """ template first """
+                    matched_obj, score = process_template_matches(
+                        template_list=self.all_templates,
+                        roi=cell_with_border,
+                        **self.cell_matching_params,
+                        grayscale=self.use_gray,
+                        debug=self.debug
+                    )
+                    # when template matching fails, use SIFT
+                    if matched_obj is None:
+                        if self.debug:
+                            print(f'template matching failed, using SIFT')
+                        matched_obj, score = process_template_matches_sift(
+                            template_list=self.all_templates,
+                            roi=cell, 
+                            **self.sift_matching_params,
+                            debug=self.debug
+                        )
+                        if self.debug and matched_obj is not None:
+                            print(f"roi({i}, {j}) symbol: {matched_obj.name}, score: {score}")
+                            cv2.imshow("cell", cell)
+                            cv2.waitKey(0)
+                            cv2.destroyAllWindows()
+                
+                elif self.cell_matching_method == 2:
+                    """ SIFT first """
                     matched_obj, score = process_template_matches_sift(
                         template_list=self.all_templates,
                         roi=cell, 
