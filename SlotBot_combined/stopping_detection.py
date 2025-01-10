@@ -265,7 +265,6 @@ class StoppingFrameCapture:
                     if self.__button_available == False:
                         print('into freegame_control')
                         print('button state', self.__button_available)
-                        self.free_gamestate = True
                         self.pause_event.clear()  # 暫停線程
 
                          #檢查開始選轉按紐，顯示內容是否為開始旋轉，如果不是判定進入免費遊戲
@@ -294,9 +293,9 @@ class StoppingFrameCapture:
                             else:
                                 print("Could not extract sufficient numerical data.")
                             self.free_gamestate = True
-                        success_continue = GameController.freegame_control(Snapshot=self.Snapshot)
+                            success_continue = GameController.freegame_control(Snapshot=self.Snapshot)
                         self.pause_event.set()  # 恢復線程
-                        print('freegame control success to contunue: ', success_continue)
+                        #print('freegame control success to contunue: ', success_continue)
                 elif elapsed__time > 30:
                     print('Slotgame AutoBot fail to process')
                     self.__terminated = True

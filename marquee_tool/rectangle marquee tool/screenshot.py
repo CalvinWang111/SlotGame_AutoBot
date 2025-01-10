@@ -41,6 +41,19 @@ class GameScreenshot:
         except IndexError:
             print(f"Window titled '{window_title}' not found.")
 
+    @staticmethod
+    def get_image_size(image_path):
+        """取得影像大小 (寬度和高度)"""
+        try:
+            from PIL import Image
+            with Image.open(image_path) as img:
+                width, height = img.size
+                print(f"Image size: width={width}, height={height}")
+                return {"width": width, "height": height}
+        except Exception as e:
+            print(f"Error getting image size: {e}")
+            return {"width": 0, "height": 0}
+
     @staticmethod 
     def click(position):
         """模擬點擊指定位置""" 
