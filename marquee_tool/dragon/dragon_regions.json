@@ -1,0 +1,58 @@
+{
+    "original_image_size": {
+        "width": 1603,
+        "height": 931
+    },
+    "regions": {
+        "dragon_fg_btn1": {
+            "path": "marquee_tool\\dragon_game_choose\\template\\dragon_fg_btn1.png",
+            "confidence": 1,
+            "contour": [
+                289.997158042371,
+                273.4493688639552,
+                186.17061588051467,
+                407.0510076031594
+            ]
+        },
+        "dragon_fg_btn2": {
+            "path": "marquee_tool\\dragon_game_choose\\template\\dragon_fg_btn2.png",
+            "confidence": 1,
+            "contour": [
+                493.5226618439505,
+                268.7162176127557,
+                189.32605004798103,
+                413.361875938092
+            ]
+        },
+        "dragon_fg_btn3": {
+            "path": "marquee_tool\\dragon_game_choose\\template\\dragon_fg_btn3.png",
+            "confidence": 1,
+            "contour": [
+                692.3150143943307,
+                271.871651780222,
+                194.0592012991807,
+                410.2064417706257
+            ]
+        },
+        "dragon_fg_btn4": {
+            "path": "marquee_tool\\dragon_game_choose\\template\\dragon_fg_btn4.png",
+            "confidence": 1,
+            "contour": [
+                894.2628011121772,
+                273.4493688639552,
+                184.59289879678158,
+                408.6287246868925
+            ]
+        },
+        "dragon_fg_btn5": {
+            "path": "marquee_tool\\dragon_game_choose\\template\\dragon_fg_btn5.png",
+            "confidence": 1,
+            "contour": [
+                1096.2105878300235,
+                270.2939346964888,
+                184.5928987967818,
+                408.6287246868926
+            ]
+        }
+    }
+}

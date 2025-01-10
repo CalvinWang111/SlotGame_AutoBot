@@ -68,7 +68,8 @@ class Excel_parser:
         # 讀取盤面檔案
         # 建立鍵值
         symbol_file_list = os.listdir(self.symbol_path)
-        symbol_file_list.sort(key=lambda x: int(x.split('_')[-1].split('.')[0]))
+        # 修改排序逻辑，处理文件名中包含非数字字符的情况
+        symbol_file_list.sort(key=lambda x: tuple(map(int, x.split('_')[-1].split('.')[0].split('-'))))
         for file_name in symbol_file_list:
             # 檢查是否為 JSON 檔案
             if file_name.endswith(".json"):
