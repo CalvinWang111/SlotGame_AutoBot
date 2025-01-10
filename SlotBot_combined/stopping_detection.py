@@ -44,6 +44,13 @@ class StoppingFrameCapture:
 
         self.config:json = self.load_config(config_file)
         self.use_key_frame = self.config.get('use_key_frame', False)
+        self.timing_offset = self.config.get('timing_offset', 0)
+        self.feature_sensitivity = self.config.get('feature_sensitivity', 1)
+        self.optical_flow_fineness = self.config.get('optical_flow_fineness', 1)
+        self.moving_distance_rate = self.config.get('moving_distance_rate', 1)
+        self.use_upward_flow = self.config.get('use_upward_flow', False)
+        self.strict_mode = self.config.get('optical_flow_strict_mode', False)
+        
 
     @staticmethod
     def load_config(config_file: Path):
@@ -111,27 +118,27 @@ class StoppingFrameCapture:
                     roi_y += (grid.row - 3)*sh
 
             # setting Shi-Tomasi
-            feature_params = dict(maxCorners=50000, qualityLevel=0.01, minDistance=20, blockSize=20)
+            feature_params = dict(maxCorners=50000, qualityLevel=0.01*self.feature_sensitivity, minDistance=20, blockSize=20)
 
             # setting Lucas-Kanade optical flow
-            lk_params = dict(winSize=(int(sh/7), int(sw/10)), maxLevel=3, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
+            lk_params = dict(winSize=(max(int(sh/7*self.optical_flow_fineness),3), max(int(sw/10),3)), maxLevel=3, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.01))
 
 
             # setting my parameter
             rolling_record_size = 9
-            min_moving_down_distance = sh/5
+            min_moving_down_distance = sh/5*self.moving_distance_rate
             min_point_number = min(int(roi_w*roi_h/100000+1),10)
             max_error = 25
             min_rolling_frames = 15
             max_degree = 5
 
             max_tan = math.tan(math.radians(max_degree))
-            point_record = [0]
             rolling_record = [False]
             rolling_frames = 0
             is_first = True
             last_capture_time = time.time()
-            capture_number = 0
+            offset_counter = -1
+
             # some thing about arrow detection
             arrow_rolling_point_number = 0
             arrow_flag = False
@@ -142,6 +149,7 @@ class StoppingFrameCapture:
             arrow_combo = 0
             elapsed_start_time = time.time()
             screenshot = GameScreenshot()
+            
             while not (self.__terminated==True and frame_buffer.qsize()==0):
                 if not frame_buffer.empty():
                     self.pause_event.wait()  # 等待事件被設置
@@ -172,10 +180,10 @@ class StoppingFrameCapture:
                                 a, b = int(new.ravel()[0])+roi_x,int(new.ravel()[1])+roi_y
                                 c, d = int(old.ravel()[0])+roi_x,int(old.ravel()[1])+roi_y
                                 dx, dy = a - c, b - d
-                                if dy >= min_moving_down_distance and abs(dx/dy) <= max_tan:                                    
+                                if (dy >= min_moving_down_distance or self.use_upward_flow and dy <= -min_moving_down_distance) and abs(dx/dy) <= max_tan:                                    
                                     rolling_point_number += 1
-                                    if rolling_point_number >= min_point_number:
-                                        rolling_now = True
+                                elif self.strict_mode and dx>2:
+                                    rolling_point_number -= 1
 
                                 # arrow detection
                                 if self.bull_mode == True and 8 <= frame_number-last_capture_frame <= 25:
@@ -186,6 +194,8 @@ class StoppingFrameCapture:
                                             horizontal_range[1] = max(horizontal_range[1],a,c)
                                             if video_height*0.004 < abs(dy) < video_height*0.02 and abs(dx/dy) <= max_tan:
                                                 arrow_rolling_point_number += 1
+                    if rolling_point_number >= min_point_number:
+                        rolling_now = True
                                     
                     # more arrow detection
                     if self.bull_mode == True and 8 <= frame_number-last_capture_frame <= 25:
@@ -209,31 +219,9 @@ class StoppingFrameCapture:
                     if(len(rolling_record)==rolling_record_size):
                         if True in rolling_record:
                             if ((rolling_record.index(True) == 0 and rolling_record.count(True) == 1) or frame_number-last_capture_frame==25) and (rolling_frames >= min_rolling_frames or (arrow_flag==True and noice_count <= max_noice and arrow_combo<5)):
-                                # the wheel is stop right now, save the image
-                                if save_images:
-                                    cv2.imwrite(f"{self.save_dir}\\key_frame{self.__output_counter}.png", frame)
-                                    key_image_pathes.append(f"{self.save_dir}\\key_frame{self.__output_counter}.png")
-                                if arrow_flag:
-                                    print("Get arrow stopping frame, Saved to path:", f"{self.save_dir}\\key_frame{self.__output_counter}.png")
-                                    if(DEBUG):
-                                        print(arrow_flag,noice_count,arrow_combo)
-                                    arrow_combo += 1
-                                else:
-                                    if save_images:
-                                        print("Get stopping frame, Saved to path:", f"{self.save_dir}\\key_frame{self.__output_counter}.png")
-                                    else:
-                                        print("Get stopping frame")
-                                    arrow_combo = 0
-                                self.__output_counter+=1
-                                last_capture_time = time.time()
-                                last_capture_frame = frame_number
-                                capture_number += 1
-
-                                avg_intensities = screenshot.clickable(snapshot_array=frame, highest_confidence_images=highest_confidence_images, target_buttons=["button_start_spin"])
-                                if screenshot.intensity_check(initial_avg_intensities=intial_intensity, avg_intensities=avg_intensities, intensity_threshold=intensity_threshold):
-                                    self.__button_available = True
-                                else:
-                                    self.__button_available = False
+                                # the wheel is stop right now
+                                if(offset_counter<0):
+                                    offset_counter = 0
                             else:
                                 if frame_number-last_capture_frame>25:
                                     # the wheel is still rolling
@@ -242,6 +230,34 @@ class StoppingFrameCapture:
                                     rolling_frames = 0
                         else:
                             rolling_frames = 0
+                        if(offset_counter == max(0,self.timing_offset)):
+                            # this is the moment when the wheel is stopped
+                            if save_images:
+                                cv2.imwrite(f"{self.save_dir}\\key_frame{self.__output_counter}.png", frame)
+                                key_image_pathes.append(f"{self.save_dir}\\key_frame{self.__output_counter}.png")
+                            if arrow_flag:
+                                print("Get arrow stopping frame, Saved to path:", f"{self.save_dir}\\key_frame{self.__output_counter}.png")
+                                if(DEBUG):
+                                    print(arrow_flag,noice_count,arrow_combo)
+                                arrow_combo += 1
+                            else:
+                                if save_images:
+                                    print("Get stopping frame, Saved to path:", f"{self.save_dir}\\key_frame{self.__output_counter}.png")
+                                else:
+                                    print("Get stopping frame")
+                                arrow_combo = 0
+                            self.__output_counter+=1
+                            last_capture_time = time.time()
+                            last_capture_frame = frame_number
+
+                            avg_intensities = screenshot.clickable(snapshot_array=frame, highest_confidence_images=highest_confidence_images, target_buttons=["button_start_spin"])
+                            if screenshot.intensity_check(initial_avg_intensities=intial_intensity, avg_intensities=avg_intensities, intensity_threshold=intensity_threshold):
+                                self.__button_available = True
+                            else:
+                                self.__button_available = False
+                            offset_counter = -1
+                        elif(offset_counter>=0):
+                            offset_counter += 1
                     if DEBUG:
                         print(f"Stopping-judgment time: {time.time()-start_time}, Buffer size: {frame_buffer.qsize()}")
                     
