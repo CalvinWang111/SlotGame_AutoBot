@@ -31,6 +31,11 @@
     },
     "layout_orientation": "horizontal",
     "initialize_grid_mode": "gray",
+    "cell_matching_mode": "color",
     "cell_size": [228, 247],
-    "non_square_scale": 0.9
+    "non_square_scale": 0.9,
+    "timing_offset": 5,
+    "flow_fineness": 4,
+    "optical_flow_strict_mode": true,
+    "use_upward_flow": true
 }
