@@ -281,7 +281,12 @@ class StoppingFrameCapture:
                         # Check if the highest score answer is "開始旋轉"
                         if any(keyword in highest_score_result[0] for keyword in self.keywords):
                             print("The spin button showing : '開始旋轉'.")
-                            self.free_gamestate = False
+
+                            success_continue = GameController.freegame_control_NoVIT(Snapshot=self.Snapshot)
+                            if success_continue:
+                                self.free_gamestate = True
+                            else:
+                                self.free_gamestate = False
                         else:
                             print("The spin button showing is not : '開始旋轉'.")
 

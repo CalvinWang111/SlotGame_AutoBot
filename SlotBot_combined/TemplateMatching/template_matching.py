@@ -13,13 +13,15 @@ def template_matching(game_screenshot, template, threshold=0.7, method=cv2.TM_CC
     res = cv2.matchTemplate(game_scene_gray, template_gray, method)
 
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    print(max_val)
+    success_match = max_val >= threshold
+    print('template matching score:',max_val, 'success_match:', success_match)
+
     # if max_val >= threshold:
     #     x, y = max_loc
     #     return [x, y, w, h]
     # else:
     #     return []
-    return max_val >= threshold
+    return success_match
 
 
 def test_template_matching(game_screenshot_path, all_freegame_btn_json_path):
@@ -48,7 +50,7 @@ def test_template_matching(game_screenshot_path, all_freegame_btn_json_path):
                 int(template.shape[0] * scale_y)
             ))
 
-        if template_matching(game_screenshot, template):
+        if template_matching(game_screenshot, template, threshold = 0.85):
             # Scale the contour coordinates
             x, y, w, h = value['contour']
             x = int(x * scale_x)

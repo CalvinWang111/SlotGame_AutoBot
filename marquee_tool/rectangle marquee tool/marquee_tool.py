@@ -37,10 +37,10 @@ def marquee_tool():
 
     # Extract base name before the first underscore
     Snapshot = os.path.splitext(selected_image)[0]  # Remove file extension
-    base_name = Snapshot.split('_')[0]  # Extract base name
-    print(base_name)
+    Snapshot = Snapshot.split('_')[0]  # Extract base name
+    print(Snapshot)
 
-    output_dir = os.path.join(root_dir, 'marquee_tool', base_name)  # Set output directory name
+    output_dir = os.path.join(root_dir, 'marquee_tool', Snapshot)  # Set output directory name
 
     # Create or use the output directory
     if not os.path.exists(output_dir):
@@ -58,7 +58,7 @@ def marquee_tool():
     }
 
     # Check if JSON file already exists and merge content if necessary
-    output_file = os.path.join(output_dir, base_name + "_regions.json")
+    output_file = os.path.join(output_dir, Snapshot + "_regions.json")
     if os.path.exists(output_file):
         try:
             with open(output_file, 'r', encoding='utf-8') as file:
