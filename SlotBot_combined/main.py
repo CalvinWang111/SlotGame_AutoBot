@@ -47,7 +47,7 @@ def main():
     numerical_round_count = {"base":0, "free":0}
     global value_recognize_signal
     free_game_initialized = False
-        
+
     root_dir = Path(__file__).parent.parent
 
     vit_model_path = os.path.join(root_dir, 'VITModel', 'vit_model.pth')
@@ -211,6 +211,7 @@ def main():
 
         if(game_mode=="free"):
             free_game_initialized = True
+
 
 if __name__ == "__main__":
     main()
