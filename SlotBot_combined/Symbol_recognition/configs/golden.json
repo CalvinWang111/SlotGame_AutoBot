@@ -8,7 +8,7 @@
       "iou_threshold": 0.1,
       "scale_range": [0.8, 1.2],
       "scale_step": 0.05,
-      "threshold": 0.95,
+      "threshold": 0.94,
       "min_area": 3000,
       "border": 140
     },
@@ -17,21 +17,22 @@
       "scale_range": [0.8, 1.2],
       "scale_step": 0.05,
       "threshold": 0.8,
-      "min_area": 3000,
+      "min_area": 2000,
       "match_one": true,
       "border": 10
     },
     "sift_matching_params": {
       "scale_range": [0.8, 1.3],
       "min_matches": 4,
-      "ratio_threshold": 0.7,
+      "ratio_threshold": 0.6,
       "ransac_threshold": 10,
       "vertical_threshold": 0.2,
       "horizontal_threshold": 0.2
     },
     "layout_orientation": "vertical",
-    "initialize_grid_mode": "gray",
-    "cell_matching_mode": "gray",
+    "initialize_grid_mode": "color",
+    "cell_matching_mode": "freegame_gray",
     "cell_size": [135, 110],
-    "non_square_scale": 0.8
+    "non_square_scale": 0.8,
+    "optical_flow_fineness": 5
 }

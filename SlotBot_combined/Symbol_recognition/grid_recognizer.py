@@ -162,7 +162,7 @@ class BaseGridRecognizer:
             template_list=self.all_templates,
             roi=roi,
             **self.grid_matching_params,
-            grayscale=self.initialize_grid_mode=="gray",
+            grayscale=self.initialize_grid_mode=="gray" or self.initialize_grid_mode=="freegame_gray" and self.mode=="free",
             debug=self.debug
         )
 
@@ -185,7 +185,7 @@ class BaseGridRecognizer:
         elapsed_time = time.time() - start_time
         print(f"Time taken to initialize grid: {elapsed_time:.2f} seconds")
 
-        if old_grid is not None:
+        if old_grid is not None and self.use_saved_grid:
             if old_grid.col == self.grid.col and old_grid.row == self.grid.row:
                 self.grid_is_stabilized = True
                 print("The grid is stabilized")
@@ -235,7 +235,7 @@ class BaseGridRecognizer:
                         template_list=self.all_templates,
                         roi=cell_with_border,
                         **self.cell_matching_params,
-                        grayscale=self.cell_matching_mode=="gray",
+                        grayscale=self.cell_matching_mode=="gray" or self.cell_matching_mode=="freegame_gray" and self.mode=="free",
                         debug=self.debug
                     )
                 
@@ -245,7 +245,7 @@ class BaseGridRecognizer:
                         template_list=self.all_templates,
                         roi=cell_with_border,
                         **self.cell_matching_params,
-                        grayscale=self.cell_matching_mode=="gray",
+                        grayscale=self.cell_matching_mode=="gray" or self.cell_matching_mode=="freegame_gray" and self.mode=="free",
                         debug=self.debug
                     )
                     # when template matching fails, use SIFT
@@ -281,7 +281,7 @@ class BaseGridRecognizer:
                             template_list=self.all_templates,
                             roi=cell_with_border,
                             **self.cell_matching_params,
-                            grayscale=self.cell_matching_mode=="gray",
+                            grayscale=self.cell_matching_mode=="gray" or self.cell_matching_mode=="freegame_gray" and self.mode=="free" ,
                             debug=self.debug
                         )
                         if self.debug and matched_obj is not None:

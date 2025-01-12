@@ -133,7 +133,7 @@ def main():
             time.sleep(1)
             if stop_catcher.free_gamestate:
                 print('超過10秒未能恢復操作，判定已經進入免費遊戲')
-        #key_frame_pathes = result_queue.get()
+        key_frame_pathes = result_queue.get()
         
         filename = Snapshot + f'_round_{i}'
         
