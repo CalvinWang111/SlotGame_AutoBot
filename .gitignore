@@ -11,6 +11,7 @@ VITModel/
 output/
 Lib/
 Scripts/
+.idea/
 
 # game images
 GoldenHoYeah/
