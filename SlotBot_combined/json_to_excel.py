@@ -33,7 +33,11 @@ class Excel_parser:
         #讀取數值檔案
         #建立鍵值
         value_file_list = os.listdir(self.value_path)
-        value_file_list.sort(key=lambda x: int(x.split('_')[-1].split('.')[0]))
+        #value_file_list.sort(key=lambda x: int(x.split('_')[-1].split('.')[0]))
+        
+        # 排序 value_file_list
+        value_file_list.sort(key=lambda x: tuple(map(int, x.split('_')[-1].split('.')[0].split('-'))))
+
         for file_name in value_file_list:
             excel['遊戲名稱'].append(game_type)
             excel['測試時間'].append("")

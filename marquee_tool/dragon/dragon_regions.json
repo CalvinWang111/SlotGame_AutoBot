@@ -5,7 +5,7 @@
     },
     "regions": {
         "dragon_fg_btn1": {
-            "path": "marquee_tool\\dragon_game_choose\\template\\dragon_fg_btn1.png",
+            "path": "marquee_tool\\dragon\\template\\dragon_fg_btn1.png",
             "confidence": 1,
             "contour": [
                 289.997158042371,
@@ -15,7 +15,7 @@
             ]
         },
         "dragon_fg_btn2": {
-            "path": "marquee_tool\\dragon_game_choose\\template\\dragon_fg_btn2.png",
+            "path": "marquee_tool\\dragon\\template\\dragon_fg_btn2.png",
             "confidence": 1,
             "contour": [
                 493.5226618439505,
@@ -25,7 +25,7 @@
             ]
         },
         "dragon_fg_btn3": {
-            "path": "marquee_tool\\dragon_game_choose\\template\\dragon_fg_btn3.png",
+            "path": "marquee_tool\\dragon\\template\\dragon_fg_btn3.png",
             "confidence": 1,
             "contour": [
                 692.3150143943307,
@@ -35,7 +35,7 @@
             ]
         },
         "dragon_fg_btn4": {
-            "path": "marquee_tool\\dragon_game_choose\\template\\dragon_fg_btn4.png",
+            "path": "marquee_tool\\dragon\\template\\dragon_fg_btn4.png",
             "confidence": 1,
             "contour": [
                 894.2628011121772,
@@ -45,7 +45,7 @@
             ]
         },
         "dragon_fg_btn5": {
-            "path": "marquee_tool\\dragon_game_choose\\template\\dragon_fg_btn5.png",
+            "path": "marquee_tool\\dragon\\template\\dragon_fg_btn5.png",
             "confidence": 1,
             "contour": [
                 1096.2105878300235,

@@ -101,7 +101,7 @@ class GameController:
             keypoints2, descriptors2 = sift.detectAndCompute(game_screenshot_gray, None)
 
             # Match descriptors using FLANN-based matcher
-            index_params = dict(algorithm=1, trees=10)  # FLANN KDTree Index
+            index_params = dict(algorithm=1, trees=20)  # FLANN KDTree Index
             search_params = dict(checks=20)  # Number of checks
             flann = cv2.FlannBasedMatcher(index_params, search_params)
 
@@ -110,11 +110,11 @@ class GameController:
             # Apply Lowe's ratio test
             good_matches = []
             for m, n in matches:
-                if m.distance < 0.6 * n.distance:  # Adjusted Lowe's ratio
+                if m.distance < 0.5 * n.distance:  # Adjusted Lowe's ratio
                     good_matches.append(m)
 
             # Minimum number of matches to consider it valid
-            MIN_MATCH_COUNT = 15  # Increased minimum matches
+            MIN_MATCH_COUNT = 100  # Increased minimum matches
 
             if len(good_matches) >= MIN_MATCH_COUNT:
                 # Extract matched keypoints
@@ -122,7 +122,7 @@ class GameController:
                 dst_pts = np.float32([keypoints2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
 
                 # Compute Homography using RANSAC with stricter threshold
-                M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 3.0)  # Reduced RANSAC threshold
+                M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 2.0)  # Reduced RANSAC threshold
                 matches_mask = mask.ravel().tolist() if mask is not None else []
 
                 if M is not None:
@@ -149,9 +149,9 @@ class GameController:
             )
             cv2.imshow(f"Matches for {key}", match_img)
             '''
-        cv2.imshow("Matched Regions", game_screenshot)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        #cv2.imshow("Matched Regions", game_screenshot)
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
 
         return matched_loc
 
@@ -167,6 +167,7 @@ class GameController:
         success_continue = False
 
         try:
+            
             print('into fg try loop with no VIT')
             screenshot.capture_screenshot(window_title=window_name, images_dir=images_dir, filename=Snapshot+'freegame')
             
@@ -174,15 +175,16 @@ class GameController:
             all_freegame_btn_json_path = os.path.join(root_dir, 'marquee_tool', Snapshot, Snapshot + '_regions.json')
             
             # try SIFT
-            print('SIFT matching with fg btn json')
-            sift_matched_loc = GameController.sift_with_ransac(freegame_screenshot, all_freegame_btn_json_path)
+            #print('SIFT matching with fg btn json')
+            #sift_matched_loc = GameController.sift_with_ransac(freegame_screenshot, all_freegame_btn_json_path)
             
             # try template
             print('Template Matching matching with fg btn json')
             template_matched_loc = test_template_matching(freegame_screenshot, all_freegame_btn_json_path)
 
             # Combine locations from both methods
-            all_matched_loc = sift_matched_loc + template_matched_loc
+            #all_matched_loc = sift_matched_loc + template_matched_loc
+            all_matched_loc = template_matched_loc
             print('all_matched_loc', all_matched_loc)
 
             if len(all_matched_loc) > 1:
