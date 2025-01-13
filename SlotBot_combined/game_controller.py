@@ -63,7 +63,9 @@ class GameController:
         game_screenshot = cv2.imread(game_screenshot_path)
         matched_loc = []
 
-        all_freegame_btn_json = json.load(open(all_freegame_btn_json_path, mode='r', encoding='utf-8'))
+        # Load JSON configuration
+        with open(all_freegame_btn_json_path, mode='r', encoding='utf-8') as file:
+            all_freegame_btn_json = json.load(file)
 
         # Get the original size of the game screenshot from JSON
         original_image_size = all_freegame_btn_json.get("original_image_size", {})
@@ -75,85 +77,95 @@ class GameController:
         scale_y = game_screenshot.shape[0] / original_height
 
         for key, value in all_freegame_btn_json.get("regions", {}).items():
+            # Load template image
             template_img = cv2.imread(value['path'], cv2.IMREAD_GRAYSCALE)
+            if template_img is None:
+                print(f"Template image {value['path']} not found.")
+                continue
 
-            # Resize the template image based on scaling factors
-            if template_img is not None:
-                template_img = cv2.resize(template_img, (
-                    int(template_img.shape[1] * scale_x),
-                    int(template_img.shape[0] * scale_y)
-                ))
+            # Compute relative position and scale it to current screenshot
+            contour = value.get("contour", [])
+            if len(contour) == 4:
+                x, y, w, h = contour
+                x_scaled = int(x * scale_x)
+                y_scaled = int(y * scale_y)
+                w_scaled = int(w * scale_x)
+                h_scaled = int(h * scale_y)
 
-            # Preprocess images (Gaussian Blur and CLAHE)
-            game_screenshot_gray = cv2.cvtColor(game_screenshot, cv2.COLOR_BGR2GRAY)
-            template_img = cv2.GaussianBlur(template_img, (5, 5), 0)
-            game_screenshot_gray = cv2.GaussianBlur(game_screenshot_gray, (5, 5), 0)
+                # Crop region of interest (ROI) from game screenshot
+                roi = game_screenshot[y_scaled:y_scaled + h_scaled, x_scaled:x_scaled + w_scaled]
+                if roi is None or roi.size == 0:
+                    print(f"ROI for {key} is empty or invalid.")
+                    continue
 
-            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-            template_img = clahe.apply(template_img)
-            game_screenshot_gray = clahe.apply(game_screenshot_gray)
+                # Preprocess images (Gaussian Blur and CLAHE)
+                roi_gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+                roi_gray = cv2.GaussianBlur(roi_gray, (5, 5), 0)
+                template_img = cv2.GaussianBlur(template_img, (5, 5), 0)
 
-            # Initialize SIFT detector
-            sift = cv2.SIFT_create()
+                clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+                roi_gray = clahe.apply(roi_gray)
+                template_img = clahe.apply(template_img)
 
-            # Detect and compute keypoints and descriptors
-            keypoints1, descriptors1 = sift.detectAndCompute(template_img, None)
-            keypoints2, descriptors2 = sift.detectAndCompute(game_screenshot_gray, None)
+                # Initialize SIFT detector
+                sift = cv2.SIFT_create()
 
-            # Match descriptors using FLANN-based matcher
-            index_params = dict(algorithm=1, trees=20)  # FLANN KDTree Index
-            search_params = dict(checks=20)  # Number of checks
-            flann = cv2.FlannBasedMatcher(index_params, search_params)
+                # Detect and compute keypoints and descriptors
+                keypoints1, descriptors1 = sift.detectAndCompute(template_img, None)
+                keypoints2, descriptors2 = sift.detectAndCompute(roi_gray, None)
 
-            matches = flann.knnMatch(descriptors1, descriptors2, k=2)
+                # Match descriptors using FLANN-based matcher
+                index_params = dict(algorithm=1, trees=20)  # FLANN KDTree Index
+                search_params = dict(checks=20)  # Number of checks
+                flann = cv2.FlannBasedMatcher(index_params, search_params)
 
-            # Apply Lowe's ratio test
-            good_matches = []
-            for m, n in matches:
-                if m.distance < 0.5 * n.distance:  # Adjusted Lowe's ratio
-                    good_matches.append(m)
+                matches = flann.knnMatch(descriptors1, descriptors2, k=2)
 
-            # Minimum number of matches to consider it valid
-            MIN_MATCH_COUNT = 100  # Increased minimum matches
+                # Apply Lowe's ratio test
+                good_matches = []
+                for m, n in matches:
+                    if m.distance < 0.3 * n.distance:
+                        good_matches.append(m)
 
-            if len(good_matches) >= MIN_MATCH_COUNT:
-                # Extract matched keypoints
-                src_pts = np.float32([keypoints1[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
-                dst_pts = np.float32([keypoints2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+                # Minimum number of matches to consider it valid
+                MIN_MATCH_COUNT = 150
+                if len(good_matches) >= MIN_MATCH_COUNT:
+                    # Extract matched keypoints
+                    src_pts = np.float32([keypoints1[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+                    dst_pts = np.float32([keypoints2[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
 
-                # Compute Homography using RANSAC with stricter threshold
-                M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 2.0)  # Reduced RANSAC threshold
-                matches_mask = mask.ravel().tolist() if mask is not None else []
+                    # Compute Homography using RANSAC
+                    M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 2.0)
+                    matches_mask = mask.ravel().tolist() if mask is not None else []
 
-                if M is not None:
-                    h, w = template_img.shape
-                    pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
-                    dst = cv2.perspectiveTransform(pts, M)
+                    if M is not None:
+                        h, w = template_img.shape
+                        pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
+                        dst = cv2.perspectiveTransform(pts, M)
 
-                    # Bounding box for matched region
-                    x, y, w, h = cv2.boundingRect(dst)
-                    matched_loc.append((x, y, w, h))
+                        # Bounding box for matched region
+                        x, y, w, h = cv2.boundingRect(dst)
+                        matched_loc.append((x_scaled + x, y_scaled + y, w, h))
 
-                    # Draw matched region on the game screenshot
-                    game_screenshot = cv2.polylines(game_screenshot, [np.int32(dst)], True, (0, 255, 0), 3, cv2.LINE_AA)
+                        # Draw matched region on the game screenshot
+                        game_screenshot = cv2.polylines(game_screenshot, [np.int32(dst)], True, (0, 255, 0), 3, cv2.LINE_AA)
 
-            '''
-            # Visualize matches
-            match_img = cv2.drawMatches(
-                template_img, keypoints1,
-                game_screenshot_gray, keypoints2,
-                good_matches, None,
-                matchColor=(0, 255, 0),
-                singlePointColor=(255, 0, 0),
-                matchesMask=matches_mask
-            )
-            cv2.imshow(f"Matches for {key}", match_img)
-            '''
-        #cv2.imshow("Matched Regions", game_screenshot)
-        #cv2.waitKey(0)
-        #cv2.destroyAllWindows()
+                # Visualize matches
+                match_img = cv2.drawMatches(
+                    template_img, keypoints1,
+                    roi_gray, keypoints2,
+                    good_matches, None,
+                    matchColor=(0, 255, 0),
+                    singlePointColor=(255, 0, 0),
+                )
+                cv2.imshow(f"Matches for {key}", match_img)
+
+        cv2.imshow("Matched Regions", game_screenshot)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
         return matched_loc
+
 
 
 
@@ -174,17 +186,17 @@ class GameController:
             freegame_screenshot = os.path.join(root_dir, 'images', Snapshot+'freegame.png')
             all_freegame_btn_json_path = os.path.join(root_dir, 'marquee_tool', Snapshot, Snapshot + '_regions.json')
             
-            # try SIFT
-            #print('SIFT matching with fg btn json')
-            #sift_matched_loc = GameController.sift_with_ransac(freegame_screenshot, all_freegame_btn_json_path)
+            #try SIFT
+            print('SIFT matching with fg btn json')
+            sift_matched_loc = GameController.sift_with_ransac(freegame_screenshot, all_freegame_btn_json_path)
             
             # try template
             print('Template Matching matching with fg btn json')
             template_matched_loc = test_template_matching(freegame_screenshot, all_freegame_btn_json_path)
 
             # Combine locations from both methods
-            #all_matched_loc = sift_matched_loc + template_matched_loc
-            all_matched_loc = template_matched_loc
+            all_matched_loc = sift_matched_loc + template_matched_loc
+            #all_matched_loc = template_matched_loc
             print('all_matched_loc', all_matched_loc)
 
             if len(all_matched_loc) > 1:
@@ -285,3 +297,4 @@ class GameController:
             print(f"An error occurred: {e}")
         
         return success_continue
+    
