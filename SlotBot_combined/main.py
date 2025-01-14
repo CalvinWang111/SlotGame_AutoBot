@@ -162,13 +162,12 @@ def main():
             os.rename(old_path, new_path)
             paths[j] = new_path
         
+        # 在free game初始化valuerec
+        if(not free_game_initialized and game_mode=="free"):
+            valuerec["free"].get_board_value(paths[0])
         # 數值組10輪後，辨識每一輪數值
         if(value_recognize_signal[game_mode]):
             valuerec[game_mode].recognize_value(root_dir=root_dir, mode=GAME, image_paths=paths)
-        
-        # I'm not sure if this is necessary, if so, please uncomment it, otherwise you can delete this paragraph
-        # if(not free_game_initialized and game_mode=="free"):
-        #     valuerec["free"].get_board_value(paths[0])
 
         # 切換盤面辨識模式
         if grid_recognizer.mode == 'base' and game_mode=="free":
@@ -205,7 +204,7 @@ def main():
                 all_rounds = [os.path.join(image_dir[mode], file)for file in os.listdir(image_dir[mode])]
                 print('all rounds round images pathes:', all_rounds)
 
-                valuerec[mode].get_meaning(root_dir, GAME, mode, all_rounds, i)
+                valuerec[mode].get_meaning(root_dir, GAME, mode, all_rounds, numerical_round_count[mode])
                 valuerec[mode].recognize_value(root_dir=root_dir, mode=GAME, image_paths=all_rounds)
                 value_recognize_signal[mode] = True
 
