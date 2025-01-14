@@ -101,6 +101,40 @@ class StoppingFrameCapture:
                 count += 1
             sct.close()
 
+    def spinbuttonOCR(self, highest_confidence_images, frame):
+        basespin = True
+
+        #檢查開始選轉按紐，顯示內容是否為開始旋轉，如果不是則判定進入免費遊戲
+        (x, y, w, h) = highest_confidence_images[10]['contour']
+        ocr_result = self.ocr.ocr(frame[y:y + h, x:x + w], cls=True)
+        ocr_result = ocr_result[0]
+                        
+        if ocr_result:
+            # Extract text and confidence
+            results = [(item[1][0], item[1][1]) for item in ocr_result]
+                        
+            # Find the result with the highest confidence
+            highest_score_result = max(results, key=lambda x: x[1])
+
+            # Check if the highest score answer is "開始旋轉"
+            if any(keyword in highest_score_result[0] for keyword in self.keywords):
+                print("The spin button showing : '開始旋轉'.")
+                basespin = True
+            else:
+                print("The spin button showing is not : '開始旋轉'.")
+
+                # 提取數字
+                numbers = [int(part) for text, _ in results for part in text.split('/') if part.isdigit()]
+                if len(numbers) >= 2:
+                    print(f"Remaining Spins: {numbers[0]}, Free Games Won: {numbers[1]}")
+                else:
+                    print("Could not extract sufficient numerical data.")
+                basespin = False
+        else:
+            print('OCR spin button failed.')
+        
+        return basespin
+
     def get_key_frames(self, grid, intial_intensity,intensity_threshold,highest_confidence_images,save_images):
         """
         Get the frame at the moment the wheel stops
@@ -283,38 +317,16 @@ class StoppingFrameCapture:
                         print('button state', self.__button_available)
                         self.pause_event.clear()  # 暫停線程
 
-                         #檢查開始選轉按紐，顯示內容是否為開始旋轉，如果不是判定進入免費遊戲
-                        (x, y, w, h) = highest_confidence_images[10]['contour']
-                        ocr_result = self.ocr.ocr(frame[y:y + h, x:x + w], cls=True)
-                        ocr_result = ocr_result[0]
-                                        
-                        # Extract text and confidence
-                        results = [(item[1][0], item[1][1]) for item in ocr_result]
-
-                        # Find the result with the highest confidence
-                        highest_score_result = max(results, key=lambda x: x[1])
-
-                        # Check if the highest score answer is "開始旋轉"
-                        if any(keyword in highest_score_result[0] for keyword in self.keywords):
-                            print("The spin button showing : '開始旋轉'.")
-
+                        if self.spinbuttonOCR(highest_confidence_images=highest_confidence_images, frame=frame):
                             success_continue = GameController.freegame_control_NoVIT(Snapshot=self.Snapshot)
                             if success_continue:
                                 self.free_gamestate = True
+                                self.__terminated = True
                             else:
                                 self.free_gamestate = False
                         else:
-                            print("The spin button showing is not : '開始旋轉'.")
-
-                            # 提取數字
-                            numbers = [int(part) for text, _ in results for part in text.split('/') if part.isdigit()]
-
-                            if len(numbers) >= 2:
-                                print(f"Remaining Spins: {numbers[0]}, Free Games Won: {numbers[1]}")
-                            else:
-                                print("Could not extract sufficient numerical data.")
-                            self.free_gamestate = True
                             success_continue = GameController.freegame_control(Snapshot=self.Snapshot)
+                            
                         self.pause_event.set()  # 恢復線程
                         #print('freegame control success to contunue: ', success_continue)
                 elif elapsed__time > 30:
@@ -326,7 +338,7 @@ class StoppingFrameCapture:
                 if self.__button_available==True:
                     if time.time()-last_capture_time>5 :
                         self.__terminated = True
-                
+
         self.__button_available = False
         self.__terminated = False
         self.__spin_start_time = time.time()
