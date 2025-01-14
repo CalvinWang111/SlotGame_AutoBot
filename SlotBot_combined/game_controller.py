@@ -114,6 +114,15 @@ class GameController:
                 keypoints1, descriptors1 = sift.detectAndCompute(template_img, None)
                 keypoints2, descriptors2 = sift.detectAndCompute(roi_gray, None)
 
+                # 检查描述符是否为 None 或者长度为 0
+                if descriptors1 is None or descriptors2 is None:
+                    print(f"Skipping {key} due to empty descriptors.")
+                    continue
+
+                # 转换描述符为 float32 类型（FLANN 需要此格式）
+                descriptors1 = np.asarray(descriptors1, dtype=np.float32)
+                descriptors2 = np.asarray(descriptors2, dtype=np.float32)
+
                 # Match descriptors using FLANN-based matcher
                 index_params = dict(algorithm=1, trees=20)  # FLANN KDTree Index
                 search_params = dict(checks=20)  # Number of checks
@@ -177,52 +186,54 @@ class GameController:
         #sam_model_cfg = os.path.join(root_dir, 'sam2_configs', 'sam2_hiera_l.yaml')
         images_dir = os.path.join(root_dir, 'images')
         success_continue = False
+        all_freegame_btn_json_path = os.path.join(root_dir, 'marquee_tool', Snapshot, Snapshot + '_regions.json')
 
-        try:
-            
-            print('into fg try loop with no VIT')
-            screenshot.capture_screenshot(window_title=window_name, images_dir=images_dir, filename=Snapshot+'freegame')
-            
-            freegame_screenshot = os.path.join(root_dir, 'images', Snapshot+'freegame.png')
-            all_freegame_btn_json_path = os.path.join(root_dir, 'marquee_tool', Snapshot, Snapshot + '_regions.json')
-            
-            #try SIFT
-            print('SIFT matching with fg btn json')
-            sift_matched_loc = GameController.sift_with_ransac(freegame_screenshot, all_freegame_btn_json_path)
-            
-            # try template
-            print('Template Matching matching with fg btn json')
-            template_matched_loc = test_template_matching(freegame_screenshot, all_freegame_btn_json_path)
+        if not all_freegame_btn_json_path is None:
+            try:
+                
+                print('into fg try loop with no VIT')
+                screenshot.capture_screenshot(window_title=window_name, images_dir=images_dir, filename=Snapshot+'freegame')
+                freegame_screenshot = os.path.join(root_dir, 'images', Snapshot+'freegame.png')
+                
+                #try SIFT
+                print('SIFT matching with fg btn json')
+                sift_matched_loc = GameController.sift_with_ransac(freegame_screenshot, all_freegame_btn_json_path)
+                
+                # try template
+                print('Template Matching matching with fg btn json')
+                template_matched_loc = test_template_matching(freegame_screenshot, all_freegame_btn_json_path)
 
-            # Combine locations from both methods
-            all_matched_loc = sift_matched_loc + template_matched_loc
-            #all_matched_loc = template_matched_loc
-            print('all_matched_loc', all_matched_loc)
+                # Combine locations from both methods
+                all_matched_loc = sift_matched_loc + template_matched_loc
+                #all_matched_loc = template_matched_loc
+                print('all_matched_loc', all_matched_loc)
 
-            if len(all_matched_loc) > 1:
-                # Randomly choose a location from combined results
-                loc = random.choice(all_matched_loc)
-                GameController.click_in_window(
-                    window_title=window_name, 
-                    x_offset=loc[0] + loc[2] // 2, 
-                    y_offset=loc[1] + loc[3] // 2
-                )
-                success_continue = True
-            elif len(all_matched_loc) == 1:
-                # Use the only matched location
-                loc = all_matched_loc[0]
-                GameController.click_in_window(
-                    window_title=window_name, 
-                    x_offset=loc[0] + loc[2] // 2, 
-                    y_offset=loc[1] + loc[3] // 2
-                )
-                success_continue = True
-            else:
-                # No matches found
-                print("Unable to process. No matches found.")
-                success_continue = False
-        except Exception as e:
-            print(f"An error occurred: {e}")
+                if len(all_matched_loc) > 1:
+                    # Randomly choose a location from combined results
+                    loc = random.choice(all_matched_loc)
+                    GameController.click_in_window(
+                        window_title=window_name, 
+                        x_offset=loc[0] + loc[2] // 2, 
+                        y_offset=loc[1] + loc[3] // 2
+                    )
+                    success_continue = True
+                elif len(all_matched_loc) == 1:
+                    # Use the only matched location
+                    loc = all_matched_loc[0]
+                    GameController.click_in_window(
+                        window_title=window_name, 
+                        x_offset=loc[0] + loc[2] // 2, 
+                        y_offset=loc[1] + loc[3] // 2
+                    )
+                    success_continue = True
+                else:
+                    # No matches found
+                    print("Unable to process. No matches found.")
+                    success_continue = False
+            except Exception as e:
+                print(f"An error occurred: {e}")
+        else:
+            success_continue = True
         
         return success_continue
 
