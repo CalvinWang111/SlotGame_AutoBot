@@ -300,8 +300,7 @@ class BaseGridRecognizer:
         
     
     def save_grid_results(self, file_name):
-        if self.grid_is_stabilized:
-            self.grid.save_results_as_json(save_dir=self.output_json_dir, template_dir=self.template_dir, file_name=file_name)
+        self.grid.save_results_as_json(save_dir=self.output_json_dir, template_dir=self.template_dir, file_name=file_name)
         
     def save_annotated_frame(self, img, file_name):
         save_path = self.save_dir / f"{file_name}.png"
