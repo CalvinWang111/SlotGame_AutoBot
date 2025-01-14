@@ -338,9 +338,7 @@ class StoppingFrameCapture:
                 if self.__button_available==True:
                     if time.time()-last_capture_time>5 :
                         self.__terminated = True
-                    if self.spinbuttonOCR(highest_confidence_images=highest_confidence_images, frame=frame) and self.free_gamestate == True:
-                        self.free_gamestate = False
-                
+
         self.__button_available = False
         self.__terminated = False
         self.__spin_start_time = time.time()

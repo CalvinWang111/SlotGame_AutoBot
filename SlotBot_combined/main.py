@@ -14,7 +14,7 @@ from value_recognition import ValueRecognition
 import threading
 import queue
 
-GAME = 'golden'
+GAME = 'dragon'
 
 symbol_template_dir = {
     "base":Path(f'./images/{GAME}/symbols/base_game'),
@@ -130,7 +130,6 @@ def main():
             if stop_catcher.free_gamestate:
                 print('超過10秒未能恢復操作，判定已經進入免費遊戲')
         key_frame_paths = result_queue.get()
-
         if(stop_catcher.free_gamestate):
             game_mode="free"
         else:
@@ -169,6 +168,14 @@ def main():
         if(value_recognize_signal[game_mode]):
             valuerec[game_mode].recognize_value(root_dir=root_dir, mode=GAME, image_paths=paths)
 
+        # spinBtn_base(Bool)檢查是否按鍵已經更換狀態，但game state尚未更換
+        frame = cv2.imread(paths[-1])
+        spinBtn_base = stop_catcher.spinbuttonOCR(highest_confidence_images=highest_confidence_images, frame=frame)
+        if spinBtn_base and stop_catcher.free_gamestate == True:
+            stop_catcher.free_gamestate = False
+        elif not spinBtn_base and stop_catcher.free_gamestate == False:
+            stop_catcher.free_gamestate = True
+
         # 切換盤面辨識模式
         if grid_recognizer.mode == 'base' and game_mode=="free":
             grid_recognizer = BaseGridRecognizer(game=GAME, mode='free', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
@@ -182,6 +189,7 @@ def main():
             grid_recognizer.recognize_roi(img)
             grid_recognizer.save_annotated_frame(img, os.path.basename(image_file).split(".")[0])
             grid_recognizer.save_grid_results(os.path.basename(image_file).split(".")[0])
+
 
 
         #數值組 
