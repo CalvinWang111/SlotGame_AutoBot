@@ -205,7 +205,7 @@ def main():
                 all_rounds = [os.path.join(image_dir[mode], file)for file in os.listdir(image_dir[mode])]
                 print('all rounds round images pathes:', all_rounds)
 
-                valuerec[mode].get_meaning(root_dir, GAME, mode, all_rounds, i)
+                valuerec[mode].get_meaning(root_dir, GAME, mode, all_rounds, numerical_round_count[mode])
                 valuerec[mode].recognize_value(root_dir=root_dir, mode=GAME, image_paths=all_rounds)
                 value_recognize_signal[mode] = True
 
