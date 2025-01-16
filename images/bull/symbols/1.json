@@ -1,0 +1,29 @@
+{
+    "info_path": "images\\bull\\info\\1.png",
+    "info_shape": {
+        "width": 1080,
+        "height": 1920
+    },
+    "symbols": [
+        {
+            "name": "wild",
+            "path": "images\\bull\\symbols\\base_game\\wild.png",
+            "bbox": [
+                138,
+                800,
+                175,
+                141
+            ]
+        },
+        {
+            "name": "big_treasure",
+            "path": "images\\bull\\symbols\\base_game\\big_treasure.png",
+            "bbox": [
+                163,
+                1200,
+                124,
+                333
+            ]
+        }
+    ]
+}

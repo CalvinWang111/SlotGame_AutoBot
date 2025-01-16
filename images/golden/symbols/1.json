@@ -1,0 +1,59 @@
+{
+    "info_path": "images\\golden\\info\\1.png",
+    "info_shape": {
+        "width": 1080,
+        "height": 1920
+    },
+    "symbols": [
+        {
+            "name": "wild",
+            "path": "images\\golden\\symbols\\test_game\\wild.png",
+            "bbox": [
+                141,
+                404,
+                194,
+                161
+            ]
+        },
+        {
+            "name": "coin",
+            "path": "images\\golden\\symbols\\test_game\\coin.png",
+            "bbox": [
+                142,
+                636,
+                192,
+                158
+            ]
+        },
+        {
+            "name": "jackpot",
+            "path": "images\\golden\\symbols\\test_game\\jackpot.png",
+            "bbox": [
+                146,
+                856,
+                192,
+                162
+            ]
+        },
+        {
+            "name": "coin_four_way_spread",
+            "path": "images\\golden\\symbols\\test_game\\coin_four_way_spread.png",
+            "bbox": [
+                144,
+                1084,
+                196,
+                160
+            ]
+        },
+        {
+            "name": "coin_eight_way_spread",
+            "path": "images\\golden\\symbols\\test_game\\coin_eight_way_spread.png",
+            "bbox": [
+                144,
+                1304,
+                196,
+                162
+            ]
+        }
+    ]
+}

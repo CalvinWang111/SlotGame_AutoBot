@@ -1,0 +1,39 @@
+{
+    "info_path": "images\\fu\\info\\1.png",
+    "info_shape": {
+        "width": 1920,
+        "height": 1080
+    },
+    "symbols": [
+        {
+            "name": "wild",
+            "path": "images\\fu\\symbols\\test_game\\wild.png",
+            "bbox": [
+                365,
+                203,
+                222,
+                182
+            ]
+        },
+        {
+            "name": "green_fu",
+            "path": "images\\fu\\symbols\\test_game\\green_fu.png",
+            "bbox": [
+                354,
+                446,
+                245,
+                203
+            ]
+        },
+        {
+            "name": "red_fu",
+            "path": "images\\fu\\symbols\\test_game\\red_fu.png",
+            "bbox": [
+                359,
+                695,
+                233,
+                206
+            ]
+        }
+    ]
+}

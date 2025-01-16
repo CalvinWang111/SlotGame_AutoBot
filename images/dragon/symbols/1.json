@@ -1,0 +1,29 @@
+{
+    "info_path": "images\\dragon\\info\\1.png",
+    "info_shape": {
+        "width": 1920,
+        "height": 1080
+    },
+    "symbols": [
+        {
+            "name": "wild",
+            "path": "images\\dragon\\symbols\\test_game\\wild.png",
+            "bbox": [
+                397,
+                182,
+                275,
+                333
+            ]
+        },
+        {
+            "name": "free_game",
+            "path": "images\\dragon\\symbols\\test_game\\free_game.png",
+            "bbox": [
+                405,
+                619,
+                265,
+                245
+            ]
+        }
+    ]
+}
