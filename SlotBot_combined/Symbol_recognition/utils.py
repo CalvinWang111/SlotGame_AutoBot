@@ -53,14 +53,3 @@ def ResizeWithAspectRatio(image, width=None, height=None, inter=cv2.INTER_LINEAR
         dim = (width, int(h * r))
 
     return cv2.resize(image, dim, interpolation=inter)
-
-# def set_seed(seed):
-#     torch.manual_seed(seed)  # Set seed for PyTorch
-#     torch.cuda.manual_seed(seed)  # Set seed for CUDA (GPU)
-#     torch.cuda.manual_seed_all(seed)  # Set seed for all GPUs
-#     random.seed(seed)  # Set seed for random module
-#     np.random.seed(seed)  # Set seed for numpy
-    
-#     # Ensure that all operations are deterministic on GPU
-#     torch.backends.cudnn.deterministic = True
-#     torch.backends.cudnn.benchmark = False

@@ -34,5 +34,7 @@
     "cell_matching_mode": "color",
     "cell_matching_method": "template first",
     "cell_size": [145, 145],
-    "non_square_scale": 0.5
+    "non_square_scale": 0.5,
+    "resize_template": true,
+    "use_saved_grid": true
 }
