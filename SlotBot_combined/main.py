@@ -43,7 +43,7 @@ def main():
     window_name = 'BlueStacks App Player'
     Snapshot = GAME
     intensity_threshold = 20
-    spin_round = 2
+    spin_round = 10000
     numerical_round_count = {"base":0, "free":0}
     global value_recognize_signal
     free_game_initialized = False
@@ -61,7 +61,7 @@ def main():
 
     # 1. 截圖
     screenshot.capture_screenshot(window_title=window_name, images_dir=images_dir, filename=Snapshot)
-    
+
     # 2. SAM 分割
     maskDict = sam.segment_image(os.path.join(images_dir, Snapshot + ".png"))
     
@@ -80,6 +80,7 @@ def main():
 
     intial_avg_intensities = screenshot.clickable(snapshot_path=intialshot_path,highest_confidence_images=highest_confidence_images)
     first_frame = cv2.imread(intialshot_path)
+    regions = screenshot.interactive_labeling(image_path=intialshot_path, Snapshot=Snapshot)
     valuerec["base"].get_board_value(intialshot_path)
 
     #config_file = Path(root_dir / f'./SlotBot_combined/Symbol_recognition/configs/{GAME}.json')
@@ -169,12 +170,20 @@ def main():
             valuerec[game_mode].recognize_value(root_dir=root_dir, mode=GAME, image_paths=paths)
 
         # spinBtn_base(Bool)檢查是否按鍵已經更換狀態，但game state尚未更換
+        '''
         frame = cv2.imread(paths[-1])
         spinBtn_base = stop_catcher.spinbuttonOCR(highest_confidence_images=highest_confidence_images, frame=frame)
         if spinBtn_base and stop_catcher.free_gamestate == True:
             stop_catcher.free_gamestate = False
         elif not spinBtn_base and stop_catcher.free_gamestate == False:
             stop_catcher.free_gamestate = True
+        '''
+            
+        #測試使用
+        autoclick_start = time.time()
+        GameController.auto_click_from_center(window_title=window_name, x_offset=4, y_offset=4, regions=regions)
+        autoclick_end = time.time()
+        print('auto click time spended:', autoclick_end - autoclick_start)
 
         # 切換盤面辨識模式
         if grid_recognizer.mode == 'base' and game_mode=="free":
@@ -189,8 +198,6 @@ def main():
             grid_recognizer.recognize_roi(img)
             grid_recognizer.save_annotated_frame(img, os.path.basename(image_file).split(".")[0])
             grid_recognizer.save_grid_results(os.path.basename(image_file).split(".")[0])
-
-
 
         #數值組 
         for mode in ("base","free"):

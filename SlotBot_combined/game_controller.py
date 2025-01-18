@@ -48,6 +48,60 @@ class GameController:
         except IndexError:
             print(f"Window titled '{window_title}' not found.")
 
+    def auto_click_from_center(window_title, x_offset, y_offset, regions, step=4, clicks=1, interval=0.0, button='left'):
+        """
+        Automatically click from the center of the window outward until the distance is less than twice the offsets,
+        while avoiding clicking below the highest contour point.
+
+        Parameters:
+        - window_title (str): The title of the window to interact with.
+        - classId (any): Identifier for the class of interest.
+        - highest_confidence_images (dict): Dictionary containing contour data for the class.
+        - x_offset (int): Initial x offset for clicking.
+        - y_offset (int): Initial y offset for clicking.
+        - step (int): Step size to increment offsets outward (default is 4).
+        - clicks (int): Number of clicks to perform at each position (default is 1).
+        - interval (float): Interval between clicks (default is 0.0).
+        - button (str): Which mouse button to click, 'left', 'right', or 'middle' (default is 'left').
+        """
+        try:
+            # Get contour data
+            x, y, w, h = regions['temp']['contour']
+            print('regions (x, y, w, h)', x, y, w, h)
+            contour_top = y
+
+            # Find the window by title
+            window = gw.getWindowsWithTitle(window_title)[0]  # Assumes the first match
+
+            # Get the window's position and size
+            width, height = window.width, window.height
+            center_x_offset = width // 2
+            center_y_offset = height // 2
+
+            current_x_offset, current_y_offset = 0, 0
+
+            while abs(current_x_offset) < (width // 2 - step) and abs(current_y_offset) < (height // 2 - step):
+                # Calculate the absolute click position
+                absolute_y = center_y_offset + current_y_offset
+
+                # Avoid clicking below the contour's highest point
+                if absolute_y < contour_top:
+                    GameController.click_in_window(window_title, center_x_offset + current_x_offset, absolute_y, clicks, interval, button)
+
+                # Increment offsets outward
+                current_x_offset += x_offset
+                current_y_offset += y_offset
+
+                if abs(current_x_offset) >= (width // 2 - step) or abs(current_y_offset) >= (height // 2 - step):
+                    break
+
+            print("Auto-clicking process completed.")
+
+        except IndexError:
+            print(f"Window titled '{window_title}' not found.")
+
+
+
     def Windowcontrol(self, highest_confidence_images, classId):
         for item in highest_confidence_images.items():
             if item[0] == classId:
@@ -167,11 +221,11 @@ class GameController:
                     matchColor=(0, 255, 0),
                     singlePointColor=(255, 0, 0),
                 )
-                cv2.imshow(f"Matches for {key}", match_img)
+                #cv2.imshow(f"Matches for {key}", match_img)
 
-        cv2.imshow("Matched Regions", game_screenshot)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        #cv2.imshow("Matched Regions", game_screenshot)
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
 
         return matched_loc
 

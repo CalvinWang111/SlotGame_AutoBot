@@ -169,7 +169,7 @@ class GameScreenshot:
         return False  # Return True if all intensity differences are within the threshold 
      
     @staticmethod 
-    def interactive_labeling(image_path, output_dir, Snapshot): 
+    def interactive_labeling(image_path, output_dir, Snapshot, image=None): 
         """ 
         交互式框選區域並添加標記，返回位置和標記數據。 
          
@@ -184,8 +184,11 @@ class GameScreenshot:
         root = Tk() 
         root.withdraw()  # 隱藏主窗口 
         regions = {} 
-        fig, ax = plt.subplots() 
-        img = plt.imread(image_path) 
+        fig, ax = plt.subplots()
+        if image:
+            img = image
+        else:  
+            img = plt.imread(image_path) 
         ax.imshow(img) 
         plt.title("Drag to select a region. Close the window to finish.") 
         selected_rectangles = [] 
