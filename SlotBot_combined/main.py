@@ -164,7 +164,13 @@ def main():
         
         # 在free game初始化valuerec
         if(not free_game_initialized and game_mode=="free"):
-            valuerec["free"].get_board_value(paths[0])
+            if paths:
+                valuerec["free"].get_board_value(paths[0])
+            else:
+                time.sleep(1)
+                screenshot.capture_screenshot(window_title=window_name, images_dir=image_dir, filename=Snapshot + "_fgshot")
+                intialshot_path = os.path.join(image_dir, Snapshot + "_fgshot")
+
         # 數值組10輪後，辨識每一輪數值
         if(value_recognize_signal[game_mode]):
             valuerec[game_mode].recognize_value(root_dir=root_dir, mode=GAME, image_paths=paths)
@@ -186,11 +192,13 @@ def main():
         print('auto click time spended:', autoclick_end - autoclick_start)
 
         # 切換盤面辨識模式
+        '''
         if grid_recognizer.mode == 'base' and game_mode=="free":
             grid_recognizer = BaseGridRecognizer(game=GAME, mode='free', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
         elif grid_recognizer.mode == 'free' and game_mode=="base":
             grid_recognizer = BaseGridRecognizer(game=GAME, mode='base', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
 
+        ''' 
         #盤面組，每一輪建立盤面(如有需要)以及辨識盤面symbol
         for image_file in paths:
             img = cv2.imread(image_file)
