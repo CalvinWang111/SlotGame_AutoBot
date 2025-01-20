@@ -21,10 +21,10 @@ class OCRModule:
         """
         讀入一張圖片，辨識圖片中的數字
         將辨識的數字包裝成Block，Block包含box、txt、score
-        回傳list[Block]
+        回傳FrameData，FrameData包含list[Block]
         """
         result = self.ocr.ocr(image_path)
-        blocks = []
+        fd = FrameData()
         for line in result[0]:
             print(line)
             tof, number = self.clean_and_check_number(line[1][0])
@@ -37,8 +37,8 @@ class OCRModule:
                 bl.box = [x, y, w, h]
                 bl.txt = number
                 bl.score = line[1][1]
-                blocks.append(bl)
-        return blocks
+                fd.blocks.append(bl)
+        return fd
 
     def clean_and_check_number(self, str):
         """
@@ -57,8 +57,8 @@ class OCRModule:
 if __name__ == "__main__":
     mod = OCRModule()
     img = r'D:\git-repository\SlotGame_AutoBot\images\dragon\screenshots\base_game\dragon_round_5.png'
-    bls = mod.read_nums(img)
-    for bl in bls:
+    fd = mod.read_nums(img)
+    for bl in fd.blocks:
         print(bl.box)
         print(bl.txt)
         print(bl.score)
