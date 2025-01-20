@@ -410,14 +410,14 @@ class StoppingFrameCapture:
             
             self.__terminated = True
             if(best_frame is None):
-                best_frame = frame
+                best_frame = frame.copy()
 
             # Create the directory if it does not exist 
             os.makedirs(images_dir, exist_ok=True)
 
             # Save the screenshot to the specified file 
             full_path = os.path.join(images_dir, filename + '.png')
-            cv2.imwrite(full_path, frame)
+            cv2.imwrite(full_path, best_frame)
             print("Get static frame, Saved to path:", full_path)
                 
         self.__button_available = False
