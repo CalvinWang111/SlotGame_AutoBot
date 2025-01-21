@@ -43,7 +43,7 @@ def main():
     window_name = 'BlueStacks App Player'
     Snapshot = GAME
     intensity_threshold = 20
-    spin_round = 10000
+    spin_round = 12
     numerical_round_count = {"base":0, "free":0}
     global value_recognize_signal
     free_game_initialized = False
@@ -131,6 +131,7 @@ def main():
             if stop_catcher.free_gamestate:
                 print('超過10秒未能恢復操作，判定已經進入免費遊戲')
         key_frame_paths = result_queue.get()
+        
         if(stop_catcher.free_gamestate):
             game_mode="free"
         else:
@@ -170,11 +171,15 @@ def main():
                 time.sleep(1)
                 screenshot.capture_screenshot(window_title=window_name, images_dir=image_dir, filename=Snapshot + "_fgshot")
                 intialshot_path = os.path.join(image_dir, Snapshot + "_fgshot")
+                valuerec['free'].get_board_value(intialshot_path)
 
         # 數值組10輪後，辨識每一輪數值
+        '''
         if(value_recognize_signal[game_mode]):
+            print(len(paths))
             valuerec[game_mode].recognize_value(root_dir=root_dir, mode=GAME, image_paths=paths)
-
+        '''
+            
         # spinBtn_base(Bool)檢查是否按鍵已經更換狀態，但game state尚未更換
         '''
         frame = cv2.imread(paths[-1])
@@ -199,6 +204,7 @@ def main():
             grid_recognizer = BaseGridRecognizer(game=GAME, mode='base', config_file=grid_recognizer_config_file, window_size=(first_frame_width, first_frame_height), debug=False)
 
         ''' 
+        '''
         #盤面組，每一輪建立盤面(如有需要)以及辨識盤面symbol
         for image_file in paths:
             img = cv2.imread(image_file)
@@ -206,6 +212,9 @@ def main():
             grid_recognizer.recognize_roi(img)
             grid_recognizer.save_annotated_frame(img, os.path.basename(image_file).split(".")[0])
             grid_recognizer.save_grid_results(os.path.basename(image_file).split(".")[0])
+        '''
+        
+        
 
         #數值組 
         for mode in ("base","free"):
@@ -228,17 +237,21 @@ def main():
                 print('all rounds round images pathes:', all_rounds)
 
                 valuerec[mode].get_meaning(root_dir, GAME, mode, all_rounds, numerical_round_count[mode])
-                valuerec[mode].recognize_value(root_dir=root_dir, mode=GAME, image_paths=all_rounds)
+                #valuerec[mode].recognize_value(root_dir=root_dir, mode=GAME, image_paths=all_rounds)
                 value_recognize_signal[mode] = True
 
         if(game_mode=="free"):
             free_game_initialized = True
 
+    all_rounds = [os.path.join(image_dir['base'], file)for file in os.listdir(image_dir['base'])]
+    print('all rounds', all_rounds)
+    valuerec["base"].recognize_value(root_dir=root_dir, mode=GAME, image_paths=all_rounds)
+                
 
 if __name__ == "__main__":
     main()
     ex = Excel_parser()
-    for mode in ("base","free"):
+    for mode in ("base", "free"):
         if(value_recognize_signal[mode]):
             ex.json_to_excel(GAME, mode)
             excel_path = os.path.join(root_dir, 'excel', f'{GAME}_{mode}.xlsx')

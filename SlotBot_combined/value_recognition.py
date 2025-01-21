@@ -19,7 +19,6 @@ class ValueRecognition:
         dotenv_path = Path(env_path)
         load_dotenv(dotenv_path=dotenv_path, override=True)
 
-        # os.environ["OPENAI_API_KEY"] =
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.openai_api = OpenAiApi(self.api_key)
 
@@ -274,15 +273,23 @@ class ValueRecognition:
                         json_data[line['meaning']] = json_each_line
 
                         break
+            print('json_data', json_data)
             with open(filename, "w", encoding="utf-8") as file:
                 json.dump(json_data, file, ensure_ascii=False, indent=4)
             frame = cv2.imread(image_path)
             cv2.imwrite(rf'./images/value/value+{timestamp}.png', frame)
 
     def auto_test(self):
-        folder_path = './test_images/ch'
-        files = ['./test_images/ch/' + filename for filename in os.listdir(folder_path) if
+        #folder_path = './test_images/ch'
+        GAME = 'dragon'
+        folder_path = Path(f'./images/{GAME}/screenshots/base_game')
+        files = [os.path.join(folder_path, file)for file in os.listdir(folder_path)]
+
+        '''
+        files = ['./test_images/ch' + filename for filename in os.listdir(folder_path) if
                  os.path.isfile(os.path.join(folder_path, filename))]
+        '''
+        
         root_dir = Path(__file__).parent.parent
         MODE = 'base'
         GAME = 'golden'
@@ -299,7 +306,82 @@ class ValueRecognition:
             ocr_total_run_time = time.time() - ocr_start_time
             print(f'round: {i} ocr_total_run_time = {ocr_total_run_time}')
 
+    # Function to load a JSON file
+    def load_json(self, file_path):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+
+    # Function to merge JSON files based on value and ensure all keys are included
+    def merge_json_files(self, input_folder):
+        # Get all JSON files in the folder
+        json_files = [f for f in os.listdir(input_folder) if f.endswith('.json')]
+
+        # Group files by their base name (e.g., dragon_round_0)
+        file_groups = {}
+        for file_name in json_files:
+            base_name = file_name.split('-')[0]  # Extract the part before the first '-'
+            if base_name not in file_groups:
+                file_groups[base_name] = []
+            file_groups[base_name].append(file_name)
+
+        # Define the output folder
+        output_folder = os.path.join(input_folder, "after")
+        os.makedirs(output_folder, exist_ok=True)
+
+        for base_name, files in file_groups.items():
+            # Separate files into primary and secondary based on the round_x-y format
+            secondary_files = [f for f in files if '-' in f]
+
+            if secondary_files:
+                # Find the file with the highest y index
+                highest_y_file = max(secondary_files, key=lambda f: int(f.split('-')[1].split('.')[0]))
+
+                # Collect all keys and merge data
+                all_values = set()
+                merged_data = []
+
+                for file_name in secondary_files:
+                    file_path = os.path.join(input_folder, file_name)
+                    file_data = self.load_json(file_path)
+
+                    for key, entry in file_data.items():
+                        # Ensure all keys and values are preserved
+                        if 'path' in entry and 'confidence' in entry and 'contour' in entry and 'value' in entry:
+                            merged_data.append(entry)
+                            all_values.add(entry['value'])
+
+                # Deduplicate data while ensuring all keys and values are included
+                value_map = {}
+                for entry in merged_data:
+                    value_key = entry['value']
+                    if value_key not in value_map:
+                        value_map[value_key] = entry
+
+                # Save merged data
+                output_data = list(value_map.values())
+                output_path = os.path.join(output_folder, f"{base_name}.json")
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    json.dump(output_data, f, indent=4, ensure_ascii=False)
+
+                print(f"Merged files for {base_name} saved to {output_path}")
+
+            else:
+                # Rename files that have no secondary versions
+                for file_name in files:
+                    if file_name.endswith('-0.json'):
+                        old_path = os.path.join(input_folder, file_name)
+                        new_name = file_name.replace('-0', '')
+                        new_path = os.path.join(output_folder, new_name)
+                        os.rename(old_path, new_path)
+                        print(f"Renamed {file_name} to {new_name}")
+
 
 if __name__ == "__main__":
     valuerec = ValueRecognition()
-    valuerec.auto_test()
+    #valuerec.auto_test()
+
+    # Input folder path
+    input_folder = r'C:\Users\13514\SlotGame_AutoBot\output\dragon\numerical'  # Replace with your folder path
+
+    # Call the merge function
+    valuerec.merge_json_files(input_folder)

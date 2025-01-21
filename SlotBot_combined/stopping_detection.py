@@ -311,7 +311,8 @@ class StoppingFrameCapture:
                         self.__button_available = True
                     else:
                         self.__button_available = False
-                        
+
+                    '''  
                     if self.__button_available == False:
                         print('into freegame_control')
                         print('button state', self.__button_available)
@@ -329,6 +330,7 @@ class StoppingFrameCapture:
                             
                         self.pause_event.set()  # 恢復線程
                         #print('freegame control success to contunue: ', success_continue)
+                    '''  
                 elif elapsed__time > 30:
                     print('Slotgame AutoBot fail to process')
                     self.__terminated = True

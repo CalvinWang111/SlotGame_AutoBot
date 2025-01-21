@@ -23,3 +23,60 @@ class PromptFormat:
         "請幫我辨識這張圖片是不是按鍵，請在標籤`<answer></answer>`內輸出是<answer>是</answer>或者<answer>不是</answer>"
         "如果是按鍵的話，在標籤`<button></button>`內輸出是哪一類按鍵。"
     )
+
+class GetValuePromptFormat:
+    """
+        A class for prompt format of getting value
+    """
+    PROMPT = (
+        """
+            我想要辨識一款slot game的遊戲畫面中的數字，並且要知道數字的意義。
+
+            以下是slot game中主要要獲得的信息(僅供參考，實際上可能會出現其他重要信息):
+                玩家贏得的分數(ex:玩家贏分)
+                玩家剩餘金額(ex:玩家剩餘金額)
+                每局的押注金額(ex:押注金額)
+                各種獎項金額
+
+            請幫我辨識遊戲畫面中的數字，並告訴我數字的意義，要符合以下條件:
+            1.只保留重要的信息
+            2.數字要用<number></number>標籤包起來，意義要用<meaning></meaning>標籤包起來
+            3.輸出格式<number></number> = <meaning></meaning>
+            4.回答盡量精簡
+            
+        """
+    )
+
+class GetSimplifiedMeaningPromptFormat:
+    """
+        A class for prompt format of getting value
+    """
+    PROMPT = (
+        """
+        我正在辨識一款slot game的遊戲畫面中的數字，但我得到數字的數值和數字的位置了，卻不知道它的意義，所以我記錄了這些數字的位置和這些數字可能的意義。
+        請你為每一筆資料進行可信度評分，規則如下:
+        1.若一個位置的意義越多，則可信度越高。
+        2.若一個位置的意義越重複，則可信度越高。
+        
+        以下是slot game中主要要獲得的信息(僅供參考，實際上可能會出現其他重要信息):
+            玩家贏得的分數(ex:玩家贏分)
+            玩家剩餘金額(ex:玩家剩餘金額)
+            每局的押注金額(ex:押注金額)
+            各種獎項金額
+        
+        請幫我整理位置對上意義，並符合以下條件:
+        1.只保留重要的信息
+        2.若不同位置出現相同的意義請選擇可信度較高的
+        3.要避免輸出重複的意義
+        4.位置要用<position></position>標籤包起來，意義要用<meaning></meaning>標籤包起來
+        5.輸出格式<position></position> = <meaning></meaning>
+        6.回答盡量精簡
+        """
+    )
+
+# """
+#         我正在辨識一款slot game的遊戲畫面中的數字，但我得到數字的數值了，卻不知道它的意義，所以我記錄了這個數字可能的意義。
+#         你認為這個數字的意義是什麼，遵守以下條件:
+#         1.回答盡量精簡。
+#         2.輸出格式<meaning></meaning>，意義要用<meaning></meaning>標籤包起來。
+#         """
