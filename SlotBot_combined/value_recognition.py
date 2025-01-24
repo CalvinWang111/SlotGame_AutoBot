@@ -6,10 +6,13 @@ import os
 from pathlib import Path
 import json
 from datetime import datetime
+from stopping_detection import StoppingFrameCapture
+from screenshot import GameScreenshot
 import re
 import cv2
 import random
 import time
+import re
 from PIL import Image
 
 
@@ -21,6 +24,7 @@ class ValueRecognition:
 
         self.api_key = os.getenv("OPENAI_API_KEY")
         self.openai_api = OpenAiApi(self.api_key)
+        self.screenshot = GameScreenshot()
 
         self.value_pos_form = []
 
@@ -203,13 +207,24 @@ class ValueRecognition:
                 json.dump(data, file, ensure_ascii=False, indent=4)
                 print("檔案不存在，已創建新檔案，內容為：", data)
 
-    def recognize_value(self, root_dir, mode, image_paths):
+    def recognize_value(self, root_dir, game, mode, image_paths, highest_confidence_images={}):
         for image_path in image_paths:
             ocr_result = self.ocr.ocr(image_path, cls=True)
             ocr_result = ocr_result[0]
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            game_name = mode
+            game_name = game
             json_data = {}
+
+            frame = cv2.imread(image_path)
+
+            if highest_confidence_images:
+                btnocr = self.screenshot.spinbuttonOCR(self=self.screenshot,highest_confidence_images=highest_confidence_images, frame=frame)
+                print('btnocr', btnocr)
+                if not isinstance(btnocr, bool) and len(btnocr)>0:
+                    mode = 'free'
+                else:
+                    mode = 'base'
+                
 
             # *********************************************
             # filename = f"./json/data_{timestamp}.json"
@@ -217,9 +232,17 @@ class ValueRecognition:
             output_dir = os.path.join(root_dir, f"output/{game_name}/numerical")
             # filename = os.path.join(output_dir, f"data_{timestamp}.json")
 
-            # 還原 file 名稱
-            filename = os.path.basename(image_path)
-            filename = os.path.join(output_dir, filename.split('.')[0] + '.json')
+            if mode == 'base':
+                # 還原 file 名稱
+                filename = os.path.basename(image_path)
+                filename = os.path.join(output_dir, filename.split('.')[0] + '.json')
+            else:
+                output_dir = os.path.join(output_dir, 'fg')
+                print(output_dir)
+                filename = os.path.basename(image_path)
+                filename = re.sub(r'\d+', '', filename.split('.')[0])
+                filename = os.path.join(output_dir, filename + str(btnocr[0]))
+
 
             # 檢查並創建目錄
             os.makedirs(output_dir, exist_ok=True)

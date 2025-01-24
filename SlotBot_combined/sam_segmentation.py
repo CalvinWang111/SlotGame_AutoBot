@@ -1,6 +1,9 @@
 import os
 # if using Apple MPS, fall back to CPU for unsupported ops
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+# 設置torch庫的路徑到PATH環境變量中
+torch_path = 'C:\\Users\\13514\\anaconda3\\envs\\Py311\\Lib\\site-packages\\torch\\lib'
+os.environ['PATH'] = torch_path + ';' + os.environ['PATH']
 import numpy as np
 import torch
 import matplotlib.pyplot as plt

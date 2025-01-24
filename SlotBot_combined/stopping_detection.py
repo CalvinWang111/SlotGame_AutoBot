@@ -13,7 +13,7 @@ import json
 from Symbol_recognition.grid import BullGrid
 from screenshot import GameScreenshot
 from game_controller import GameController
-from paddleocr import PaddleOCR
+
 
 target_fps = 30
 MAX_BUFFER_SIZE = 32
@@ -32,8 +32,8 @@ class StoppingFrameCapture:
         self.Snapshot = Snapshot
         self.time_threshold = elapsed_time_threshold
         self.frame_buffer = Queue()
-        self.keywords = ['開始旋轉','自動旋轉','長按','開始']
-        self.ocr = PaddleOCR(use_angle_cls=True, lang="ch")
+        
+        
 
         self.pause_event = threading.Event()  # 控制線程的事件
         self.pause_event.set()  # 初始化為未暫停狀態
@@ -100,40 +100,6 @@ class StoppingFrameCapture:
                 #     print("Warning: Capture speed lower than target frame rate")
                 count += 1
             sct.close()
-
-    def spinbuttonOCR(self, highest_confidence_images, frame):
-        basespin = True
-
-        #檢查開始選轉按紐，顯示內容是否為開始旋轉，如果不是則判定進入免費遊戲
-        (x, y, w, h) = highest_confidence_images[10]['contour']
-        ocr_result = self.ocr.ocr(frame[y:y + h, x:x + w], cls=True)
-        ocr_result = ocr_result[0]
-                        
-        if ocr_result:
-            # Extract text and confidence
-            results = [(item[1][0], item[1][1]) for item in ocr_result]
-                        
-            # Find the result with the highest confidence
-            highest_score_result = max(results, key=lambda x: x[1])
-
-            # Check if the highest score answer is "開始旋轉"
-            if any(keyword in highest_score_result[0] for keyword in self.keywords):
-                print("The spin button showing : '開始旋轉'.")
-                basespin = True
-            else:
-                print("The spin button showing is not : '開始旋轉'.")
-
-                # 提取數字
-                numbers = [int(part) for text, _ in results for part in text.split('/') if part.isdigit()]
-                if len(numbers) >= 2:
-                    print(f"Remaining Spins: {numbers[0]}, Free Games Won: {numbers[1]}")
-                else:
-                    print("Could not extract sufficient numerical data.")
-                basespin = False
-        else:
-            print('OCR spin button failed.')
-        
-        return basespin
 
     def get_key_frames(self, grid, intial_intensity,intensity_threshold,highest_confidence_images,save_images):
         """

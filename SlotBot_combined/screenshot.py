@@ -9,6 +9,7 @@ from matplotlib.patches import Rectangle
 from matplotlib.widgets import RectangleSelector 
 from tkinter import Tk, simpledialog 
 import time
+from paddleocr import PaddleOCR
  
 class GameScreenshot: 
     @staticmethod 
@@ -264,6 +265,46 @@ class GameScreenshot:
  
         return avg_intensities 
     ''' 
+    @staticmethod
+    def spinbuttonOCR(self, highest_confidence_images, frame):
+        basespin = True
+        keywords = ['開始旋轉','自動旋轉','長按','開始']
+
+        #檢查開始選轉按紐，顯示內容是否為開始旋轉，如果不是則判定進入免費遊戲
+        (x, y, w, h) = highest_confidence_images[10]['contour']
+        ocr = PaddleOCR(use_angle_cls=True, lang="ch")
+        ocr_result = ocr.ocr(frame[y:y + h, x:x + w], cls=True)
+        ocr_result = ocr_result[0]
+                        
+        if ocr_result:
+            # Extract text and confidence
+            results = [(item[1][0], item[1][1]) for item in ocr_result]
+                        
+            # Find the result with the highest confidence
+            highest_score_result = max(results, key=lambda x: x[1])
+
+            # Check if the highest score answer is "開始旋轉"
+            if any(keyword in highest_score_result[0] for keyword in keywords):
+                print("The spin button showing : '開始旋轉'.")
+                basespin = True
+            else:
+                print("The spin button showing is not : '開始旋轉'.")
+
+                # 提取數字
+                numbers = [int(part) for text, _ in results for part in text.split('/') if part.isdigit()]
+                if len(numbers) >= 2:
+                    print(f"Remaining Spins: {numbers[0]}, Free Games Won: {numbers[1]}")
+                else:
+                    print("Could not extract sufficient numerical data.")
+                basespin = False
+        else:
+            print('OCR spin button failed.')
+        
+        if basespin:
+            return basespin
+        else:
+            return numbers
+
 
     @staticmethod 
     def intensity_check(initial_avg_intensities, avg_intensities, intensity_threshold): 
@@ -298,6 +339,8 @@ class GameScreenshot:
                     return False  # Return False if any intensity exceeds the threshold 
  
         return True  # Return True if all intensity differences are within the threshold 
+    
+    
      
     @staticmethod 
     def interactive_labeling(image_path,Snapshot): 

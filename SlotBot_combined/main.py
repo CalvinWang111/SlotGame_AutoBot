@@ -1,6 +1,6 @@
 import os
 import time
-
+import torch
 from pathlib import Path
 from screenshot import GameScreenshot
 from sam_segmentation import SAMSegmentation
@@ -13,6 +13,9 @@ import cv2
 from value_recognition import ValueRecognition
 import threading
 import queue
+
+
+print(torch.cuda.is_available())
 
 GAME = 'dragon'
 
@@ -43,7 +46,7 @@ def main():
     window_name = 'BlueStacks App Player'
     Snapshot = GAME
     intensity_threshold = 20
-    spin_round = 12
+    spin_round = 1000
     numerical_round_count = {"base":0, "free":0}
     global value_recognize_signal
     free_game_initialized = False
@@ -192,7 +195,7 @@ def main():
             
         #測試使用
         autoclick_start = time.time()
-        GameController.auto_click_from_center(window_title=window_name, x_offset=4, y_offset=4, regions=regions)
+        GameController.auto_click_from_center(window_title=window_name, regions=regions, step=50)
         autoclick_end = time.time()
         print('auto click time spended:', autoclick_end - autoclick_start)
 
@@ -245,12 +248,37 @@ def main():
 
     all_rounds = [os.path.join(image_dir['base'], file)for file in os.listdir(image_dir['base'])]
     print('all rounds', all_rounds)
-    valuerec["base"].recognize_value(root_dir=root_dir, mode=GAME, image_paths=all_rounds)
+    valuerec["base"].recognize_value(root_dir=root_dir, mode=GAME, image_paths=all_rounds, highest_confidence_images=highest_confidence_images)
                 
 
 if __name__ == "__main__":
     main()
+    '''
+    valuerec = {"base":ValueRecognition(),"free":ValueRecognition()}
+    all_rounds = [os.path.join(image_dir['base'], file)for file in os.listdir(image_dir['base'])]
+    print('all rounds', all_rounds)
+
+    Snapshot = 'dragon'
+    images_dir = os.path.join(root_dir, 'images', Snapshot)
+    vit_model_path = os.path.join(root_dir, 'VITModel', 'vit_model.pth')
+    sam_model_path = os.path.join(root_dir, 'checkpoints', 'sam2_hiera_large.pt')
+    sam_model_cfg = os.path.join(root_dir, 'sam2', 'configs', 'sam2', 'sam2_hiera_l.yaml')
+
+    sam = SAMSegmentation(Snapshot=Snapshot, images_dir=images_dir, sam2_checkpoint=sam_model_path, model_cfg=sam_model_cfg)
+    # 2. SAM 分割
+    maskDict = sam.segment_image(os.path.join(images_dir, Snapshot + ".png"))
+    
+    # 3. ViT 辨識
+    # put your own VIT model path here
+    vit = ViTRecognition(Snapshot=Snapshot, images_dir=images_dir, maskDict=maskDict,model_path=vit_model_path)
+    highest_confidence_images, template_folder = vit.classify_components()
+    vit.output_json(template_folder=template_folder, highest_confidence_images=highest_confidence_images)
+
+
+    valuerec['base'].get_meaning(root_dir=root_dir, game=GAME, mode='base', image_paths=all_rounds, image_amount=10)
+    valuerec["base"].recognize_value(root_dir=root_dir, game=GAME, mode='base', image_paths=all_rounds, highest_confidence_images=highest_confidence_images)
     ex = Excel_parser()
+    '''
     for mode in ("base", "free"):
         if(value_recognize_signal[mode]):
             ex.json_to_excel(GAME, mode)
