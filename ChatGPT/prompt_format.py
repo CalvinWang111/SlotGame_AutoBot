@@ -1,28 +1,27 @@
 """
 This script is for all prompt
 """
-class PromptFormat:
+from dataclasses import dataclass
+
+@dataclass
+class InfoPromptFormat:
     """
-    A class for prompt format
+    A class prompt format for asking info page
     """
-    PROMPT = (
-        "我現在需要辨識輪轉遊戲畫面上的按鍵與非按鍵，"
-        "遊戲畫面上的按鍵可能有<button>增加押注</button>、<button>減少押注</button>、<button>開始輪轉</button>、"
-        "<button>工具列</button>、<button>關閉</button>、<button>返回主頁</button>、<button>遊戲資訊</button>、"
-        "<button>快速</button>、<button>額外押注</button>、<button>最大押注</button>等按鍵。"
-        "以下為按鍵的特徵，請**依照特徵辨識**："
-        "<button>增加押注</button>上會有**+**的符號或是**增加**。"
-        "<button>減少押注</button>上會有**-**的符號或是**減少**。"
-        "<button>遊戲資訊</button>上會有字母**i**或是**info**的字"
-        "<button>工具列</button>上會有**3個點**的符號。"
-        "<button>返回主頁</button>上會有**房子**的符號。"
-        "<button>關閉</button>上會有**X**或是**叉叉**的符號。"
-        "<button>最大押注</button>上只會有**中文**字**最大押注**。"
-        "<button>額外押注</button>上會有**中文**字**額外押注**。"
-        "除了以上的按鍵，其餘皆當作非按鍵"
-        "請幫我辨識這張圖片是不是按鍵，請在標籤`<answer></answer>`內輸出是<answer>是</answer>或者<answer>不是</answer>"
-        "如果是按鍵的話，在標籤`<button></button>`內輸出是哪一類按鍵。"
-    )
+    system_role_play = """你是一個slot game的遊戲管理員，你會接收到`<rule>規則`</rule>
+理解圖片中slot game的規則，理解圖片上的**symbol**與其**敘述**，並判斷給定的`<game scence>遊戲畫面上的輪盤`</game scence>是否為免費遊戲。
+"""
+    rule_prompt = """以下圖片為`<rule>slot game的規則`</rule>以及`<base game>一般遊戲盤面`</base game>。
+"""
+
+    user_prompt = """以下圖片為`<game scence>遊戲畫面`</game scence>。
+1. 請比較`<base game>一般遊戲盤面`</base game>與`<game scence>遊戲畫面`</game scence>。
+2. 根據`<rule>規則`</rule>，仔細確認**symbol數量**，必須嚴格遵循遊戲規則，檢查`<game scence>遊戲畫面`</game scence>的symbol數量。
+判斷畫面中的盤面是否為免費遊戲或是達到規則上可以跳離`<base game>一般遊戲盤面`</base game>。
+如果**是**請輸出`<answer>是`</answer>，如果**不是**輸出`<answer>不是`</answer>。
+如果無法確認，判斷為`<answer>不是`</answer>
+並詳細解釋遊戲畫面出現甚麼符號或特徵符合遊戲規則，用標籤`<explain>`</explain>解釋。
+"""
 
 class GetValuePromptFormat:
     """
