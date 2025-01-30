@@ -46,7 +46,7 @@ def main():
     window_name = 'BlueStacks App Player'
     Snapshot = GAME
     intensity_threshold = 20
-    spin_round = 1000
+    spin_round = 70
     numerical_round_count = {"base":0, "free":0}
     global value_recognize_signal
     free_game_initialized = False
@@ -248,7 +248,7 @@ def main():
 
     all_rounds = [os.path.join(image_dir['base'], file)for file in os.listdir(image_dir['base'])]
     print('all rounds', all_rounds)
-    valuerec["base"].recognize_value(root_dir=root_dir, mode=GAME, image_paths=all_rounds, highest_confidence_images=highest_confidence_images)
+    valuerec["base"].recognize_value(root_dir=root_dir, game=GAME, mode=mode, image_paths=all_rounds, highest_confidence_images=highest_confidence_images)
                 
 
 if __name__ == "__main__":
@@ -277,11 +277,19 @@ if __name__ == "__main__":
 
     valuerec['base'].get_meaning(root_dir=root_dir, game=GAME, mode='base', image_paths=all_rounds, image_amount=10)
     valuerec["base"].recognize_value(root_dir=root_dir, game=GAME, mode='base', image_paths=all_rounds, highest_confidence_images=highest_confidence_images)
-    ex = Excel_parser()
     '''
+    valuerec = {"base":ValueRecognition(),"free":ValueRecognition()}
+    value_recognize_signal['base'] = True
+    print(GAME)
+    ex = Excel_parser()
     for mode in ("base", "free"):
         if(value_recognize_signal[mode]):
+            # Call the merge function
+            #valuerec['base'].merge_json_files(jsons_path)
+            
             ex.json_to_excel(GAME, mode)
             excel_path = os.path.join(root_dir, 'excel', f'{GAME}_{mode}.xlsx')
             jsons_path = os.path.join(root_dir, f"output/{GAME}/numerical")
+            print('jsons_path', jsons_path)
             ex.fill_creation_times_by_index(folder_path=jsons_path, excel_path=excel_path, output_excel=excel_path)
+        
