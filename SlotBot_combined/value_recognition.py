@@ -29,7 +29,7 @@ class ValueRecognition:
         self.value_pos_form = []
 
         self.threshold = 5
-        self.ocr = PaddleOCR(use_angle_cls=True, lang="en")
+        self.ocr = PaddleOCR(use_angle_cls=True, lang="en",show_log=False)
 
         self.meaning_table = None
 
@@ -207,51 +207,413 @@ class ValueRecognition:
                 json.dump(data, file, ensure_ascii=False, indent=4)
                 print("檔案不存在，已創建新檔案，內容為：", data)
 
-    def recognize_value(self, root_dir, game, mode, image_paths, highest_confidence_images={}):
+
+    def get_image_files(self, directory):
+        """讀取所有符合 round_XX-YY 命名規則的檔案"""
+        pattern = re.compile(r"(.+)_round_(\d+)-(\d+)\.(\w+)$")
+        image_files = []
+        
+        for root, _, files in os.walk(directory):
+            for file in files:
+                match = pattern.match(file)
+                if match:
+                    full_path = os.path.join(root, file)
+                    image_files.append(full_path)
+        
+        return image_files
+    
+
+    def shift_round_numbers(self, paths, start_round, stop_frame_old, btnocr_records):
+        """
+        進行 round shift：
+        1. 先將 round_(start_round+1) 及以後的 rounds 往後移一 round，確保空出目標 round。
+        2. 再將 round_(start_round)-stop_frame_old ~ round_(start_round)-max 變成 round_(start_round+1)-0 ~ round_(start_round+1)-N。
+        3. 檢查檔案是否存在，如目標名稱已存在，則繼續往後推。
+        4. 變更後更新 btnocr_records，確保檔案名稱同步。
+        """
+        pattern = re.compile(r"(.+)_round_(\d+)(?:-(\d+))?\.(\w+)$")
+        files_to_rename = []
+        later_rounds = []
+        rename_map = {}  # 存放 {舊檔名: 新檔名}，用於更新 btnocr_records
+
+        # **分類文件**
+        for file_path in paths:
+            filename = os.path.basename(file_path)
+            match = pattern.match(filename)
+            if match:
+                game_name, round_num, stop_frame, ext = match.groups()
+                stop_frame = int(stop_frame) if stop_frame is not None else None
+                round_num, stop_frame_old = int(round_num), int(stop_frame_old)
+
+                if round_num >= start_round + 1:
+                    later_rounds.append((file_path, game_name, round_num, stop_frame, ext))
+                elif round_num >= start_round and stop_frame is None:  # ✅ 把 dragon_round_13 這類加入
+                    later_rounds.append((file_path, game_name, round_num, -1, ext))  # -1 代表無停輪數值
+                elif round_num == start_round and stop_frame >= stop_frame_old:
+                    files_to_rename.append((file_path, game_name, round_num, stop_frame, ext))
+
+        # **1️⃣ 先處理所有 round_13+，確保有空位**
+        later_rounds.sort(key=lambda x: (-x[2], x[3] if x[3] is not None else -1))  # ✅ None 變成 -1，確保能排序
+        
+        for old_path, game_name, round_num, stop_frame, ext in later_rounds:
+            new_round = round_num + 1
+            new_name = f"{game_name}_round_{new_round}{f'-{stop_frame}' if stop_frame is not None else ''}.{ext}"
+            new_path = os.path.join(os.path.dirname(old_path), new_name)
+
+            os.rename(old_path, new_path)
+            rename_map[old_path] = new_path  # **記錄變更**
+            print(f"🔄 {old_path} -> {new_path}")
+
+        # **2️⃣ 重新讀取檔案，並處理 round_12-3 ~ round_12-max**
+        paths = self.get_image_files(os.path.dirname(paths[0]))  # **重新讀取檔案列表**
+        files_to_rename.sort(key=lambda x: x[3])  # stop_frame 升序排序
+
+        for i, (old_path, game_name, round_num, stop_frame, ext) in enumerate(files_to_rename):
+            new_round = round_num + 1
+            new_stop_frame = i
+            new_name = f"{game_name}_round_{new_round}-{new_stop_frame}.{ext}"
+            new_path = os.path.join(os.path.dirname(old_path), new_name)
+
+            os.rename(old_path, new_path)
+            rename_map[old_path] = new_path  # **記錄變更**
+            print(f"✅ {old_path} -> {new_path}")
+
+        # **3️⃣ 更新 btnocr_records**
+        new_btnocr_records = []
+        for file_path, btnocr in btnocr_records:
+            new_path = rename_map.get(file_path, file_path)  # 若變更則更新，未變更則保持原樣
+            new_btnocr_records.append((new_path, btnocr))
+
+        print("✅ btnocr_records 已更新！")
+        return new_btnocr_records  # **返回更新後的 btnocr_records**
+
+
+    '''
+    def shift_round_numbers(self, paths, start_round, stop_frame_old):
+        """
+        進行 round shift：
+        1. 先將 round_(start_round+1) 及以後的 rounds 往後移一 round，確保空出目標 round。
+        2. 再將 round_(start_round)-stop_frame_old ~ round_(start_round)-max 變成 round_(start_round+1)-0 ~ round_(start_round+1)-N。
+        3. 檢查檔案是否存在，如目標名稱已存在，則繼續往後推。
+        """
+        pattern = re.compile(r"(.+)_round_(\d+)(?:-(\d+))?\.(\w+)$")
+        files_to_rename = []
+        later_rounds = []
+        
+        # **分類文件**
+        for file_path in paths:
+            filename = os.path.basename(file_path)
+            match = pattern.match(filename)
+            if match:
+                game_name, round_num, stop_frame, ext = match.groups()
+                if not stop_frame is None:
+                    stop_frame = int(stop_frame)
+                round_num, stop_frame_old = int(round_num), int(stop_frame_old)
+
+                if round_num >= start_round + 1:
+                    later_rounds.append((file_path, game_name, round_num, stop_frame, ext))
+                elif round_num >= start_round and stop_frame is None:  # ✅ 把 dragon_round_13 這類加入
+                    later_rounds.append((file_path, game_name, round_num, -1, ext))  # -1 代表無停輪數值
+                elif round_num == start_round and stop_frame >= stop_frame_old:
+                    files_to_rename.append((file_path, game_name, round_num, stop_frame, ext))
+        
+        # **1️⃣ 先處理所有 round_13+，確保有空位**
+        existing_files = {os.path.basename(p) for p in paths}
+        later_rounds.sort(key=lambda x: (-x[2], x[3] if x[3] is not None else -1))  # ✅ None 變成 -1，確保能排序
+        
+        for old_path, game_name, round_num, stop_frame, ext in later_rounds:
+            new_round = round_num + 1
+            new_name = f"{game_name}_round_{new_round}{f'-{stop_frame}' if stop_frame is not None else ''}.{ext}"
+            new_path = os.path.join(os.path.dirname(old_path), new_name)
+            os.rename(old_path, new_path)
+            print(f"🔄 {old_path} -> {new_path}")
+            
+        
+        # **2️⃣ 重新讀取檔案，並處理 round_12-3 ~ round_12-max**
+        paths = self.get_image_files(os.path.dirname(paths[0]))  # **重新讀取檔案列表**
+        files_to_rename.sort(key=lambda x: x[3])  # stop_frame 升序排序
+        
+        for i, (old_path, game_name, round_num, stop_frame, ext) in enumerate(files_to_rename):
+            new_round = round_num + 1
+            new_stop_frame = i
+            new_name = f"{game_name}_round_{new_round}-{new_stop_frame}.{ext}"
+            new_path = os.path.join(os.path.dirname(old_path), new_name)
+            
+            os.rename(old_path, new_path)
+            print(f"✅ {old_path} -> {new_path}")
+            existing_files.add(os.path.basename(new_path))
+    '''
+
+
+    def shift_round_tofront(self, image_paths, start_round):
+        """
+        當某些圖片合併時，調整後續 round 讓編號連續。
+        - start_round: 從哪個 round 之後開始重新編號
+        """
+        pattern = re.compile(r"(.+)_round_(\d+)-(\d+)\.(\w+)$")  # ex: dragon_round_24-1.png
+        shift_map = {}  # key: 舊 round -> value: 新 round
+        new_round = start_round
+
+        # ✅ 修正排序，確保 round 和 stop_frame 正確順序
+        image_paths.sort(key=lambda p: tuple(map(int, re.findall(r"_(\d+)-(\d+)\.", p)[0])))
+
         for image_path in image_paths:
+            filename = os.path.basename(image_path)
+            match = pattern.match(filename)
+
+            if not match:
+                continue  # 不符合格式跳過
+
+            game_name, round_num, stop_frame, ext = match.groups()
+            round_num = int(round_num)
+            stop_frame = int(stop_frame)
+
+            if round_num < start_round:
+                continue  # 這些 round 不用動
+
+            # ✅ 確保 new_round 連續不跳號
+            if round_num not in shift_map:
+                shift_map[round_num] = new_round
+                new_round += 1
+
+            new_round_num = shift_map[round_num]
+            new_filename = f"{game_name}_round_{new_round_num}-{stop_frame}.{ext}"
+            new_path = os.path.join(os.path.dirname(image_path), new_filename)
+
+            os.rename(image_path, new_path)
+            print(f"✅ 編號前移: {image_path} -> {new_path}")
+
+
+    def merge_rounds(self, btnocr_records):
+        print(btnocr_records)
+        """
+        找出相同 btnocr[0] 但 round 不同的圖片，合併至相同 round，確保 stop_frame 連續，
+        並且讓後續所有 round 順序不亂。
+        """
+
+        # ✅ 按照 btnocr[0] 分組
+        btnocr_groups = {}
+        pattern = re.compile(r"(.+)_round_(\d+)-(\d+)\.(\w+)$")  # ex: dragon_round_24-1.png
+        all_image_paths = [image_path for image_path, _ in btnocr_records]
+
+        for image_path, btnocr in btnocr_records:
+            btn_value = btnocr[0]  # 取出 btnocr[0] 來分組
+
+            if btn_value not in btnocr_groups:
+                btnocr_groups[btn_value] = []
+
+            btnocr_groups[btn_value].append((image_path, btnocr))
+ 
+        for btn_value, images in btnocr_groups.items():
+            images.sort(key=lambda x: x[0])  # 依照檔名順序排序
+
+            base_round = None  # 目標 round
+            max_stop_frame = -1  # 記錄該 round 內最大 stop_frame
+
+            for i, (image_path, btnocr) in enumerate(images):
+                filename = os.path.basename(image_path)
+                match = pattern.match(filename)
+
+                if not match:
+                    continue  # 不符合格式就跳過
+
+                game_name, round_num, stop_frame, ext = match.groups()
+                round_num = int(round_num)
+                stop_frame = int(stop_frame)
+
+                if base_round is None:
+                    base_round = round_num  # 設定為第一個 round
+                    max_stop_frame = stop_frame  # 更新最大 stop_frame
+                    continue
+
+                if round_num != base_round:
+                    # 發現不同 round，合併
+                    # 先找出 base_round 內的最大 stop_frame
+                    existing_stop_frames = [
+                        int(re.search(rf"{game_name}_round_{base_round}-(\d+)\.{ext}", os.path.basename(p)).group(1))
+                        for p, _ in images if re.search(rf"{game_name}_round_{base_round}-(\d+)\.{ext}", os.path.basename(p))
+                    ]
+                    max_stop_frame = max(existing_stop_frames, default=-1) + 1  # 找不到時從 0 開始
+
+                    # 生成新文件名
+                    new_filename = f"{game_name}_round_{base_round}-{max_stop_frame}.{ext}"
+                    new_path = os.path.join(os.path.dirname(image_path), new_filename)
+
+                    # 確保不會重命名為已存在的檔案名稱
+                    while os.path.exists(new_path):
+                        max_stop_frame += 1
+                        new_filename = f"{game_name}_round_{base_round}-{max_stop_frame}.{ext}"
+                        new_path = os.path.join(os.path.dirname(image_path), new_filename)
+
+                    # 重新命名
+                    os.rename(image_path, new_path)
+                    images[i] = (new_path, btnocr)  # 更新記錄
+
+                    print(f"✅ 檔案合併: {image_path} -> {new_path}")
+        # ✅ 確保所有 round 編號是連續的
+        self.shift_round_tofront(all_image_paths, base_round + 1)
+
+    print("✅ 所有 round 已對齊且編號連續！")
+
+
+    def extract_round_number(self, filename):
+        """從文件名提取 round 數字"""
+        match = re.search(r'round_(\d+)', filename)
+        return int(match.group(1)) if match else float('inf')
+
+    def extract_stop_frame(self, filename):
+        """從文件名提取 stop_frame 數字"""
+        match = re.search(r'round_\d+-(\d+)', filename)
+        return int(match.group(1)) if match else -1  # 若無 stop_frame，則為 -1
+    
+    def recognize_value(self, root_dir, game, mode, image_paths, highest_confidence_images={}):
+
+
+        index = 0  # ✅ 記錄當前處理的位置
+        btnocr_records = []  # ✅ 存放按鈕的 OCR 記錄 [[image_path, btnocr], ...]
+        last_btnocr_first = None  # ✅ 用來判斷是否進入新的一輪 fg
+
+        while index < len(image_paths):
+            # ✅ **更新 image_paths**
+            image_dir = Path(f'./images/{game}/screenshots/base_game2')
+            
+            image_paths = sorted(
+                [os.path.join(image_dir, file) for file in os.listdir(image_dir)],
+                key=lambda x: (self.extract_round_number(os.path.basename(x)), self.extract_stop_frame(os.path.basename(x)))
+            )
+            print("✅ 已更新最新的 image_paths")
+            
+
+            image_path = image_paths[index]  # 取得當前圖片
+            filename = os.path.basename(image_path)
+            
             ocr_result = self.ocr.ocr(image_path, cls=True)
             ocr_result = ocr_result[0]
+            ocr_switch = True
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
             game_name = game
             json_data = {}
 
             frame = cv2.imread(image_path)
 
+            # ✅ **檢查 btnocr，決定 mode**
+            btnocr = None
             if highest_confidence_images:
-                btnocr = self.screenshot.spinbuttonOCR(self=self.screenshot,highest_confidence_images=highest_confidence_images, frame=frame)
+                btnocr = self.screenshot.spinbuttonOCR(self=self.screenshot, highest_confidence_images=highest_confidence_images, frame=frame)
                 print('btnocr', btnocr)
-                if not isinstance(btnocr, bool) and len(btnocr)>0:
-                    mode = 'free'
-                else:
-                    mode = 'base'
-                
+                mode = 'free' if isinstance(btnocr, list) and len(btnocr) == 2 else 'base'
 
-            # *********************************************
-            # filename = f"./json/data_{timestamp}.json"
-            # 定義完整路徑
             output_dir = os.path.join(root_dir, f"output/{game_name}/numerical")
-            # filename = os.path.join(output_dir, f"data_{timestamp}.json")
 
-            if mode == 'base':
-                # 還原 file 名稱
-                filename = os.path.basename(image_path)
-                filename = os.path.join(output_dir, filename.split('.')[0] + '.json')
-            else:
-                output_dir = os.path.join(output_dir, 'fg')
-                print(output_dir)
-                filename = os.path.basename(image_path)
-                filename = re.sub(r'\d+', '', filename.split('.')[0])
-                filename = os.path.join(output_dir, filename + str(btnocr[0]))
+            # ✅ **檔名匹配 `dragon_round_xxx`**
+            pattern = re.compile(r"(.+)_round_(\d+)(?:-(\d+))?\.(\w+)$")
+            match = pattern.match(filename)
 
+            if match:
+                game_name_old, round_num_old, stop_frame_old, ext_old = match.groups()
+                round_num_old = int(round_num_old)
+                print('正在運行round', round_num_old, '停輪偵', stop_frame_old)
 
-            # 檢查並創建目錄
+                if mode == 'free' and stop_frame_old is None:
+                    # ✅ **找出該 round 的最大 stop_frame**
+                    same_round_files = []
+                    for file_path in image_paths:
+                        file_name = os.path.basename(file_path)
+                        match = pattern.match(file_name)
+                        if match:
+                            _, round_num, stop_frame, _ = match.groups()
+                            if round_num and int(round_num) == round_num_old:
+                                stop_frame = int(stop_frame) if stop_frame else -1
+                                same_round_files.append((file_path, stop_frame))
+
+                    # 找最大停輪幀 stop_frame
+                    max_stop_frame = max([sf[1] for sf in same_round_files]) if same_round_files else -1
+                    new_stop_frame = max_stop_frame + 1
+
+                    # ✅ **重新命名檔案**
+                    new_filename = f"{game_name_old}_round_{round_num_old}-{new_stop_frame}.{ext_old}"
+                    new_path = os.path.join(os.path.dirname(image_path), new_filename)
+                    os.rename(image_path, new_path)
+
+                    print(f"✅ Renamed {image_path} -> {new_path}")
+
+                    #更換path後當輪不進行btnocr
+                    ocr_switch = False
+                    print('ocr switch關閉', ocr_switch)
+
+                    # ✅ **更新 `image_path` 和 `filename`**
+                    image_path = new_path
+                    filename = new_filename
+
+                    # ✅ **更新 image_paths**
+                    image_dir = Path(f'./images/{game}/screenshots/base_game')
+                    image_paths = sorted(
+                        [os.path.join(image_dir, file) for file in os.listdir(image_dir)],
+                        key=lambda x: (self.extract_round_number(os.path.basename(x)), self.extract_stop_frame(os.path.basename(x)))
+                    )
+                    #print("✅ 已更新最新的 image_paths:", image_paths)
+
+                    '''
+                    # ✅ **確保從新 image_paths 中找到對應的 index**
+                    if new_path in image_paths:
+                        index = image_paths.index(new_path) + 1  # 找到新圖片的位置，繼續下一張
+                    else:
+                        index = 0  # 若檔名變更，從新列表開始
+                    '''
+                    if index >= len(image_paths):
+                        break  # 若所有圖片處理完畢，結束迴圈
+
+                    continue
+                elif mode == 'base':
+                    # ✅ **刪除符合 `dragon_round_xxx` 格式但沒有 `-數值` 的檔案**
+                    if stop_frame_old is None:
+                        print(f"🗑️ Deleting {image_path}")
+                        os.remove(image_path)
+                        
+                        # ✅ **更新 image_paths**
+                        image_paths.remove(image_path)
+
+                        image_paths = sorted(
+                            [os.path.join(image_dir, file) for file in os.listdir(image_dir)],
+                            key=lambda x: (self.extract_round_number(os.path.basename(x)), self.extract_stop_frame(os.path.basename(x)))
+                        )
+
+                        if index >= len(image_paths):
+                            break  # 若所有圖片處理完畢，結束迴圈
+
+                        continue    
+
+            # ✅ **記錄 btnocr**
+            if mode=='free' and btnocr and ocr_switch:
+                btnocr_records.append([image_path, btnocr])
+
+                if btnocr[0] == 4:
+                    print('檢查fg4')
+
+                if last_btnocr_first is not None and btnocr[0] != last_btnocr_first:
+                    # ✅ **只有當 btnocr[0] 變化且不等於上一輪的數字時，才進入新的一輪**
+                    if last_btnocr_first is None or btnocr[0] < last_btnocr_first:
+                        print("🔄 btnocr 變更，進入新的一輪")
+                        # ✅ **進行 round 數後移**
+                        btnocr_records = self.shift_round_numbers(image_paths, round_num_old, stop_frame_old, btnocr_records)
+                        # ✅ **修改當前 round**
+                        new_round_num = round_num_old + 1
+                        new_filename = f"{game_name_old}_round_{new_round_num}-0.{ext_old}"
+                        new_path = os.path.join(os.path.dirname(image_path), new_filename)
+                        # os.rename(image_path, new_path)
+                        filename = new_filename
+                        print(f"✅ {image_path} -> {new_path} (新 fg 輪)")
+
+                        # ✅ **更新 `image_path`**
+                        image_path = new_path
+
+                last_btnocr_first = btnocr[0]  # 更新 btnocr 記錄
+
+            # ✅ **確保輸出目錄存在**
             os.makedirs(output_dir, exist_ok=True)
-            # filename = os.path.join(root_dir, f"./output/{game_name}/numerical/data_{timestamp}.json")
-            # *********************************************
 
             for line in self.meaning_table:
-                json_each_line = {}
-                json_each_line['path'] = ''
+                json_each_line = {'path': ''}
                 for data in ocr_result:
                     x = int(data[0][0][0])
                     y = int(data[0][0][1])
@@ -261,46 +623,61 @@ class ValueRecognition:
 
                     middle = [line['roi'][0] + line['roi'][2] / 2, line['roi'][1] + line['roi'][3] / 2]
                     new_middle = [new_value_pos['roi'][0] + new_value_pos['roi'][2] / 2,
-                                  new_value_pos['roi'][1] + new_value_pos['roi'][3] / 2]
+                                new_value_pos['roi'][1] + new_value_pos['roi'][3] / 2]
 
-                    # left side similar
                     if line['roi'][0] + self.threshold > new_value_pos['roi'][0] > line['roi'][0] - self.threshold and \
                             middle[1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
-                        print(new_value_pos['value'], line['meaning'])
-                        json_each_line['confidence'] = data[1][1]
-                        json_each_line['contour'] = new_value_pos['roi']
-                        json_each_line['value'] = new_value_pos['value']
+                        json_each_line.update({
+                            'confidence': data[1][1],
+                            'contour': new_value_pos['roi'],
+                            'value': new_value_pos['value']
+                        })
                         json_data[line['meaning']] = json_each_line
                         break
-                    # right side similar
+
                     elif line['roi'][0] + line['roi'][2] + self.threshold > new_value_pos['roi'][0] + \
-                            new_value_pos['roi'][
-                                2] > line['roi'][0] + line['roi'][2] - self.threshold and middle[1] + self.threshold > \
-                            new_middle[
-                                1] > middle[
-                        1] - self.threshold:
-                        print(new_value_pos['value'], line['meaning'])
-                        json_each_line['confidence'] = data[1][1]
-                        json_each_line['contour'] = new_value_pos['roi']
-                        json_each_line['value'] = new_value_pos['value']
+                            new_value_pos['roi'][2] > line['roi'][0] + line['roi'][2] - self.threshold and \
+                            middle[1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
+                        json_each_line.update({
+                            'confidence': data[1][1],
+                            'contour': new_value_pos['roi'],
+                            'value': new_value_pos['value']
+                        })
                         json_data[line['meaning']] = json_each_line
-
                         break
-                    # middle similar
-                    elif middle[0] + self.threshold > new_middle[0] > middle[0] - self.threshold and middle[
-                        1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
-                        print(new_value_pos['value'], line['meaning'])
-                        json_each_line['confidence'] = data[1][1]
-                        json_each_line['contour'] = new_value_pos['roi']
-                        json_each_line['value'] = new_value_pos['value']
+
+                    elif middle[0] + self.threshold > new_middle[0] > middle[0] - self.threshold and \
+                            middle[1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
+                        json_each_line.update({
+                            'confidence': data[1][1],
+                            'contour': new_value_pos['roi'],
+                            'value': new_value_pos['value']
+                        })
                         json_data[line['meaning']] = json_each_line
-
                         break
+
+            # ✅ **確保 `filename` 最終格式正確**
+            #filename_clean = re.sub(r'\d+', '', filename.split('.')[0])
+            #json_filename = os.path.join(output_dir, filename_clean.split('.')[0] + '.json')
+
+            # 只移除尾部的副檔名，不改變數字
+            filename_clean = os.path.splitext(filename)[0]
+            json_filename = os.path.join(output_dir, filename_clean + '.json')
+
+            print('filename', filename)
+            print('filename clean', filename_clean)
+            print('json_filename', json_filename )
             print('json_data', json_data)
-            with open(filename, "w", encoding="utf-8") as file:
+
+            with open(json_filename, "w", encoding="utf-8") as file:
                 json.dump(json_data, file, ensure_ascii=False, indent=4)
-            frame = cv2.imread(image_path)
-            cv2.imwrite(rf'./images/value/value+{timestamp}.png', frame)
+
+            index += 1  # ✅ **只在沒有 rename 時才往前進**
+            print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+
+        #檢查fg 狀態round是否需要合併
+        self.merge_rounds(btnocr_records=btnocr_records)
+
 
     def auto_test(self):
         #folder_path = './test_images/ch'
