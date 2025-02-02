@@ -287,64 +287,6 @@ class ValueRecognition:
         print("✅ btnocr_records 已更新！")
         return new_btnocr_records  # **返回更新後的 btnocr_records**
 
-
-    '''
-    def shift_round_numbers(self, paths, start_round, stop_frame_old):
-        """
-        進行 round shift：
-        1. 先將 round_(start_round+1) 及以後的 rounds 往後移一 round，確保空出目標 round。
-        2. 再將 round_(start_round)-stop_frame_old ~ round_(start_round)-max 變成 round_(start_round+1)-0 ~ round_(start_round+1)-N。
-        3. 檢查檔案是否存在，如目標名稱已存在，則繼續往後推。
-        """
-        pattern = re.compile(r"(.+)_round_(\d+)(?:-(\d+))?\.(\w+)$")
-        files_to_rename = []
-        later_rounds = []
-        
-        # **分類文件**
-        for file_path in paths:
-            filename = os.path.basename(file_path)
-            match = pattern.match(filename)
-            if match:
-                game_name, round_num, stop_frame, ext = match.groups()
-                if not stop_frame is None:
-                    stop_frame = int(stop_frame)
-                round_num, stop_frame_old = int(round_num), int(stop_frame_old)
-
-                if round_num >= start_round + 1:
-                    later_rounds.append((file_path, game_name, round_num, stop_frame, ext))
-                elif round_num >= start_round and stop_frame is None:  # ✅ 把 dragon_round_13 這類加入
-                    later_rounds.append((file_path, game_name, round_num, -1, ext))  # -1 代表無停輪數值
-                elif round_num == start_round and stop_frame >= stop_frame_old:
-                    files_to_rename.append((file_path, game_name, round_num, stop_frame, ext))
-        
-        # **1️⃣ 先處理所有 round_13+，確保有空位**
-        existing_files = {os.path.basename(p) for p in paths}
-        later_rounds.sort(key=lambda x: (-x[2], x[3] if x[3] is not None else -1))  # ✅ None 變成 -1，確保能排序
-        
-        for old_path, game_name, round_num, stop_frame, ext in later_rounds:
-            new_round = round_num + 1
-            new_name = f"{game_name}_round_{new_round}{f'-{stop_frame}' if stop_frame is not None else ''}.{ext}"
-            new_path = os.path.join(os.path.dirname(old_path), new_name)
-            os.rename(old_path, new_path)
-            print(f"🔄 {old_path} -> {new_path}")
-            
-        
-        # **2️⃣ 重新讀取檔案，並處理 round_12-3 ~ round_12-max**
-        paths = self.get_image_files(os.path.dirname(paths[0]))  # **重新讀取檔案列表**
-        files_to_rename.sort(key=lambda x: x[3])  # stop_frame 升序排序
-        
-        for i, (old_path, game_name, round_num, stop_frame, ext) in enumerate(files_to_rename):
-            new_round = round_num + 1
-            new_stop_frame = i
-            new_name = f"{game_name}_round_{new_round}-{new_stop_frame}.{ext}"
-            new_path = os.path.join(os.path.dirname(old_path), new_name)
-            
-            os.rename(old_path, new_path)
-            print(f"✅ {old_path} -> {new_path}")
-            existing_files.add(os.path.basename(new_path))
-    '''
-
-
     def shift_round_tofront(self, image_paths, start_round):
         """
         當某些圖片合併時，調整後續 round 讓編號連續。
@@ -451,7 +393,7 @@ class ValueRecognition:
 
                     print(f"✅ 檔案合併: {image_path} -> {new_path}")
         # ✅ 確保所有 round 編號是連續的
-        self.shift_round_tofront(all_image_paths, base_round + 1)
+        #self.shift_round_tofront(all_image_paths, base_round + 1)
 
     print("✅ 所有 round 已對齊且編號連續！")
 
@@ -465,6 +407,116 @@ class ValueRecognition:
         """從文件名提取 stop_frame 數字"""
         match = re.search(r'round_\d+-(\d+)', filename)
         return int(match.group(1)) if match else -1  # 若無 stop_frame，則為 -1
+
+    def ensure_continuous_rounds(self, image_paths):
+        """確保 round 數字是連續的，並重新命名檔案"""
+        pattern = re.compile(r"(.*)_round_(\d+)-(\d+)\.(\w+)")
+        
+        round_data = []
+        for image_path in image_paths:
+            filename = os.path.basename(image_path)
+            match = pattern.match(filename)
+            if match:
+                game_name, round_num, stop_frame, ext = match.groups()
+                round_data.append((int(round_num), int(stop_frame), image_path, game_name, ext))
+
+        # 按 round 及 stop_frame 排序
+        round_data.sort()
+
+        # 重新分配 round 數字
+        round_mapping = {}
+        new_round_num = 0
+        renamed_paths = []
+
+        for old_round, stop_frame, old_path, game_name, ext in round_data:
+            if old_round not in round_mapping:
+                round_mapping[old_round] = new_round_num
+                new_round_num += 1  # 確保 round 連續
+
+            new_round = round_mapping[old_round]
+            new_filename = f"{game_name}_round_{new_round}-{stop_frame}.{ext}"
+            new_path = os.path.join(os.path.dirname(old_path), new_filename)
+
+            os.rename(old_path, new_path)
+            renamed_paths.append(new_path)
+            print(f"✅ {old_path} -> {new_path}")
+
+        print("✅ 所有 round 已連續編號！")
+        return renamed_paths  # 回傳新路徑
+
+    def json_output(self, output_dir, image_paths):
+        """OCR 辨識並輸出 JSON"""
+
+        # 先確保 round 連續
+        image_paths = self.ensure_continuous_rounds(image_paths)
+
+        for image_path in image_paths:
+            filename = os.path.basename(image_path)
+
+            # 進行 OCR
+            ocr_result = self.ocr.ocr(image_path, cls=True)
+            ocr_result = ocr_result[0]
+            json_data = {}
+
+            # ✅ **確保輸出目錄存在**
+            os.makedirs(output_dir, exist_ok=True)
+
+            for line in self.meaning_table:
+                json_each_line = {'path': ''}
+                for data in ocr_result:
+                    x = int(data[0][0][0])
+                    y = int(data[0][0][1])
+                    w = int(data[0][1][0] - data[0][0][0])
+                    h = int(data[0][2][1] - data[0][1][1])
+                    new_value_pos = {'roi': [x, y, w, h], 'value': data[1][0]}
+
+                    middle = [line['roi'][0] + line['roi'][2] / 2, line['roi'][1] + line['roi'][3] / 2]
+                    new_middle = [new_value_pos['roi'][0] + new_value_pos['roi'][2] / 2,
+                                new_value_pos['roi'][1] + new_value_pos['roi'][3] / 2]
+
+                    if line['roi'][0] + self.threshold > new_value_pos['roi'][0] > line['roi'][0] - self.threshold and \
+                            middle[1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
+                        json_each_line.update({
+                            'confidence': data[1][1],
+                            'contour': new_value_pos['roi'],
+                            'value': new_value_pos['value']
+                        })
+                        json_data[line['meaning']] = json_each_line
+                        break
+
+                    elif line['roi'][0] + line['roi'][2] + self.threshold > new_value_pos['roi'][0] + \
+                            new_value_pos['roi'][2] > line['roi'][0] + line['roi'][2] - self.threshold and \
+                        middle[1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
+                        json_each_line.update({
+                            'confidence': data[1][1],
+                            'contour': new_value_pos['roi'],
+                            'value': new_value_pos['value']
+                        })
+                        json_data[line['meaning']] = json_each_line
+                        break
+
+                    elif middle[0] + self.threshold > new_middle[0] > middle[0] - self.threshold and \
+                            middle[1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
+                        json_each_line.update({
+                            'confidence': data[1][1],
+                            'contour': new_value_pos['roi'],
+                            'value': new_value_pos['value']
+                        })
+                        json_data[line['meaning']] = json_each_line
+                        break
+
+            # ✅ **確保 `filename` 最終格式正確**
+            filename_clean = os.path.splitext(filename)[0]
+            json_filename = os.path.join(output_dir, filename_clean + '.json')
+
+            print('filename', filename)
+            print('filename clean', filename_clean)
+            print('json_filename', json_filename)
+            print('json_data', json_data)
+
+            with open(json_filename, "w", encoding="utf-8") as file:
+                json.dump(json_data, file, ensure_ascii=False, indent=4)
+
     
     def recognize_value(self, root_dir, game, mode, image_paths, highest_confidence_images={}):
 
@@ -609,74 +661,15 @@ class ValueRecognition:
 
                 last_btnocr_first = btnocr[0]  # 更新 btnocr 記錄
 
-            # ✅ **確保輸出目錄存在**
-            os.makedirs(output_dir, exist_ok=True)
-
-            for line in self.meaning_table:
-                json_each_line = {'path': ''}
-                for data in ocr_result:
-                    x = int(data[0][0][0])
-                    y = int(data[0][0][1])
-                    w = int(data[0][1][0] - data[0][0][0])
-                    h = int(data[0][2][1] - data[0][1][1])
-                    new_value_pos = {'roi': [x, y, w, h], 'value': data[1][0]}
-
-                    middle = [line['roi'][0] + line['roi'][2] / 2, line['roi'][1] + line['roi'][3] / 2]
-                    new_middle = [new_value_pos['roi'][0] + new_value_pos['roi'][2] / 2,
-                                new_value_pos['roi'][1] + new_value_pos['roi'][3] / 2]
-
-                    if line['roi'][0] + self.threshold > new_value_pos['roi'][0] > line['roi'][0] - self.threshold and \
-                            middle[1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
-                        json_each_line.update({
-                            'confidence': data[1][1],
-                            'contour': new_value_pos['roi'],
-                            'value': new_value_pos['value']
-                        })
-                        json_data[line['meaning']] = json_each_line
-                        break
-
-                    elif line['roi'][0] + line['roi'][2] + self.threshold > new_value_pos['roi'][0] + \
-                            new_value_pos['roi'][2] > line['roi'][0] + line['roi'][2] - self.threshold and \
-                            middle[1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
-                        json_each_line.update({
-                            'confidence': data[1][1],
-                            'contour': new_value_pos['roi'],
-                            'value': new_value_pos['value']
-                        })
-                        json_data[line['meaning']] = json_each_line
-                        break
-
-                    elif middle[0] + self.threshold > new_middle[0] > middle[0] - self.threshold and \
-                            middle[1] + self.threshold > new_middle[1] > middle[1] - self.threshold:
-                        json_each_line.update({
-                            'confidence': data[1][1],
-                            'contour': new_value_pos['roi'],
-                            'value': new_value_pos['value']
-                        })
-                        json_data[line['meaning']] = json_each_line
-                        break
-
-            # ✅ **確保 `filename` 最終格式正確**
-            #filename_clean = re.sub(r'\d+', '', filename.split('.')[0])
-            #json_filename = os.path.join(output_dir, filename_clean.split('.')[0] + '.json')
-
-            # 只移除尾部的副檔名，不改變數字
-            filename_clean = os.path.splitext(filename)[0]
-            json_filename = os.path.join(output_dir, filename_clean + '.json')
-
-            print('filename', filename)
-            print('filename clean', filename_clean)
-            print('json_filename', json_filename )
-            print('json_data', json_data)
-
-            with open(json_filename, "w", encoding="utf-8") as file:
-                json.dump(json_data, file, ensure_ascii=False, indent=4)
-
             index += 1  # ✅ **只在沒有 rename 時才往前進**
             print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
 
         #檢查fg 狀態round是否需要合併
         self.merge_rounds(btnocr_records=btnocr_records)
+        self.json_output(output_dir=output_dir, image_paths=image_paths)
+
+
+
 
 
     def auto_test(self):
