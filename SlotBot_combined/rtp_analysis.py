@@ -169,7 +169,7 @@ class RtpTool:
 
 
 if __name__ == "__main__":
-    folder_path = Path(r"D:\git\SlotGame_AutoBot\SlotBot_combined\test_images\ch")
+    folder_path = Path(r"D:\git-repository\SlotGame_AutoBot\SlotBot_combined\test_images\ch")
     image_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff"}
 
     # 遍歷資料夾中的所有檔案
